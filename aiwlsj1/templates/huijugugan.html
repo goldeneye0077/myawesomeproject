@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}汇聚故障感知数据管理 - 网络视界指标后台管理{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 class="card-title">汇聚故障感知数据管理</h2>
+    <!-- 筛选表单 -->
+    <form method="get" id="filterForm" style="margin-bottom: 18px; display: flex; gap: 18px; align-items: center; flex-wrap: wrap;">
+        <label>城市：
+            <select name="city" onchange="document.getElementById('filterForm').submit();" style="min-width: 60px;">
+                <option value="">全部</option>
+                {% for c in all_cities %}
+                <option value="{{ c }}" {% if current_city==c %}selected{% endif %}>{{ c }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>月份：
+            <select name="month" onchange="document.getElementById('filterForm').submit();" style="min-width: 60px;">
+                <option value="">全部</option>
+                {% for m in all_months %}
+                <option value="{{ m }}" {% if current_month==m %}selected{% endif %}>{{ m }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <input type="hidden" name="page" value="1">
+    </form>
+    <div class="action-bar">
+        <button class="btn btn-primary" onclick="openAddModal()">添加数据</button>
+    </div>
+
+    <!-- 添加/编辑弹窗Modal -->
+    <div id="huijugugan-modal" class="modal" style="display:none;position:fixed;z-index:9999;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.3);align-items:center;justify-content:center;">
+        <div class="modal-content" style="background:#fff;padding:32px 28px 24px 28px;border-radius:12px;min-width:340px;max-width:96vw;">
+            <h3 id="modal-title">添加数据</h3>
+            <form id="huijugugan-form" method="post">
+                <input type="hidden" id="modal-id" name="id">
+                <div style="display:flex;flex-wrap:wrap;gap:16px 24px;">
+                    <div style="flex:1 1 150px;min-width:140px;">
+                        <label>月份</label>
+                        <input type="text" id="modal-month" name="month" class="form-control" required>
+                    </div>
+                    <div style="flex:1 1 150px;min-width:140px;">
+                        <label>城市</label>
+                        <input type="text" id="modal-city" name="city" class="form-control" required>
+                    </div>
+                    <div style="flex:1 1 150px;min-width:140px;">
+                        <label>汇聚全量</label>
+                        <input type="number" id="modal-huiju_amount" name="huiju_amount" class="form-control" required>
+                    </div>
+                    <div style="flex:1 1 150px;min-width:140px;">
+                        <label>超4小时</label>
+                        <input type="number" id="modal-over_4h" name="over_4h" class="form-control" required>
+                    </div>
+                    <div style="flex:1 1 150px;min-width:140px;">
+                        <label>重要环全量</label>
+                        <input type="number" id="modal-important_amount" name="important_amount" class="form-control" required>
+                    </div>
+                    <div style="flex:1 1 150px;min-width:140px;">
+                        <label>超12小时</label>
+                        <input type="number" id="modal-over_12h" name="over_12h" class="form-control" required>
+                    </div>
+                </div>
+                <div style="margin-top:24px;text-align:right;">
+                    <button type="submit" class="btn btn-primary" id="modal-save-btn">保存</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="data-table-container">
+        <table class="data-table">
+            <thead class="sticky-header">
+                <tr>
+                    <th>月份</th>
+                    <th>城市</th>
+                    <th>汇聚全量</th>
+                    <th>超4小时</th>
+                    <th>重要环全量</th>
+                    <th>超12小时</th>
+                    <th>创建时间</th>
+                    <th>更新时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in huijugugan_list %}
+                <tr>
+                    <td>{{ item.month }}</td>
+                    <td>{{ item.city }}</td>
+                    <td>{{ item.huiju_amount }}</td>
+                    <td>{{ item.over_4h }}</td>
+                    <td>{{ item.important_amount }}</td>
+                    <td>{{ item.over_12h }}</td>
+                    <td>{{ item.created_at.strftime('%Y-%m-%d') if item.created_at else '' }}</td>
+                    <td>{{ item.updated_at.strftime('%Y-%m-%d') if item.updated_at else '' }}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="openEditModal({{ item.id }}, '{{ item.month }}', '{{ item.city }}', {{ item.huiju_amount }}, {{ item.over_4h }}, {{ item.important_amount }}, {{ item.over_12h }})">编辑</button>
+                        <a href="/delete_huijugugan/{{ item.id }}" class="btn btn-sm btn-danger" onclick="return confirm('确定要删除吗？');">删除</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="pagination" style="margin-top: 18px; display: flex; justify-content: center; align-items: center; gap: 8px;">
+        {% if page > 1 %}
+            <a href="?page=1&city={{ current_city }}&month={{ current_month }}" class="page-link">首页</a>
+            <a href="?page={{ page - 1 }}&city={{ current_city }}&month={{ current_month }}" class="page-link">上一页</a>
+        {% endif %}
+        <span>第 {{ page }} / {{ pages }} 页</span>
+        {% if page < pages %}
+            <a href="?page={{ page + 1 }}&city={{ current_city }}&month={{ current_month }}" class="page-link">下一页</a>
+            <a href="?page={{ pages }}&city={{ current_city }}&month={{ current_month }}" class="page-link">末页</a>
+        {% endif %}
+        <span style="margin-left:12px;">共 {{ total }} 条</span>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta http-equiv="refresh" content="3600" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>数据可视化</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/pageTwo.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', path='/element-ui/lib/theme-chalk/index.css') }}" />
+    <style>
+    #yearSelect:hover {
+        background-color: #66b1ff !important;
+        color: #fff;
+    }
+    #yearSelect:focus {
+        outline: none;
+    }
+    </style>
+</head>
+
+<body>
+    <div id="scaleBox">
+        <div id="pageContainer">
+            <div id="headContainer">
+                <h1>KPI指标</h1>
+                <div id="button" style="display:inline-block;vertical-align:middle;">
+                    <a href="/bi"><button style="margin-right:8px;width:88px;height:32px;background-color:#409EFF;color:#fff;border:none;border-radius:16px;cursor:pointer;font-size:16px;">契约化</button></a>
+                    <select id="yearSelect" name="year" style="width:88px;height:32px;vertical-align:middle;background-color:#409EFF;color:#fff;border:none;padding:0 16px;border-radius:16px;cursor:pointer;font-size:16px;appearance:none;-webkit-appearance:none;-moz-appearance:none;text-align:center;">
+                        <option value="2023">2023年</option>
+                        <option value="2024">2024年</option>
+                        <option value="2025" selected>2025年</option>
+                    </select>
+                </div>
+                <span id="showTime" v-text="curTime+'   '+curDate"></span>
+
+            </div>
+            <div id="mainContainer">
+                <div id="topContainer">
+                    <div class="item" v-for="item in topData">
+                        <div class="rowOne" v-text="item[0]"></div>
+                        <div class="rowTwo">
+                            <div class="rowLeft"></div>
+                            <div class="rowCenter" v-text="item[1]"></div>
+                            <div class="rowRight">
+                                <div class="dot" :class="{'green':item[1]==='达标','red':item[1]!=='达标'}"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="leftMiddle" class="panel">
+                    <div class="panelTitle">无线退服时长</div>
+                    <div class="panelContent"></div>
+                </div>                
+                
+                <div id="centerMiddle" class="panel">
+                    <div class="panelTitle">家企宽&到企</div>
+                    <div class="panelContent"></div>
+                </div>
+                
+                <div id="rightMiddle" class="panel">
+                    <div class="panelTitle">研发投入完成度</div>
+                    <div class="panelContent"></div>
+                </div>
+
+                <div id="leftBottom" class="panel">
+                    <div class="panelTitle">指标</div>
+                    <div class="panelContent"></div>
+                </div>
+                <div id="rightBottom" class="panel">
+                    <div class="panelTitle">新入网涉案手机号码占比同比下降</div>
+                    <div class="panelContent"></div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+<script src="{{ url_for('static', path='/js/scaleBox.js') }}"></script>
+<script src="{{ url_for('static', path='/js/showTime.js') }}"></script>
+<script src="{{ url_for('static', path='/js/map.js') }}"></script>
+<script src="{{ url_for('static', path='/js/theme.js') }}"></script>
+<script src="{{ url_for('static', path='/js/echarts.min.js') }}"></script>
+<script src="{{ url_for('static', path='/js/vchart.min.js') }}"></script>
+<script src="{{ url_for('static', path='/js/vue.js') }}"></script>
+<script src="{{ url_for('static', path='/js/axios.min.js') }}"></script>
+<script src="{{ url_for('static', path='/element-ui/lib/index.js') }}"></script>
+<script src="{{ url_for('static', path='/js/pageTwo.js') }}"></script>
+</body>
+
+</html>

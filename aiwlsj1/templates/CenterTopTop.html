@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}故障割接管理{% endblock %}
+{% block content %}
+<div class="card">
+    <h2>故障割接管理</h2>
+    <form method="post" action="/center_top_top/add" style="display:flex;flex-direction:row;gap:32px;align-items:center;flex-wrap:wrap;background:#fff;padding:32px 28px 24px 28px;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,0.07);margin-bottom:24px;max-width:100%;width:auto;">
+        <div style="display:flex;align-items:center;gap:8px;flex:1 1 220px;min-width:220px;max-width:320px;margin-bottom:12px;">
+            <label for="type" style="font-weight:500;color:#333;white-space:nowrap;min-width:56px;">类型</label>
+            <input type="text" name="type" id="type" required style="flex:1 1 120px;padding:10px 14px;border:1px solid #e0e0e0;border-radius:6px;font-size:15px;min-width:0;">
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex:1 1 220px;min-width:220px;max-width:320px;margin-bottom:12px;">
+            <label for="status" style="font-weight:500;color:#333;white-space:nowrap;min-width:56px;">是否达标</label>
+            <input type="text" name="status" id="status" required style="flex:1 1 120px;padding:10px 14px;border:1px solid #e0e0e0;border-radius:6px;font-size:15px;min-width:0;">
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex:1 1 220px;min-width:220px;max-width:320px;margin-bottom:12px;">
+            <label for="year" style="font-weight:500;color:#333;white-space:nowrap;min-width:56px;">年份</label>
+            <input type="number" name="year" id="year" required style="flex:1 1 120px;padding:10px 14px;border:1px solid #e0e0e0;border-radius:6px;font-size:15px;min-width:0;">
+        </div>
+        <button type="submit" class="btn btn-success" style="height:40px;min-width:80px;font-size:16px;margin-bottom:12px;">新增</button>
+    </form>
+    <table class="data-table">
+        <thead>
+            <tr><th>ID</th><th>类型</th><th>是否达标</th><th>年份</th><th>操作</th></tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                <td>{{ row.id }}</td>
+                <td>{{ row.type }}</td>
+                <td>{{ row.status }}</td>
+                <td>{{ row.year }}</td>
+                <td>
+                    <form method="post" action="/center_top_top/delete" style="display:inline;">
+                        <input type="hidden" name="id" value="{{ row.id }}">
+                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('确定删除？');">删除</button>
+                    </form>
+                    <button class="btn btn-info btn-sm" onclick="showEdit({{ row.id }}, '{{ row.type }}', '{{ row.status }}', {{ row.year if row.year is not none else '' }})">编辑</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <!-- 编辑弹窗 -->
+    <div id="editModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.2);z-index:1000;align-items:center;justify-content:center;">
+        <form method="post" action="/center_top_top/update" class="card" style="max-width:400px;margin:auto;padding:30px;">
+            <input type="hidden" id="editId" name="id">
+            <input type="text" id="editType" name="type" placeholder="类型" required class="form-col">
+            <input type="text" id="editStatus" name="status" placeholder="是否达标" required class="form-col">
+            <input type="number" id="editYear" name="year" placeholder="年份" required class="form-col">
+            <div style="text-align:right;margin-top:18px;">
+                <button type="button" onclick="hideEdit()" class="btn btn-secondary" style="margin-right:8px;">取消</button>
+                <button type="submit" class="btn btn-success">保存</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+function showEdit(id, type, status, year) {
+    document.getElementById('editId').value = id;
+    document.getElementById('editType').value = type;
+    document.getElementById('editStatus').value = status;
+    document.getElementById('editYear').value = (year === null || year === undefined) ? '' : year;
+    document.getElementById('editModal').style.display = 'flex';
+}
+function hideEdit() {
+    document.getElementById('editModal').style.display = 'none';
+}
+</script>
+{% endblock %}

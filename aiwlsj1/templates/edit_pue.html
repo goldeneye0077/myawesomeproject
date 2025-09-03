@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}编辑PUE数据 - 网络视界指标后台管理{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 class="card-title">编辑PUE数据</h2>
+    <form action="/edit_pue_data/{{ pue_data.id }}" method="post" class="form-container">
+        <div class="form-row">
+            <div class="form-col">
+                <div class="form-group">
+                    <label for="location">地点</label>
+                    <input type="text" id="location" name="location" value="{{ pue_data.location }}" class="form-control" required>
+                </div>
+            </div>
+            <div class="form-col">
+                <div class="form-group">
+                    <label for="month">月份</label>
+                    <select id="month" name="month" class="form-control" required>
+                        <option value="">请选择</option>
+                        <option value="1" {% if pue_data.month == "1" %}selected{% endif %}>1月</option>
+                        <option value="2" {% if pue_data.month == "2" %}selected{% endif %}>2月</option>
+                        <option value="3" {% if pue_data.month == "3" %}selected{% endif %}>3月</option>
+                        <option value="4" {% if pue_data.month == "4" %}selected{% endif %}>4月</option>
+                        <option value="5" {% if pue_data.month == "5" %}selected{% endif %}>5月</option>
+                        <option value="6" {% if pue_data.month == "6" %}selected{% endif %}>6月</option>
+                        <option value="7" {% if pue_data.month == "7" %}selected{% endif %}>7月</option>
+                        <option value="8" {% if pue_data.month == "8" %}selected{% endif %}>8月</option>
+                        <option value="9" {% if pue_data.month == "9" %}selected{% endif %}>9月</option>
+                        <option value="10" {% if pue_data.month == "10" %}selected{% endif %}>10月</option>
+                        <option value="11" {% if pue_data.month == "11" %}selected{% endif %}>11月</option>
+                        <option value="12" {% if pue_data.month == "12" %}selected{% endif %}>12月</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-col">
+                <div class="form-group">
+                    <label for="pue_value">PUE值</label>
+                    <input type="number" id="pue_value" name="pue_value" step="0.01" min="1" max="3" value="{{ '{:.2f}'.format(pue_data.pue_value) }}" class="form-control" required>
+                </div>
+            </div>
+            <div class="form-col">
+                <div class="form-group">
+                    <label for="year">年份</label>
+                    <input type="text" id="year" name="year" pattern="\d{4}" title="请输入4位数字年份" value="{{ pue_data.year }}" class="form-control" required>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">更新</button>
+            <a href="/pue_data" class="btn btn-secondary">取消</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

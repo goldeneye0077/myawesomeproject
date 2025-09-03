@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}汇聚骨干指标数据管理{% endblock %}
+{% block content %}
+<div class="card">
+    <h2 class="card-title">汇聚骨干指标数据管理</h2>
+
+    <!-- 筛选表单 -->
+    <form method="get" id="filterForm" style="margin-bottom: 18px; display: flex; gap: 18px; align-items: center; flex-wrap: wrap;">
+        <label>城市：
+            <select name="city" onchange="document.getElementById('filterForm').submit();" style="min-width: 100px;">
+                <option value="">全部</option>
+                {% for city in all_cities %}
+                <option value="{{ city }}" {% if current_city==city %}selected{% endif %}>{{ city }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>月份：
+            <select name="month" onchange="document.getElementById('filterForm').submit();" style="min-width: 100px;">
+                <option value="">全部</option>
+                {% for m in all_months %}
+                <option value="{{ m }}" {% if current_month==m %}selected{% endif %}>{{ m }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <input type="hidden" name="page" value="1">
+    </form>
+
+    <!-- 操作按钮区 -->
+    <div class="action-bar">
+        <a href="/huiju/data/add" class="btn btn-primary">添加汇聚骨干数据</a>
+    </div>
+
+    <div class="data-table-container">
+        <table class="data-table">
+            <thead class="sticky-header">
+                <tr>
+                    <th>ID</th>
+                    <th>月份</th>
+                    <th>城市</th>
+                    <th>汇聚全量</th>
+                    <th>超4小时</th>
+                    <th>重要环全量</th>
+                    <th>超12小时</th>
+                    <th>创建时间</th>
+                    <th>更新时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>{{ item.id }}</td>
+                    <td>{{ item.month }}</td>
+                    <td>{{ item.city }}</td>
+                    <td>{{ item.huiju_amount }}</td>
+                    <td>{{ item.over_4h }}</td>
+                    <td>{{ item.important_amount }}</td>
+                    <td>{{ item.over_12h }}</td>
+                    <td>{{ item.created_at.strftime('%Y-%m-%d %H:%M:%S') if item.created_at else '' }}</td>
+                    <td>{{ item.updated_at.strftime('%Y-%m-%d %H:%M:%S') if item.updated_at else '' }}</td>
+                    <td class="action-buttons">
+                        <a href="/huiju/data/edit/{{ item.id }}" class="btn-edit">编辑</a>
+                        <a href="#" onclick="confirmDelete({{ item.id }})" class="btn-delete">删除</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="10" style="text-align: center;">暂无数据</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 分页 -->
+    {% if pagination.pages > 1 %}
+    <div class="pagination">
+        {% if pagination.has_prev %}
+            <a href="?page={{ pagination.prev_num }}{% if current_city %}&city={{ current_city }}{% endif %}{% if current_month %}&month={{ current_month }}{% endif %}">上一页</a>
+        {% endif %}
+        
+        {% for page_num in pagination.iter_pages %}
+            {% if page_num %}
+                {% if page_num == pagination.page %}
+                    <span class="current-page">{{ page_num }}</span>
+                {% else %}
+                    <a href="?page={{ page_num }}{% if current_city %}&city={{ current_city }}{% endif %}{% if current_month %}&month={{ current_month }}{% endif %}">{{ page_num }}</a>
+                {% endif %}
+            {% else %}
+                <span class="ellipsis">...</span>
+            {% endif %}
+        {% endfor %}
+        
+        {% if pagination.has_next %}
+            <a href="?page={{ pagination.next_num }}{% if current_city %}&city={{ current_city }}{% endif %}{% if current_month %}&month={{ current_month }}{% endif %}">下一页</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function confirmDelete(id) {
+    if(confirm('确定要删除这条记录吗？')) {
+        fetch(`/huiju/data/delete/${id}`, {
+            method: 'DELETE',
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.success) {
+                alert('删除成功');
+                window.location.reload();
+            } else {
+                alert('删除失败：' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('删除过程中发生错误');
+        });
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,1131 @@
+{% extends "base.html" %}
+{% block title %}故障指标分析{% endblock %}
+{% block extra_head %}
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.0/echarts.min.js"></script>
+    <style>
+        .fault-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: transform 0.2s;
+        }
+        
+        .fault-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+        
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #3b82f6;
+        }
+        
+        .metric-label {
+            font-size: 0.9rem;
+            color: #6b7280;
+            margin-top: 5px;
+        }
+        
+        .chart-container {
+            height: 400px;
+            margin: 20px 0;
+        }
+        
+        .search-box {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .fault-table {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .table th {
+            background: #f8fafc;
+            border: none;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .table td {
+            border: none;
+            border-bottom: 1px solid #e5e7eb;
+            vertical-align: middle;
+        }
+        
+        .badge-success {
+            background: #10b981;
+        }
+        
+        .badge-warning {
+            background: #f59e0b;
+        }
+        
+        .badge-danger {
+            background: #ef4444;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+        
+        .nav-tabs .nav-link {
+            border: none;
+            color: #6b7280;
+            font-weight: 500;
+        }
+        
+        .nav-tabs .nav-link.active {
+            background: #3b82f6;
+            color: white;
+            border-radius: 5px;
+        }
+        /* 显隐控制：仅显示本页激活的内容区（避免与Bootstrap模态框Tab冲突） */
+        .fd-tab { display: none !important; }
+        .fd-tab.active { display: block !important; }
+    </style>
+{% endblock %}
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <nav class="nav nav-pills fault-nav mb-3">
+                    <a class="nav-link active" href="#overview" data-tab="overview">概览统计</a>
+                    <a class="nav-link" href="#trend" data-tab="trend">趋势分析</a>
+                    <a class="nav-link" href="#category" data-tab="category">分类分析</a>
+                    <a class="nav-link" href="#duration" data-tab="duration">时长分析</a>
+                    <a class="nav-link" href="#proactive" data-tab="proactive">主动发现</a>
+                    <a class="nav-link" href="#detail" data-tab="detail">详细列表</a>
+                </nav>
+                <!-- 概览统计 -->
+                <div id="overview-content" class="fd-tab active">
+                    <h2>故障概览统计</h2>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="fault-card text-center">
+                                <div class="metric-value" id="total-faults">-</div>
+                                <div class="metric-label">总故障数</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="fault-card text-center">
+                                <div class="metric-value" id="monthly-faults">-</div>
+                                <div class="metric-label">本月故障数</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="fault-card text-center">
+                                <div class="metric-value" id="avg-duration">-</div>
+                                <div class="metric-label">平均处理时长(小时)</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="fault-card text-center">
+                                <div class="metric-value" id="proactive-rate">-</div>
+                                <div class="metric-label">主动发现率(%)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 趋势分析 -->
+                <div id="trend-content" class="fd-tab">
+                    <h2>故障趋势分析</h2>
+                    <div class="fault-card">
+                        <h5>月度故障数量趋势</h5>
+                        <div id="trend-chart" class="chart-container"></div>
+                    </div>
+                </div>
+                
+                <!-- 分类分析 -->
+                <div id="category-content" class="fd-tab">
+                    <h2>故障分类分析</h2>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="fault-card">
+                                <h5>按原因分类</h5>
+                                <div id="cause-chart" class="chart-container"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="fault-card">
+                                <h5>按故障类型</h5>
+                                <div id="type-chart" class="chart-container"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="fault-card">
+                                <h5>按通报级别</h5>
+                                <div id="level-chart" class="chart-container"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 时长分析 -->
+                <div id="duration-content" class="fd-tab">
+                    <h2>故障处理时长分析</h2>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="fault-card">
+                                <h5>处理时长分布</h5>
+                                <div id="duration-dist-chart" class="chart-container"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="fault-card">
+                                <h5>平均处理时长趋势</h5>
+                                <div id="duration-trend-chart" class="chart-container"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 主动发现分析 -->
+                <div id="proactive-content" class="fd-tab">
+                    <h2>主动发现分析</h2>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="fault-card">
+                                <h5>主动发现vs被动发现</h5>
+                                <div id="proactive-dist-chart" class="chart-container"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="fault-card">
+                                <h5>主动发现率趋势</h5>
+                                <div id="proactive-trend-chart" class="chart-container"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 详细列表 -->
+                <div id="detail-content" class="fd-tab">
+                    <h2>故障详细列表</h2>
+                    
+                    <!-- 搜索框 -->
+                    <div class="search-box">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <input type="text" class="form-control" id="search-keyword" placeholder="搜索故障名称、原因、处理方式...">
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" id="filter-type">
+                                    <option value="">全部故障类型</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" id="filter-category">
+                                    <option value="">全部原因分类</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button class="btn btn-primary w-100" onclick="searchFaults()">搜索</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 故障列表表格 -->
+                    <div class="fault-table">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>序号</th>
+                                    <th>故障时间</th>
+                                    <th>故障名称</th>
+                                    <th>故障类型</th>
+                                    <th>原因分类</th>
+                                    <th>通报级别</th>
+                                    <th>处理时长</th>
+                                    <th>主动发现</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fault-table-body">
+                                <tr>
+                                    <td colspan="9" class="loading">加载中...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- 分页 -->
+                    <nav class="mt-3">
+                        <ul class="pagination justify-content-center" id="pagination">
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 故障详情模态框 -->
+    <div class="modal fade" id="faultDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">故障详情</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="fault-detail-content">
+                    <!-- 故障详情内容 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 下钻分析模态框 -->
+    <div class="modal fade" id="drilldownModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">下钻分析 - <span id="drilldown-month">-</span></h5>
+                    <div class="d-flex align-items-center gap-2" style="margin-left:auto;">
+                        <label for="pareto-topn" class="form-label mb-0" style="font-size: 0.9rem;">Pareto Top-N:</label>
+                        <select id="pareto-topn" class="form-select form-select-sm" style="width: 100px;">
+                            <option value="5">5</option>
+                            <option value="10" selected>10</option>
+                            <option value="15">15</option>
+                            <option value="0">全部</option>
+                        </select>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="nav nav-tabs" id="drillTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-pareto" type="button" role="tab">帕累托分析</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-boxplot" type="button" role="tab">处理时长箱线图</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-control" type="button" role="tab">MTTR控制图</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-heatmap" type="button" role="tab">故障时段热力图</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-compare" type="button" role="tab">分组对比</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content mt-3">
+                        <div class="tab-pane fade show active" id="tab-pareto" role="tabpanel">
+                            <div id="chart-pareto" class="chart-container"></div>
+                        </div>
+                        <div class="tab-pane fade" id="tab-boxplot" role="tabpanel">
+                            <div id="chart-boxplot" class="chart-container"></div>
+                        </div>
+                        <div class="tab-pane fade" id="tab-control" role="tabpanel">
+                            <div id="chart-control" class="chart-container"></div>
+                        </div>
+                        <div class="tab-pane fade" id="tab-heatmap" role="tabpanel">
+                            <div id="chart-heatmap" class="chart-container"></div>
+                        </div>
+                        <div class="tab-pane fade" id="tab-compare" role="tabpanel">
+                            <div id="chart-compare" class="chart-container"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        // 全局变量
+        let currentPage = 1;
+        let currentFilters = {};
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('[fault_dashboard] DOMContentLoaded');
+            // 初始化标签页切换
+            initTabSwitching();
+            
+            // 加载概览数据
+            loadOverviewData();
+            
+            // 加载筛选选项
+            loadFilterOptions();
+
+            // 初始化下钻Tab切换时的图表自适应
+            initDrilldownResizeHandlers();
+
+            // 不再预加载趋势数据，避免在隐藏状态下初始化导致宽度为0
+
+            // 绑定全局ECharts点击兜底
+            try { initGlobalChartClickFallback(); } catch (e) { console.error('初始化全局点击兜底失败', e); }
+        });
+        
+        // 初始化标签页切换
+        function initTabSwitching() {
+            const nav = document.querySelector('.fault-nav');
+            if (!nav) return;
+            nav.addEventListener('click', function(e){
+                const link = e.target.closest('.nav-link');
+                if (!link || !nav.contains(link)) return;
+                e.preventDefault();
+                const tab = link.dataset.tab;
+                if (!tab) return;
+                console.log('[tab click]', tab);
+
+                // 移除所有活动状态
+                document.querySelectorAll('.fault-nav .nav-link').forEach(l => l.classList.remove('active'));
+                document.querySelectorAll('.fd-tab').forEach(c => c.classList.remove('active'));
+
+                // 添加活动状态
+                link.classList.add('active');
+                const targetId = `#${tab}-content`;
+                const targetEl = document.querySelector(targetId);
+                if (targetEl) targetEl.classList.add('active');
+
+                // 根据标签页加载对应数据
+                loadTabData(tab);
+
+                // 切换到可见后，触发内部图表自适应
+                setTimeout(() => resizeChartsIn(targetEl), 0);
+            });
+        }
+        
+        // 根据标签页加载数据
+        function loadTabData(tabId) {
+            switch(tabId) {
+                case 'overview':
+                    loadOverviewData();
+                    break;
+                case 'trend':
+                    loadTrendData();
+                    break;
+                case 'category':
+                    loadCategoryData();
+                    break;
+                case 'duration':
+                    loadDurationData();
+                    break;
+                case 'proactive':
+                    loadProactiveData();
+                    break;
+                case 'detail':
+                    loadDetailList();
+                    break;
+            }
+        }
+
+        // 使容器内的所有 ECharts 实例自适应
+        function resizeChartsIn(container) {
+            if (!container) return;
+            container.querySelectorAll('.chart-container').forEach(el => {
+                try {
+                    const inst = echarts.getInstanceByDom(el);
+                    if (inst) inst.resize();
+                } catch(e) {}
+            });
+        }
+
+        // 窗口尺寸变化时全局自适应
+        window.addEventListener('resize', function(){
+            document.querySelectorAll('.chart-container').forEach(el => {
+                try {
+                    const inst = echarts.getInstanceByDom(el);
+                    if (inst) inst.resize();
+                } catch(e) {}
+            });
+        });
+        
+        // 加载概览数据
+        function loadOverviewData() {
+            fetch('/fault/api/overview')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('total-faults').textContent = data.data.total_faults;
+                        document.getElementById('monthly-faults').textContent = data.data.monthly_faults;
+                        document.getElementById('avg-duration').textContent = formatFixed2(data.data.avg_duration);
+                        document.getElementById('proactive-rate').textContent = formatFixed2(data.data.proactive_rate);
+                    }
+                })
+                .catch(error => console.error('加载概览数据失败:', error));
+        }
+        
+        // 加载趋势数据
+        function loadTrendData() {
+            console.log('[fault_dashboard] loadTrendData');
+            fetch('/fault/api/trend')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        renderTrendChart(data.data);
+                        // 渲染趋势图后再尝试一次全局兜底绑定
+                        setTimeout(() => { try { initGlobalChartClickFallback(true); } catch(e){} }, 0);
+                    }
+                })
+                .catch(error => console.error('加载趋势数据失败:', error));
+        }
+        
+        // 渲染趋势图表
+        function renderTrendChart(data) {
+            const chart = echarts.init(document.getElementById('trend-chart'));
+            const option = {
+                title: {
+                    text: '故障数量月度趋势'
+                },
+                tooltip: {
+                    trigger: 'axis'
+                },
+                xAxis: {
+                    type: 'category',
+                    data: data.map(item => item.date)
+                },
+                yAxis: {
+                    type: 'value'
+                },
+                series: [{
+                    data: data.map(item => item.count),
+                    type: 'bar',
+                    itemStyle: { color: '#3b82f6' }
+                }]
+            };
+            chart.setOption(option);
+
+            // 柱状图点击下钻
+            chart.off('click');
+            chart.on('click', function(params) {
+                if (!params || !params.name) return;
+                console.log('[trend click]', params);
+                const monthStr = normalizeMonth(params.name);
+                if (!monthStr) {
+                    alert('无法识别月份标签：' + params.name);
+                    return;
+                }
+                openDrilldown(monthStr);
+            });
+
+            // 鼠标样式提示可点击
+            chart.getZr().on('mousemove', function(e){
+                const pointInPixel = [e.offsetX, e.offsetY];
+                const isOnGrid = chart.convertFromPixel({seriesIndex:0}, pointInPixel);
+                chart.getDom().style.cursor = isOnGrid ? 'pointer' : 'default';
+            });
+        }
+        
+        // 兜底：确保趋势图存在点击事件（防止某些情况下实例未绑定或被覆盖）
+        function initGlobalChartClickFallback(rebind = false) {
+            const el = document.getElementById('trend-chart');
+            if (!el) return;
+            let inst = null;
+            try {
+                inst = echarts.getInstanceByDom(el) || null;
+            } catch (e) { inst = null; }
+            if (!inst) return;
+            try {
+                if (rebind && inst.off) inst.off('click');
+                inst.on('click', function(params){
+                    if (!params || !params.name) return;
+                    const monthStr = normalizeMonth(params.name);
+                    if (monthStr) openDrilldown(monthStr);
+                });
+            } catch (e) {
+                // 忽略，防止影响页面其它功能
+            }
+        }
+        
+        // 加载分类数据
+        function loadCategoryData() {
+            fetch('/fault/api/category_analysis')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        renderCategoryCharts(data.data);
+                    }
+                })
+                .catch(error => console.error('加载分类数据失败:', error));
+        }
+        
+        // 渲染分类图表
+        function renderCategoryCharts(data) {
+            // 原因分类饼图
+            const causeChart = echarts.init(document.getElementById('cause-chart'));
+            causeChart.setOption({
+                tooltip: {
+                    trigger: 'item'
+                },
+                series: [{
+                    type: 'pie',
+                    radius: '70%',
+                    data: data.cause_category,
+                    emphasis: {
+                        itemStyle: {
+                            shadowBlur: 10,
+                            shadowOffsetX: 0,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                    }
+                }]
+            });
+            
+            // 故障类型饼图
+            const typeChart = echarts.init(document.getElementById('type-chart'));
+            typeChart.setOption({
+                tooltip: {
+                    trigger: 'item'
+                },
+                series: [{
+                    type: 'pie',
+                    radius: '70%',
+                    data: data.fault_type,
+                    emphasis: {
+                        itemStyle: {
+                            shadowBlur: 10,
+                            shadowOffsetX: 0,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                    }
+                }]
+            });
+            
+            // 通报级别饼图
+            const levelChart = echarts.init(document.getElementById('level-chart'));
+            levelChart.setOption({
+                tooltip: {
+                    trigger: 'item'
+                },
+                series: [{
+                    type: 'pie',
+                    radius: '70%',
+                    data: data.notification_level,
+                    emphasis: {
+                        itemStyle: {
+                            shadowBlur: 10,
+                            shadowOffsetX: 0,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                    }
+                }]
+            });
+        }
+        
+        // 加载时长数据
+        function loadDurationData() {
+            fetch('/fault/api/duration_analysis')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        renderDurationCharts(data.data);
+                    }
+                })
+                .catch(error => console.error('加载时长数据失败:', error));
+        }
+        
+        // 渲染时长图表
+        function renderDurationCharts(data) {
+            // 时长分布柱状图
+            const distChart = echarts.init(document.getElementById('duration-dist-chart'));
+            distChart.setOption({
+                tooltip: {
+                    trigger: 'axis'
+                },
+                xAxis: {
+                    type: 'category',
+                    data: data.duration_distribution.map(item => item.range)
+                },
+                yAxis: {
+                    type: 'value'
+                },
+                series: [{
+                    data: data.duration_distribution.map(item => item.count),
+                    type: 'bar',
+                    itemStyle: {
+                        color: '#10b981'
+                    }
+                }]
+            });
+            
+            // 平均时长趋势图
+            const trendChart = echarts.init(document.getElementById('duration-trend-chart'));
+            trendChart.setOption({
+                tooltip: {
+                    trigger: 'axis'
+                },
+                xAxis: {
+                    type: 'category',
+                    data: data.duration_trend.map(item => item.date)
+                },
+                yAxis: {
+                    type: 'value'
+                },
+                series: [{
+                    data: data.duration_trend.map(item => item.avg_duration),
+                    type: 'line',
+                    smooth: true,
+                    itemStyle: {
+                        color: '#f59e0b'
+                    }
+                }]
+            });
+        }
+        
+        // 加载主动发现数据
+        function loadProactiveData() {
+            fetch('/fault/api/proactive_analysis')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        renderProactiveCharts(data.data);
+                    }
+                })
+                .catch(error => console.error('加载主动发现数据失败:', error));
+        }
+        
+        // 渲染主动发现图表
+        function renderProactiveCharts(data) {
+            // 主动发现分布饼图
+            const distChart = echarts.init(document.getElementById('proactive-dist-chart'));
+            distChart.setOption({
+                tooltip: {
+                    trigger: 'item'
+                },
+                series: [{
+                    type: 'pie',
+                    radius: '70%',
+                    data: data.proactive_distribution,
+                    emphasis: {
+                        itemStyle: {
+                            shadowBlur: 10,
+                            shadowOffsetX: 0,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                    }
+                }]
+            });
+            
+            // 主动发现率趋势图
+            const trendChart = echarts.init(document.getElementById('proactive-trend-chart'));
+            trendChart.setOption({
+                tooltip: {
+                    trigger: 'axis'
+                },
+                xAxis: {
+                    type: 'category',
+                    data: data.proactive_trend.map(item => item.date)
+                },
+                yAxis: {
+                    type: 'value',
+                    max: 100
+                },
+                series: [{
+                    data: data.proactive_trend.map(item => item.proactive_rate),
+                    type: 'line',
+                    smooth: true,
+                    itemStyle: {
+                        color: '#ef4444'
+                    }
+                }]
+            });
+        }
+        
+        // 加载详细列表
+        function loadDetailList(page = 1) {
+            const params = new URLSearchParams({
+                page: page,
+                per_page: 20,
+                ...currentFilters
+            });
+            
+            fetch(`/fault/api/detail_list?${params}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        renderFaultTable(data.data);
+                        renderPagination(data.data);
+                    }
+                })
+                .catch(error => console.error('加载详细列表失败:', error));
+        }
+        
+        // 渲染故障表格
+        function renderFaultTable(data) {
+            const tbody = document.getElementById('fault-table-body');
+            if (data.faults.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center">暂无数据</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = data.faults.map(fault => `
+                <tr>
+                    <td>${fault.sequence_no || '-'}</td>
+                    <td>${fault.fault_date}</td>
+                    <td>${fault.fault_name || '-'}</td>
+                    <td>${fault.province_fault_type || '-'}</td>
+                    <td>${fault.cause_category || '-'}</td>
+                    <td><span class="badge ${getBadgeClass(fault.notification_level)}">${fault.notification_level || '-'}</span></td>
+                    <td>${formatDuration(fault.fault_duration_hours)}</td>
+                    <td><span class="badge ${fault.is_proactive_discovery === '是' ? 'badge-success' : 'badge-warning'}">${fault.is_proactive_discovery || '-'}</span></td>
+                    <td><button class="btn btn-sm btn-outline-primary" onclick="showFaultDetail(${fault.id})">详情</button></td>
+                </tr>
+            `).join('');
+        }
+        
+        // 获取徽章样式类
+        function getBadgeClass(level) {
+            if (!level) return 'bg-secondary';
+            if (level.includes('重大') || level.includes('严重')) return 'badge-danger';
+            if (level.includes('一般')) return 'badge-warning';
+            return 'badge-success';
+        }
+        
+        // 格式化处理时长（小时），保留两位小数
+        function formatDuration(value) {
+            if (value === null || value === undefined || value === '') return '-';
+            const num = parseFloat(value);
+            if (isNaN(num)) return '-';
+            return num.toFixed(2) + '小时';
+        }
+        
+        // 通用：格式化为保留两位小数（不加单位）
+        function formatFixed2(value) {
+            if (value === null || value === undefined || value === '') return '-';
+            const num = parseFloat(value);
+            if (isNaN(num)) return '-';
+            return num.toFixed(2);
+        }
+        
+        // 渲染分页
+        function renderPagination(data) {
+            const pagination = document.getElementById('pagination');
+            if (data.total_pages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+            
+            let html = '';
+            
+            // 上一页
+            if (data.page > 1) {
+                html += `<li class="page-item"><a class="page-link" href="#" onclick="loadDetailList(${data.page - 1})">上一页</a></li>`;
+            }
+            
+            // 页码
+            for (let i = Math.max(1, data.page - 2); i <= Math.min(data.total_pages, data.page + 2); i++) {
+                html += `<li class="page-item ${i === data.page ? 'active' : ''}">
+                    <a class="page-link" href="#" onclick="loadDetailList(${i})">${i}</a>
+                </li>`;
+            }
+            
+            // 下一页
+            if (data.page < data.total_pages) {
+                html += `<li class="page-item"><a class="page-link" href="#" onclick="loadDetailList(${data.page + 1})">下一页</a></li>`;
+            }
+            
+            pagination.innerHTML = html;
+        }
+        
+        // 加载筛选选项
+        function loadFilterOptions() {
+            fetch('/fault/api/category_analysis')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // 填充故障类型选项
+                        const typeSelect = document.getElementById('filter-type');
+                        data.data.fault_type.forEach(item => {
+                            const option = document.createElement('option');
+                            option.value = item.name;
+                            option.textContent = item.name;
+                            typeSelect.appendChild(option);
+                        });
+                        
+                        // 填充原因分类选项
+                        const categorySelect = document.getElementById('filter-category');
+                        data.data.cause_category.forEach(item => {
+                            const option = document.createElement('option');
+                            option.value = item.name;
+                            option.textContent = item.name;
+                            categorySelect.appendChild(option);
+                        });
+                    }
+                })
+                .catch(error => console.error('加载筛选选项失败:', error));
+        }
+        
+        // 搜索故障
+        function searchFaults() {
+            const keyword = document.getElementById('search-keyword').value.trim();
+            const faultType = document.getElementById('filter-type').value;
+            const causeCategory = document.getElementById('filter-category').value;
+            
+            currentFilters = {};
+            if (faultType) currentFilters.fault_type = faultType;
+            if (causeCategory) currentFilters.cause_category = causeCategory;
+            
+            if (keyword) {
+                // 关键词搜索
+                fetch(`/fault/api/search?keyword=${encodeURIComponent(keyword)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            renderFaultTable({faults: data.data});
+                            document.getElementById('pagination').innerHTML = '';
+                        }
+                    })
+                    .catch(error => console.error('搜索失败:', error));
+            } else {
+                // 筛选搜索
+                currentPage = 1;
+                loadDetailList(1);
+            }
+        }
+        
+        // 显示故障详情
+        function showFaultDetail(faultId) {
+            fetch(`/fault/api/detail/${faultId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const fault = data.data;
+                        const detailContent = `
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>故障ID:</strong> ${fault.id || '-'}</p>
+                                    <p><strong>故障发生时间:</strong> ${fault.fault_occurrence_time || '-'}</p>
+                                    <p><strong>故障恢复时间:</strong> ${fault.fault_recovery_time || '-'}</p>
+                                    <p><strong>处理时长(小时):</strong> ${formatDuration(fault.fault_duration_hours)}</p>
+                                    <p><strong>故障类型:</strong> ${fault.fault_type || '-'}</p>
+                                    <p><strong>省份故障类型:</strong> ${fault.province_fault_type || '-'}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>原因分类:</strong> ${fault.cause_category || '-'}</p>
+                                    <p><strong>通报等级:</strong> <span class="badge ${getBadgeClass(fault.notification_level)}">${fault.notification_level || '-'}</span></p>
+                                    <p><strong>主动发现:</strong> <span class="badge ${fault.is_proactive_discovery === '是' ? 'badge-success' : 'badge-warning'}">${fault.is_proactive_discovery || '-'}</span></p>
+                                    <p><strong>故障描述:</strong> ${fault.fault_description || '-'}</p>
+                                    <p><strong>处理措施:</strong> ${fault.handling_measures || '-'}</p>
+                                    <p><strong>备注:</strong> ${fault.remarks || '-'}</p>
+                                </div>
+                            </div>
+                        `;
+                        document.getElementById('fault-detail-content').innerHTML = detailContent;
+                        const modal = new bootstrap.Modal(document.getElementById('faultDetailModal'));
+                        modal.show();
+                    } else {
+                        alert('获取故障详情失败: ' + (data.message || '未知错误'));
+                    }
+                })
+                .catch(error => {
+                    console.error('获取故障详情失败:', error);
+                    alert('获取故障详情失败，请稍后重试');
+                });
+        }
+        
+        // 回车搜索
+        document.getElementById('search-keyword').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchFaults();
+            }
+        });
+
+        // 下钻：打开弹窗并加载数据
+        function openDrilldown(monthStr) {
+            document.getElementById('drilldown-month').textContent = monthStr;
+            if (!window.bootstrap) {
+                alert('前端依赖未加载完成（Bootstrap）。');
+                return;
+            }
+            const modal = new bootstrap.Modal(document.getElementById('drilldownModal'));
+            modal.show();
+
+            // 模态框展示后触发一次所有图表resize，避免初始渲染在隐藏容器
+            document.getElementById('drilldownModal').addEventListener('shown.bs.modal', function once() {
+                document.getElementById('drilldownModal').removeEventListener('shown.bs.modal', once);
+                // 触发当前活动tab下图表resize
+                ['chart-pareto','chart-boxplot','chart-control','chart-heatmap','chart-compare'].forEach(id => {
+                    const inst = echarts.getInstanceByDom(document.getElementById(id));
+                    if (inst) setTimeout(()=>inst.resize(), 0);
+                });
+            });
+
+            // 切换tab时resize
+            document.querySelectorAll('#drillTabs button[data-bs-toggle="tab"]').forEach(btn => {
+                btn.addEventListener('shown.bs.tab', function() {
+                    const target = document.querySelector(this.getAttribute('data-bs-target'));
+                    const el = target && target.querySelector('.chart-container');
+                    if (el) {
+                        const inst = echarts.getInstanceByDom(el);
+                        if (inst) setTimeout(()=>inst.resize(), 0);
+                    }
+                });
+            });
+
+            fetch(`/fault/api/drilldown?month=${encodeURIComponent(monthStr)}`)
+                .then(r => r.json())
+                .then(res => {
+                    if (!res.success) throw new Error(res.error || '加载失败');
+                    window.__faultDrilldownData = res.data || {};
+                    // Pareto 使用 Top-N
+                    renderPareto(getParetoTopN());
+                    // 其他图表
+                    renderBoxplot(res.data.boxplot || {categories:[], data:[]});
+                    renderControl(res.data.control || {series:[], mean:0, ucl:0, lcl:0});
+                    renderHeatmap(res.data.heatmap || []);
+                    renderGroupCompare(res.data.group_compare || {levels:[], counts:[], avg_duration:[]});
+                })
+                .catch(err => {
+                    console.error('下钻数据加载失败:', err);
+                    alert('下钻数据加载失败：' + err.message);
+                });
+        }
+
+        // 获取 Pareto Top-N 数据
+        function getParetoTopN() {
+            const all = (window.__faultDrilldownData && window.__faultDrilldownData.pareto) ? window.__faultDrilldownData.pareto : [];
+            const n = parseInt(document.getElementById('pareto-topn').value || '10', 10);
+            if (!n || n <= 0) return all;
+            return all.slice(0, n);
+        }
+
+        // 监听 Top-N 变化
+        document.addEventListener('change', function(e){
+            if (e.target && e.target.id === 'pareto-topn') {
+                try { renderPareto(getParetoTopN()); } catch (err) { console.warn('重绘Pareto失败', err); }
+            }
+        });
+
+        // 规范化月份字符串为 YYYY-MM
+        function normalizeMonth(s) {
+            if (!s) return '';
+            // 常见格式：YYYY-MM 或 YYYY/M 或 YYYY/M M
+            const m = String(s).trim().replace(/年|\//g, '-').replace(/\s+/g, '');
+            let m2 = m;
+            const m1 = m.match(/^(\d{4})-(\d{1,2})$/);
+            if (m1) {
+                const mm = m1[2].padStart(2, '0');
+                return `${m1[1]}-${mm}`;
+            }
+            const m2match = m.match(/^(\d{4})-(\d{1,2})-?$/);
+            if (m2match) {
+                const mm = m2match[2].padStart(2, '0');
+                return `${m2match[1]}-${mm}`;
+            }
+            // 已经是YYYY-MM
+            if (/^\d{4}-\d{2}$/.test(m2)) return m2;
+            return '';
+        }
+
+        // 下钻：帕累托图
+        function renderPareto(pareto) {
+            const el = echarts.init(document.getElementById('chart-pareto'));
+            const names = pareto.map(i => i.name);
+            const counts = pareto.map(i => i.count);
+            const cum = pareto.map(i => i.cum_percent);
+            el.setOption({
+                tooltip: { trigger: 'axis' },
+                xAxis: { type: 'category', data: names },
+                yAxis: [
+                    { type: 'value', name: '数量' },
+                    { type: 'value', name: '累计占比(%)', min: 0, max: 100 }
+                ],
+                series: [
+                    { type: 'bar', data: counts, itemStyle: { color: '#3b82f6' }, name: '数量' },
+                    { type: 'line', yAxisIndex: 1, data: cum, name: '累计占比', smooth: true, itemStyle: { color: '#f59e0b' } }
+                ]
+            });
+        }
+
+        // 下钻：箱线图
+        function renderBoxplot(box) {
+            const el = echarts.init(document.getElementById('chart-boxplot'));
+            const option = {
+                tooltip: { trigger: 'item' },
+                xAxis: { type: 'category', data: box.categories },
+                yAxis: { type: 'value', name: '处理时长(小时)' },
+                series: [{
+                    name: '时长分布',
+                    type: 'boxplot',
+                    data: box.data
+                }]
+            };
+            el.setOption(option);
+        }
+
+        // 下钻：控制图
+        function renderControl(ctrl) {
+            const el = echarts.init(document.getElementById('chart-control'));
+            const n = ctrl.series.length;
+            el.setOption({
+                tooltip: { trigger: 'axis' },
+                xAxis: { type: 'category', data: Array.from({length: n}, (_, i) => i + 1) },
+                yAxis: { type: 'value', name: '处理时长(小时)' },
+                series: [
+                    { type: 'line', data: ctrl.series, name: '时长', smooth: true, itemStyle: { color: '#10b981' } },
+                    { type: 'line', data: Array(n).fill(ctrl.mean), name: '均值', lineStyle: { type: 'dashed' } },
+                    { type: 'line', data: Array(n).fill(ctrl.ucl), name: 'UCL', lineStyle: { type: 'dotted', color: '#ef4444' } },
+                    { type: 'line', data: Array(n).fill(ctrl.lcl), name: 'LCL', lineStyle: { type: 'dotted', color: '#ef4444' } }
+                ]
+            });
+        }
+
+        // 下钻：热力图 (周x小时)
+        function renderHeatmap(heatmapData) {
+            const el = echarts.init(document.getElementById('chart-heatmap'));
+            const hours = Array.from({length:24}, (_,i)=>i);
+            const days = ['一','二','三','四','五','六','日'];
+            const vmax = (heatmapData && heatmapData.length) ? Math.max.apply(null, heatmapData.map(i=>i[2])) : 10;
+            el.setOption({
+                tooltip: {},
+                grid: { top: 40 },
+                xAxis: { type: 'category', data: hours, name: '小时' },
+                yAxis: { type: 'category', data: [0,1,2,3,4,5,6].map(i => '周' + days[i]) },
+                visualMap: { min: 0, max: vmax, calculable: true, orient: 'horizontal', left: 'center', bottom: 0 },
+                series: [{
+                    type: 'heatmap',
+                    data: heatmapData,
+                    emphasis: { itemStyle: { borderColor: '#333' } }
+                }]
+            });
+        }
+
+        // 下钻：在Tab切换时调整对应图表尺寸
+        function initDrilldownResizeHandlers(){
+            const tabs = document.getElementById('drillTabs');
+            if (tabs) {
+                tabs.addEventListener('shown.bs.tab', function(e){
+                    const target = e.target && e.target.getAttribute('data-bs-target');
+                    if (!target) return;
+                    const container = document.querySelector(target + ' .chart-container');
+                    if (!container) return;
+                    try {
+                        const inst = echarts.getInstanceByDom(container);
+                        if (inst) inst.resize();
+                    } catch (err) {}
+                });
+            }
+        }
+
+        // 下钻：分组对比（通报级别计数与平均时长）
+        function renderGroupCompare(gc) {
+            const el = echarts.init(document.getElementById('chart-compare'));
+            el.setOption({
+                tooltip: { trigger: 'axis' },
+                legend: { data: ['数量', '平均时长'] },
+                xAxis: { type: 'category', data: gc.levels },
+                yAxis: [ { type: 'value', name: '数量' }, { type: 'value', name: '平均时长(小时)' } ],
+                series: [
+                    { type: 'bar', data: gc.counts, name: '数量', itemStyle: { color: '#3b82f6' } },
+                    { type: 'line', data: gc.avg_duration, yAxisIndex: 1, name: '平均时长', itemStyle: { color: '#f59e0b' } }
+                ]
+            });
+        }
+    </script>
+{% endblock %}

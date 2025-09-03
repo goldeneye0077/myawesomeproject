@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}PUE 下钻数据管理 - 网络视界指标后台管理{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 class="card-title">PUE 下钻数据管理</h2>
+
+    <!-- 筛选 -->
+    <form method="get" id="filterForm" style="margin-bottom:18px;display:flex;gap:18px;align-items:center;flex-wrap:wrap;">
+        <label>地点：
+            <select name="location" onchange="document.getElementById('filterForm').submit();">
+                <option value="">全部</option>
+                {% for loc in all_locations %}
+                <option value="{{ loc }}" {% if current_location==loc %}selected{% endif %}>{{ loc }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>年份：
+            <select name="year" onchange="document.getElementById('filterForm').submit();">
+                <option value="">全部</option>
+                {% for y in all_years %}
+                <option value="{{ y }}" {% if current_year==y %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>月份：
+            <select name="month" onchange="document.getElementById('filterForm').submit();">
+                <option value="">全部</option>
+                {% for m in range(1,13) %}
+                <option value="{{ m }}" {% if current_month==m|string %}selected{% endif %}>{{ m }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <input type="hidden" name="page" value="1" />
+    </form>
+
+    <div class="action-bar" style="margin-bottom:12px;">
+        <a href="/add_pue_drill_down" class="btn btn-primary">添加下钻数据</a>
+    </div>
+
+    <div class="data-table-container">
+        <table class="data-table">
+            <thead class="sticky-header">
+                <tr>
+                    <th>地点</th>
+                    <th>年份</th>
+                    <th>月份</th>
+                    <th>作业形式</th>
+                    <th>作业分类</th>
+                    <th>序号</th>
+                    <th>对象</th>
+                    <th>检查项</th>
+                    <th>操作方法</th>
+                    <th>标杆值</th>
+                    <th>执行标准</th>
+                    <th>执行情况</th>
+                    <th>量化标准</th>
+                    <th>量化单位</th>
+                    <th>执行人</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in drill_list %}
+                <tr>
+                    <td>{{ item.location }}</td>
+                    <td>{{ item.year }}</td>
+                    <td>{{ item.month }}</td>
+                    <td>{{ item.work_type }}</td>
+                    <td>{{ item.work_category }}</td>
+                    <td>{{ item.sequence_no }}</td>
+                    <td>{{ item.work_object }}</td>
+                    <td>{{ item.check_item|truncate(20) }}</td>
+                    <td>{{ item.operation_method|truncate(20) }}</td>
+                    <td>{{ item.benchmark_value }}</td>
+                    <td>{{ item.execution_standard }}</td>
+                    <td>{{ item.execution_status }}</td>
+                    <td>{{ item.quantification_standard }}</td>
+                    <td>{{ item.quantification_unit }}</td>
+                    <td>{{ item.executor }}</td>
+                    <td>
+                        <a href="/edit_pue_drill_down/{{ item.id }}" class="btn btn-sm btn-primary">编辑</a>
+                        <a href="/delete_pue_drill_down/{{ item.id }}" class="btn btn-sm btn-danger" onclick="return confirm('确定要删除吗？');">删除</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 分页 -->
+    <div class="pagination" style="margin-top:18px;display:flex;justify-content:center;gap:8px;">
+        {% if page > 1 %}
+            <a class="page-link" href="?page=1{% if current_location %}&location={{ current_location }}{% endif %}{% if current_year %}&year={{ current_year }}{% endif %}{% if current_month %}&month={{ current_month }}{% endif %}">首页</a>
+            <a class="page-link" href="?page={{ page-1 }}{% if current_location %}&location={{ current_location }}{% endif %}{% if current_year %}&year={{ current_year }}{% endif %}{% if current_month %}&month={{ current_month }}{% endif %}">上一页</a>
+        {% endif %}
+        <span>第 {{ page }} / {{ pages }} 页</span>
+        {% if page < pages %}
+            <a class="page-link" href="?page={{ page+1 }}{% if current_location %}&location={{ current_location }}{% endif %}{% if current_year %}&year={{ current_year }}{% endif %}{% if current_month %}&month={{ current_month }}{% endif %}">下一页</a>
+            <a class="page-link" href="?page={{ pages }}{% if current_location %}&location={{ current_location }}{% endif %}{% if current_year %}&year={{ current_year }}{% endif %}{% if current_month %}&month={{ current_month }}{% endif %}">末页</a>
+        {% endif %}
+        <span style="margin-left:12px;">共 {{ total }} 条</span>
+    </div>
+</div>
+{% endblock %}

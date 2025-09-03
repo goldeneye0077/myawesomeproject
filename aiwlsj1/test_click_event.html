@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>测试点击事件</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+</head>
+<body>
+    <h2>测试PUE柱状图点击事件</h2>
+    <div id="testChart" style="width: 800px; height: 400px;"></div>
+    
+    <script>
+        // 创建测试图表
+        var testChart = echarts.init(document.getElementById('testChart'));
+        
+        var option = {
+            title: {
+                text: '测试柱状图'
+            },
+            tooltip: {
+                trigger: 'axis'
+            },
+            xAxis: {
+                type: 'category',
+                data: ['1月', '2月', '3月', '4月', '5月', '6月']
+            },
+            yAxis: {
+                type: 'value'
+            },
+            series: [{
+                name: '2024年',
+                type: 'bar',
+                data: [1.2, 1.3, 1.1, 1.4, 1.2, 1.3]
+            }, {
+                name: '2025年',
+                type: 'bar',
+                data: [1.3, 1.2, 1.2, 1.3, 1.1, 1.2]
+            }]
+        };
+        
+        testChart.setOption(option);
+        
+        // 添加点击事件
+        testChart.on('click', function(params) {
+            console.log('点击事件触发:', params);
+            alert('点击了: ' + params.seriesName + ' - ' + params.name + ' - 值: ' + params.value);
+            
+            if (params.componentType === 'series') {
+                var month = params.dataIndex + 1;
+                var year = params.seriesName.includes('2024') ? '2024' : '2025';
+                console.log('月份:', month, '年份:', year);
+                
+                // 测试调用showDrillDownModal函数
+                if (typeof showDrillDownModal === 'function') {
+                    showDrillDownModal('', month, year);
+                } else {
+                    alert('showDrillDownModal函数未定义');
+                }
+            }
+        });
+        
+        // 定义测试用的showDrillDownModal函数
+        function showDrillDownModal(location, month, year) {
+            alert('下钻弹窗测试: 地点=' + location + ', 月份=' + month + ', 年份=' + year);
+        }
+    </script>
+</body>
+</html>

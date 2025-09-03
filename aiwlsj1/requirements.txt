@@ -1,0 +1,13 @@
+fastapi
+sqlalchemy[asyncio]
+aiosqlite
+uvicorn
+jinja2
+starlette
+openpyxl
+pandas
+pyecharts
+aiofiles
+python-multipart
+requests
+plotly

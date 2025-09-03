@@ -1,0 +1,593 @@
+/* 全局样式 */
+html, body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.5;
+    color: #333;
+    margin: 0;
+    padding: 0;
+    background-color: #f8f9fa;
+    height: 100%;
+    width: 100%;
+    overflow-x: hidden;
+    /* 保持y轴滚动，只有一条全局滚动条 */
+    overflow-y: auto;
+}
+
+.container {
+    display: flex;
+    width: 100%;
+    min-height: calc(100vh - 80px);
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    align-items: flex-start;
+    /* 彻底移除滚动条 */
+    overflow: visible !important;
+    height: auto;
+}
+
+/* 顶部标题栏 */
+.header {
+    /* 使用更柔和的天蓝色 */
+    background-color: #66CCFF;
+    /* 添加圆角 */
+    border-radius: 0 0 10px 10px;
+    border-bottom: none;
+    padding: 20px 0;
+    /* 更明显的阴影效果 */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 100%;
+    /* 增加高度并使用 flex 布局 */
+    height: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* 添加过渡效果 */
+    transition: background-color 0.3s ease;
+    margin-bottom: 0;
+}
+
+.header:hover {
+    /* 鼠标悬停时改变背景颜色 */
+    background-color: #88DDFF;
+}
+
+.header h1 {
+    margin: 0;
+    padding: 0;
+    /* 使用更鲜明的文字颜色 */
+    color: #FFFFFF;
+    font-size: 32px;
+    /* 添加文字阴影 */
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+    /* 添加过渡效果 */
+    transition: color 0.3s ease;
+}
+/* 标题链接样式 */
+.header h1 a {
+    text-decoration: none;         /* 移除下划线 */
+    color: inherit;                /* 使用继承的颜色（与标题相同） */
+    cursor: pointer;               /* 保持鼠标指针为手型 */
+}
+
+/* 鼠标悬停、激活和已访问状态的样式 */
+.header h1 a:hover,
+.header h1 a:active,
+.header h1 a:visited {
+    text-decoration: none;         /* 悬停时也不显示下划线 */
+    color: inherit;                /* 保持颜色不变 */
+}
+.header h1:hover {
+    /* 鼠标悬停时改变文字颜色 */
+    color: #F0F0F0;
+}    
+
+/* 顶部横幅分割线，美观渐变 */
+.header-divider {
+    height: 5px;
+    width: 100%;
+    background: #fff;
+    border: none;
+    margin-bottom: 0;
+    margin-top: -8px;
+    box-shadow: 0 1px 8px 0 rgba(67, 233, 123, 0.13);
+    border-radius: 0 0 18px 18px;
+}
+
+/* 恢复美化前的菜单栏样式（简洁风格） */
+.sidebar {
+    background: #fff;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 15px 0;
+    margin: 0;
+}
+
+.sidebar .nav-item {
+    border-left: 3px solid #ddd;
+    margin: 4px 0;
+    border-radius: 0;
+    transition: background 0.2s, border-color 0.2s;
+    box-shadow: none;
+}
+
+.sidebar .nav-item > a {
+    font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif;
+    font-size: 16px;
+    letter-spacing: 0.02em;
+    font-weight: 500;
+    color: #333;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.3);
+    transition: color 0.2s, text-shadow 0.2s;
+    display: flex;
+    align-items: center;
+    padding: 12px 20px 12px 10px;
+    border-radius: 0;
+    transition: background 0.2s, color 0.2s;
+}
+
+.sidebar .nav-item:hover,
+.sidebar .nav-item:focus-within {
+    background: #f0f7ff;
+    border-left-color: #6cb2ff;
+    box-shadow: none;
+}
+
+.sidebar .nav-item.active,
+.sidebar .nav-item.active > a {
+    background: #e0f2fe;
+    color: #2563eb;
+    font-weight: 600;
+    border-left-color: #2563eb;
+    box-shadow: none;
+}
+
+.sidebar .nav-item.active > a {
+    color: #2563eb !important;
+    font-weight: 700 !important;
+    text-shadow: 0 2px 8px rgba(37,99,235,0.08);
+}
+
+.sidebar .submenu {
+    background: #fff;
+    border-radius: 0;
+    margin-top: 2px;
+    margin-bottom: 2px;
+    margin-left: 0;
+    padding-left: 6px;
+    box-shadow: none;
+}
+
+.sidebar .submenu .nav-item {
+    border-left: 3px solid #ddd;
+    border-radius: 0;
+    margin: 2px 0;
+}
+
+.sidebar .submenu .nav-item > a {
+    font-size: 15px;
+    font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif;
+    font-weight: 400;
+    color: #555 !important;
+    letter-spacing: 0.01em;
+    text-shadow: none;
+    padding: 9px 18px 9px 18px;
+    border-radius: 0;
+}
+
+.sidebar .submenu .nav-item.active > a {
+    color: #2563eb !important;
+    font-weight: 600;
+    text-shadow: 0 1px 6px rgba(37,99,235,0.07);
+}
+
+/* 强制所有菜单及子菜单连接线始终为浅灰色 #ddd，不因active变色 */
+.sidebar .nav-item,
+.sidebar .nav-item.active,
+.sidebar .submenu .nav-item,
+.sidebar .submenu .nav-item.active {
+    border-left: 3px solid #ddd !important;
+}
+
+/* 强制所有子菜单字体颜色为 #555，只有顶级主菜单.active > a 才为蓝色 */
+.sidebar .submenu .nav-item > a,
+.sidebar .submenu .nav-item.active > a {
+    color: #555 !important;
+    font-weight: 400 !important;
+}
+.sidebar .nav-item.active > a {
+    color: #2563eb !important;
+    font-weight: 600 !important;
+}
+
+/* 主内容区 */
+.content {
+    flex: 1;
+    padding: 32px 32px 0 32px;
+    min-height: 0;
+    overflow: visible !important;
+    background: #fff;
+    border-radius: 0 18px 18px 0;
+    box-sizing: border-box;
+    margin-left: 0;
+    margin-top: 0;
+    box-shadow: 0 2px 18px rgba(44, 52, 70, 0.10);
+    overflow-x: auto;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+/* 卡片样式 */
+.card {
+    background-color: #fff;
+    border-radius: 5px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.card-title {
+    font-size: 18px;
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #333;
+    font-weight: 600;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+/* 表单样式 */
+.form-row {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0 -10px 15px;
+}
+
+.form-col {
+    flex: 1;
+    padding: 0 10px;
+    min-width: 200px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #555;
+}
+
+.form-control {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box; /* 确保padding不会增加宽度 */
+}
+
+.form-actions {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+/* 按钮样式 */
+.btn {
+    display: inline-block;
+    font-weight: 400;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    user-select: none;
+    border: 1px solid transparent;
+    padding: 6px 12px;
+    font-size: 14px;
+    line-height: 1.5;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.15s ease-in-out;
+}
+
+.btn-primary {
+    color: #fff;
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.btn-primary:hover {
+    background-color: #0069d9;
+    border-color: #0062cc;
+}
+
+.btn-success {
+    color: #fff;
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+
+.btn-danger {
+    color: #fff;
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+
+.btn-info {
+    color: #fff;
+    background-color: #17a2b8;
+    border-color: #17a2b8;
+}
+
+.btn-info:hover {
+    background-color: #138496;
+    border-color: #117a8b;
+}
+
+/* 选项卡样式 */
+.tabs {
+    display: flex;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.tab {
+    padding: 10px 15px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    margin-bottom: -1px;
+}
+
+.tab:hover {
+    background-color: #f8f9fa;
+}
+
+.tab.active {
+    background-color: #fff;
+    border-color: #dee2e6 #dee2e6 #fff;
+    color: #007bff;
+    font-weight: 500;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* 数据表格样式 */
+.data-table-container {
+    width: 100%;
+    overflow-x: auto;
+    margin-bottom: 20px;
+    max-width: 100%;
+}
+
+.data-table {
+    table-layout: fixed;
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+}
+.data-table th, .data-table td {
+    padding: 8px 6px;
+    border: 1px solid #e5e7eb;
+    font-size: 14px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+}
+.data-table th {
+    background: #f8fafc;
+    font-weight: 600;
+}
+.data-table td {
+    background: #fff;
+}
+.data-table td[title], .data-table th[title] {
+    cursor: pointer;
+}
+
+/* 表格行样式 */
+.data-table tr:hover {
+    background-color: #f8faff;
+}
+
+.data-table tr:nth-child(even) {
+    background-color: #fafcff;
+}
+
+/* 操作按钮样式 */
+.action-buttons {
+    white-space: nowrap;
+}
+
+.action-buttons .btn {
+    padding: 3px 8px;
+    font-size: 12px;
+    margin: 0 2px;
+}
+
+/* 固定表头 */
+.sticky-header {
+    position: sticky;
+    top: 0;
+    background-color: #f5f7fa;
+    z-index: 10;
+}
+
+/* 上传区域样式 */
+.upload-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.upload-header h3 {
+    margin: 0;
+}
+
+.download-btn {
+    display: flex;
+    align-items: center;
+}
+
+.download-icon {
+    margin-right: 5px;
+}
+
+.upload-area {
+    border: 2px dashed #ccc;
+    border-radius: 5px;
+    padding: 30px;
+    text-align: center;
+    margin-bottom: 20px;
+    cursor: pointer;
+    background-color: #f9f9f9;
+    transition: all 0.3s;
+}
+
+.upload-area:hover, .upload-area.highlight {
+    border-color: #007bff;
+    background-color: #f0f7ff;
+}
+
+.upload-icon {
+    font-size: 48px;
+    margin-bottom: 10px;
+    color: #888;
+}
+
+.upload-text {
+    margin-bottom: 15px;
+    color: #666;
+}
+
+.file-input {
+    display: none;
+}
+
+.file-name {
+    margin-top: 10px;
+    color: #007bff;
+    font-size: 14px;
+}
+
+/* 导入说明卡片 */
+.info-card {
+    margin-top: 20px;
+    background-color: #f8f9fa;
+    border-left: 4px solid #17a2b8;
+}
+
+.info-list {
+    margin: 10px 0 10px 20px;
+}
+
+/* 苹果风格底部大屏预览按钮 */
+.apple-preview-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 16px 18px 0 18px;
+    padding: 14px 0 14px 0;
+    background: linear-gradient(90deg, #f5f6fa 0%, #e9ecef 100%);
+    border-radius: 18px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07), 0 1.5px 0.5px rgba(0,0,0,0.01);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: #222;
+    letter-spacing: 0.02em;
+    transition: box-shadow 0.2s, background 0.2s, color 0.2s;
+    border: 1.5px solid #e5e7eb;
+    text-decoration: none;
+    margin-bottom: 10px;
+}
+.apple-preview-link:hover {
+    background: linear-gradient(90deg, #e0e7ef 0%, #f2f6fa 100%);
+    color: #0071e3;
+    box-shadow: 0 4px 16px rgba(0,123,255,0.10), 0 2px 8px rgba(0,0,0,0.03);
+    border-color: #b6d4fe;
+    text-decoration: none;
+}
+.apple-preview-link .apple-icon {
+    width: 22px;
+    height: 22px;
+    margin-right: 10px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+/* 响应式布局 - 修改以保持侧边栏固定宽度 */
+@media (max-width: 900px) {
+    .container {
+        flex-direction: column;
+    }
+    .sidebar {
+        width: 100%;
+        border-radius: 0 0 18px 18px;
+        min-height: unset;
+        margin-bottom: 18px;
+    }
+    .content {
+        border-radius: 18px;
+        margin-top: 0;
+    }
+}
+
+/* 禁用全局滚动，只允许内容区域滚动 */
+/* html, body {
+    overflow: hidden;
+} */
+
+/* 修正Firefox中的一些渲染问题 */
+@-moz-document url-prefix() {
+    .sidebar {
+        height: calc(100vh - 80px);
+    }
+}
+/* 评估状态圆圈样式 */
+.status-circle {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+.status-success {
+    background-color: #28a745; /* 绿色 */
+}
+
+.status-danger {
+    background-color: #dc3545; /* 红色 */
+}
+
+/* 表头中的圆圈 */
+th .status-circle {
+    background-color: #6c757d; /* 灰色，用于表头 */
+}

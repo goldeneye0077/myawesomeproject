@@ -1,0 +1,951 @@
+{% extends "base.html" %}
+{% block title %}故障指标数据分析{% endblock %}
+{% block content %}
+<div class="main-flex-row" style="display: flex; gap: 24px; align-items: flex-start; min-width:0; width:100%; box-sizing:border-box; position:relative; z-index:1;">
+    <!-- 左侧主内容区 -->
+    <div style="flex: 7 1 0; min-width:0; max-width: 70%; display: flex; flex-direction: column; gap: 24px; box-sizing:border-box; overflow-x:auto;">
+        <!-- 故障趋势分析 -->
+        <div class="card" style="width:100%; box-sizing:border-box;">
+            <div class="card-title" style="margin-bottom: 0;">故障指标数据分析</div>
+            <div style="display: flex; flex-direction: column; align-items: stretch; width: 100%; gap: 12px; min-width: 0; box-sizing:border-box;">
+                <!-- 筛选条件 -->
+
+                <!-- 当前筛选面包屑 -->
+                {% set has_filters = current_fault_type or current_cause_category or current_notification_level or current_time_range %}
+                {% if has_filters %}
+                <div class="filter-breadcrumb" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; font-size:14px;">
+                    <span style="color:#666;">当前筛选:</span>
+                    {% if current_fault_type %}
+                    <a href="#" data-filter-key="fault_type" class="filter-chip" title="点击移除过滤">
+                        故障类型: {{ current_fault_type }} <span class="chip-close">×</span>
+                    </a>
+                    {% endif %}
+                    {% if current_cause_category %}
+                    <a href="#" data-filter-key="cause_category" class="filter-chip" title="点击移除过滤">
+                        原因分类: {{ current_cause_category }} <span class="chip-close">×</span>
+                    </a>
+                    {% endif %}
+                    {% if current_notification_level %}
+                    <a href="#" data-filter-key="notification_level" class="filter-chip" title="点击移除过滤">
+                        通报级别: {{ current_notification_level }} <span class="chip-close">×</span>
+                    </a>
+                    {% endif %}
+                    {% if current_duration_range %}
+                    <a href="#" data-filter-key="duration_range" class="filter-chip" title="点击移除过滤">
+                        处理时长: {% if current_duration_range == '0-2' %}0-2小时{% elif current_duration_range == '2-8' %}2-8小时{% elif current_duration_range == '8-24' %}8-24小时{% elif current_duration_range == '24+' %}24小时以上{% endif %} <span class="chip-close">×</span>
+                    </a>
+                    {% endif %}
+                    {% if current_time_range %}
+                    <a href="#" data-filter-key="time_range" class="filter-chip" title="点击移除过滤">
+                        时间范围: 近{{ current_time_range }}天 <span class="chip-close">×</span>
+                    </a>
+                    {% endif %}
+                    <a href="/fault/dashboard" style="margin-left:4px; color:#007bff; text-decoration:none;">清空筛选</a>
+                </div>
+                {% endif %}
+                <form method="get" id="filterForm" style="margin-bottom: 0; display: flex; gap: 18px; align-items: center; flex-wrap: wrap; min-width:0; width:100%; max-width:100%;">
+                    <div class="filter-row" style="display:flex; gap:12px; align-items:center; flex:1 1 0; min-width:0; max-width:100%; flex-wrap: wrap;">
+                        <!-- 故障类型筛选 -->
+                        <label style="margin-right: 10px; white-space: nowrap;">
+                            <select name="fault_type" onchange="document.getElementById('filterForm').submit();" style="padding: 5px; width: 160px; min-width: 120px; max-width: 160px;">
+                                <option value="">全部故障类型</option>
+                                {% for ft in fault_types %}
+                                <option value="{{ ft }}" {% if current_fault_type==ft %}selected{% endif %}>{{ ft }}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                        
+                        <!-- 原因分类筛选 -->
+                        <label style="margin-right: 10px; white-space: nowrap;">
+                            <select name="cause_category" onchange="document.getElementById('filterForm').submit();" style="padding: 5px; width: 160px; min-width: 120px; max-width: 160px;">
+                                <option value="">全部原因分类</option>
+                                {% for cc in cause_categories %}
+                                <option value="{{ cc }}" {% if current_cause_category==cc %}selected{% endif %}>{{ cc }}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                        
+                        <!-- 通报级别筛选 -->
+                        <label style="margin-right: 10px; white-space: nowrap;">
+                            <select name="notification_level" onchange="document.getElementById('filterForm').submit();" style="padding: 5px; max-width: 220px; min-width: 140px;">
+                                <option value="">全部通报级别</option>
+                                {% for nl in notification_levels %}
+                                <option value="{{ nl }}" {% if current_notification_level==nl %}selected{% endif %}>{{ nl }}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                        
+                        <!-- 处理时长区间筛选 -->
+                        <label style="margin-right: 10px; white-space: nowrap;">
+                            <select name="duration_range" onchange="document.getElementById('filterForm').submit();" style="padding: 5px; max-width: 220px; min-width: 140px;">
+                                <option value="">全部处理时长</option>
+                                <option value="0-2" {% if current_duration_range=='0-2' %}selected{% endif %}>0-2小时</option>
+                                <option value="2-8" {% if current_duration_range=='2-8' %}selected{% endif %}>2-8小时</option>
+                                <option value="8-24" {% if current_duration_range=='8-24' %}selected{% endif %}>8-24小时</option>
+                                <option value="24+" {% if current_duration_range=='24+' %}selected{% endif %}>24小时以上</option>
+                            </select>
+                        </label>
+                        
+                        <!-- 时间范围筛选 -->
+                        <label style="margin-right: 10px; white-space: nowrap;">
+                            <select name="time_range" onchange="document.getElementById('filterForm').submit();" style="padding: 5px; max-width: 220px; min-width: 140px;">
+                                <option value="">全部时间</option>
+                                <option value="7" {% if current_time_range=='7' %}selected{% endif %}>近7天</option>
+                                <option value="30" {% if current_time_range=='30' %}selected{% endif %}>近30天</option>
+                                <option value="90" {% if current_time_range=='90' %}selected{% endif %}>近90天</option>
+                                <option value="365" {% if current_time_range=='365' %}selected{% endif %}>近1年</option>
+                            </select>
+                        </label>
+                    </div>
+                </form>
+                
+                <!-- 故障趋势图表 -->
+                <div style="width:100%; min-width:0;">
+                    {{ fault_trend_chart|safe }}
+                </div>
+            </div>
+        </div>
+        
+        <!-- 故障分类分析 -->
+        <div class="card" style="width:100%; box-sizing:border-box;">
+            <div class="card-title">故障分类分析</div>
+            <div style="display: flex; gap: 20px; width: 100%; min-height: 720px; align-items: flex-start;">
+                <!-- 故障类型分布 -->
+                <div style="flex: 1; min-width: 0; max-width: 50%; height: 700px; overflow: hidden;">
+                    <div style="width: 100%; height: 100%; position: relative;">
+                        {{ fault_type_pie_chart|safe }}
+                    </div>
+                </div>
+                <!-- 原因分类分布 -->
+                <div style="flex: 1; min-width: 0; max-width: 50%; height: 700px; overflow: hidden;">
+                    <div style="width: 100%; height: 100%; position: relative;">
+                        {{ cause_category_pie_chart|safe }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 故障处理时长分析 -->
+        <div class="card" style="width:100%; box-sizing:border-box;">
+            <div class="card-title">故障处理时长分析</div>
+            <div style="width:100%; min-width:0;">
+                {{ duration_analysis_chart|safe }}
+            </div>
+        </div>
+    </div>
+    
+    <!-- 右侧：统计信息和关键指标 -->
+    <div style="flex: 3 1 0; min-width:220px; max-width:30%; display: flex; flex-direction: column; gap: 18px; align-items: stretch; box-sizing:border-box; position:relative; z-index:1;">
+        <!-- 关键指标卡片 -->
+        <div style="background: #fff; border-radius: 12px; box-shadow: 0 2px 8px #eee; padding: 14px 18px 8px 18px; display: flex; flex-direction: column; justify-content: flex-start; align-self: stretch; box-sizing:border-box;">
+            <div style="font-size: 16px; font-weight: 600; color: #333; margin-bottom: 12px;">关键指标</div>
+            
+            <!-- 总故障数 -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="color: #666; font-size: 14px;">总故障数</span>
+                <span style="color: #2196f3; font-size: 18px; font-weight: 600;">{{ total_faults }}</span>
+            </div>
+            
+            <!-- 平均处理时长 -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="color: #666; font-size: 14px;">平均处理时长</span>
+                <span style="color: #ff9800; font-size: 18px; font-weight: 600;">{{ avg_duration }}小时</span>
+            </div>
+            
+            <!-- 主动发现率 -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="color: #666; font-size: 14px;">主动发现率</span>
+                <span style="color: #4caf50; font-size: 18px; font-weight: 600;">{{ proactive_rate }}%</span>
+            </div>
+            
+            <!-- 有投诉故障数 -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="color: #666; font-size: 14px;">有投诉故障数</span>
+                <span style="color: #f44336; font-size: 18px; font-weight: 600;">{{ complaint_count }}</span>
+            </div>
+        </div>
+        
+        <!-- 通报级别分布 -->
+        <div style="background: #fff; border-radius: 12px; box-shadow: 0 2px 8px #eee; padding: 14px 18px 8px 18px; display: flex; flex-direction: column; justify-content: flex-start; align-self: stretch; box-sizing:border-box;">
+            <div style="font-size: 16px; font-weight: 600; color: #333; margin-bottom: 12px;">通报级别分布</div>
+            
+            {% for level, count, color in notification_level_stats %}
+            <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                <span class="color-chip" data-color="{{ color }}" style="display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:8px;flex-shrink:0;"></span>
+                <span style="flex: 1; color: #666; font-size: 14px;">{{ level }}</span>
+                <span style="color: #333; font-size: 14px; font-weight: 600;">{{ count }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- 月度趋势图 -->
+        {% if monthly_trend_chart %}
+        <div style="background: #fff; border-radius: 12px; box-shadow: 0 2px 8px #eee; padding: 10px 16px; width: 100%; box-sizing:border-box;">
+            {{ monthly_trend_chart|safe }}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 分割主分析区和详细数据表 -->
+<div style="height:32px; width:100%; clear:both;"></div>
+
+<!-- AI智能分析与预测（Deepseek R1 深度思考） -->
+<div class="card" style="margin: 0 0 24px 0; background:#f7f7fb; border-left:4px solid #3498db; padding:16px; position:relative; z-index:0;">
+    <div style="font-weight:bold; color:#3498db; margin-bottom:4px; display:flex; align-items:center; gap:18px;">
+        <span>AI智能分析与预测（Deepseek R1 深度思考）</span>
+        <button id="start-ai-analysis" type="button" style="background:#3498db; color:#fff; border:none; border-radius:4px; padding:4px 16px; font-size:14px; cursor:pointer;">开始分析</button>
+    </div>
+    <div id="ai-analysis-box" style="white-space:pre-line; max-height:140px; overflow-y:auto; line-height:1.7; font-size:15px; padding-right:6px; transition:max-height 0.3s; color:#888;">
+        {{ ai_analysis|default("点击上方'开始分析'按钮获取AI智能分析与预测（Deepseek R1 深度思考）") }}
+    </div>
+    <button id="toggle-ai-analysis" type="button" style="margin-top:8px; background:#eaf3fb; border:none; color:#3498db; padding:4px 14px; border-radius:4px; cursor:pointer; display:none;">展开全部</button>
+</div>
+
+<!-- 故障详细数据表 -->
+<div class="card" style="margin-top:0; position:relative; z-index:0;">
+    <div class="card-title">故障详细数据</div>
+    <div class="data-table-container" style="overflow-x:auto;">
+        <table class="data-table" style="min-width:100%;">
+            <thead>
+                <tr>
+                    <th>故障日期</th>
+                    <th>故障名称</th>
+                    <th>故障类型</th>
+                    <th>原因分类</th>
+                    <th>通报级别</th>
+                    <th>处理时长(小时)</th>
+                    <th>主动发现</th>
+                    <th>是否有投诉</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for fault in fault_records %}
+                <tr>
+                    <td>{{ fault.fault_date.strftime('%Y-%m-%d %H:%M') if fault.fault_date else '-' }}</td>
+                    <td title="{{ fault.fault_name }}">{{ fault.fault_name[:30] + '...' if fault.fault_name and fault.fault_name|length > 30 else fault.fault_name or '-' }}</td>
+                    <td>{{ fault.province_fault_type or '-' }}</td>
+                    <td>{{ fault.cause_category or '-' }}</td>
+                    <td>{{ fault.notification_level or '-' }}</td>
+                    <td>{{ ('%.2f' % fault.fault_duration_hours) if fault.fault_duration_hours is not none else '-' }}</td>
+                    <td>{{ fault.is_proactive_discovery or '-' }}</td>
+                    <td>{{ '是' if fault.complaint_situation and fault.complaint_situation.strip() else '否' }}</td>
+                    <td>
+                        <button type="button" class="view-fault-btn" data-id="{{ fault.id }}" style="padding: 4px 8px; font-size: 12px; background: #2196f3; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 4px;">
+                            详情
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- 分页 -->
+    {% if pages > 1 %}
+    <div class="pagination" style="margin-top: 20px; display: flex; justify-content: center; align-items: center; gap: 8px;">
+        {% if current_page > 1 %}
+        <a href="?page=1{% if current_fault_type %}&fault_type={{ current_fault_type }}{% endif %}{% if current_cause_category %}&cause_category={{ current_cause_category }}{% endif %}{% if current_notification_level %}&notification_level={{ current_notification_level }}{% endif %}{% if current_duration_range %}&duration_range={{ current_duration_range }}{% endif %}{% if current_start_date %}&start_date={{ current_start_date }}{% endif %}{% if current_end_date %}&end_date={{ current_end_date }}{% endif %}{% if current_time_range %}&time_range={{ current_time_range }}{% endif %}" class="page-link">首页</a>
+        <a href="?page={{ current_page - 1 }}{% if current_fault_type %}&fault_type={{ current_fault_type }}{% endif %}{% if current_cause_category %}&cause_category={{ current_cause_category }}{% endif %}{% if current_notification_level %}&notification_level={{ current_notification_level }}{% endif %}{% if current_duration_range %}&duration_range={{ current_duration_range }}{% endif %}{% if current_start_date %}&start_date={{ current_start_date }}{% endif %}{% if current_end_date %}&end_date={{ current_end_date }}{% endif %}{% if current_time_range %}&time_range={{ current_time_range }}{% endif %}" class="page-link">上一页</a>
+        {% endif %}
+        
+        <span class="page-info">第 {{ current_page }} 页 / 共 {{ pages }} 页 ({{ total }} 条记录)</span>
+        
+        {% if current_page < pages %}
+        <a href="?page={{ current_page + 1 }}{% if current_fault_type %}&fault_type={{ current_fault_type }}{% endif %}{% if current_cause_category %}&cause_category={{ current_cause_category }}{% endif %}{% if current_notification_level %}&notification_level={{ current_notification_level }}{% endif %}{% if current_duration_range %}&duration_range={{ current_duration_range }}{% endif %}{% if current_start_date %}&start_date={{ current_start_date }}{% endif %}{% if current_end_date %}&end_date={{ current_end_date }}{% endif %}{% if current_time_range %}&time_range={{ current_time_range }}{% endif %}" class="page-link">下一页</a>
+        <a href="?page={{ pages }}{% if current_fault_type %}&fault_type={{ current_fault_type }}{% endif %}{% if current_cause_category %}&cause_category={{ current_cause_category }}{% endif %}{% if current_notification_level %}&notification_level={{ current_notification_level }}{% endif %}{% if current_duration_range %}&duration_range={{ current_duration_range }}{% endif %}{% if current_start_date %}&start_date={{ current_start_date }}{% endif %}{% if current_end_date %}&end_date={{ current_end_date }}{% endif %}{% if current_time_range %}&time_range={{ current_time_range }}{% endif %}" class="page-link">末页</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- 故障详情弹窗 -->
+<div id="faultDetailModal" class="drill-down-modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="faultModalTitle">故障详情</h3>
+            <span class="close-btn">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div id="faultModalLoading" class="loading-spinner">加载中...</div>
+            <div id="faultModalContent" style="display: none;">
+                <!-- 故障详情内容将通过JavaScript动态加载 -->
+            </div>
+            <div id="faultModalError" style="display: none; color: #e53935; text-align: center; padding: 20px;">
+                加载失败，请稍后重试
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* AI加载动画 */
+.ai-loading-spinner {
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    border: 3px solid #e3e8f0;
+    border-top: 3px solid #3498db;
+    border-radius: 50%;
+    animation: ai-spin 0.8s linear infinite;
+    vertical-align: middle;
+}
+@keyframes ai-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+/* 弹窗样式 */
+.drill-down-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8f9fa;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.close-btn {
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+.close-btn:hover {
+    opacity: 1;
+}
+
+.modal-body {
+    padding: 24px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.loading-spinner {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+/* 分页样式 */
+.pagination {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.page-link {
+    display: inline-block;
+    padding: 8px 12px;
+    margin: 0 2px;
+    text-decoration: none;
+    color: #007bff;
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    font-size: 0.9em;
+    transition: all 0.2s ease;
+}
+
+.page-link:hover {
+    color: #0056b3;
+    background-color: #e9ecef;
+    border-color: #adb5bd;
+    text-decoration: none;
+}
+
+.page-info {
+    padding: 8px 12px;
+    color: #6c757d;
+    font-size: 0.9em;
+}
+
+/* 数据表格样式 */
+.data-table-container {
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.data-table th,
+.data-table td {
+    padding: 12px 8px;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.data-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.data-table tr:hover {
+    background-color: #f8f9fa;
+}
+/* 过滤行样式，防止选择框超出卡片边界 */
+.filter-row {
+    flex-wrap: wrap;
+    gap: 12px 18px; /* 行间距 列间距 */
+}
+.filter-row label {
+    flex: 0 1 auto;
+}
+.filter-row select {
+    max-width: 220px;
+    min-width: 140px;
+    width: auto;
+}
+@media (max-width: 768px) {
+    .filter-row select { min-width: 120px; max-width: 180px; }
+}
+</style>
+
+<script>
+// 刷新AI分析（Deepseek R1 深度思考）
+async function refreshAIAnalysis() {
+    const box = document.getElementById('ai-analysis-box');
+    const toggleBtn = document.getElementById('toggle-ai-analysis');
+    const startBtn = document.getElementById('start-ai-analysis');
+
+    if (!box) return;
+
+    box.innerHTML = '<div class="ai-loading-spinner"></div><span style="margin-left:12px; color:#888; vertical-align:middle;">AI分析生成中…</span>';
+    box.style.color = '#888';
+    if (toggleBtn) toggleBtn.style.display = 'none';
+    if (startBtn) { startBtn.disabled = true; startBtn.textContent = '分析中...'; }
+
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const response = await fetch(`/fault/ai_analysis?${params.toString()}`);
+        const data = await response.json();
+        box.innerText = (data && data.ai_analysis) ? data.ai_analysis : 'AI分析生成失败，请稍后重试。';
+        box.style.color = '#222';
+        setTimeout(function(){
+            if (toggleBtn) {
+                if (box.scrollHeight > 150) { toggleBtn.style.display = ''; } else { toggleBtn.style.display = 'none'; }
+            }
+        }, 60);
+        if (startBtn) { startBtn.disabled = false; startBtn.textContent = '重新分析'; }
+    } catch (error) {
+        box.textContent = 'AI分析生成失败，请稍后重试。';
+        box.style.color = '#e53935';
+        if (startBtn) { startBtn.disabled = false; startBtn.textContent = '重新分析'; }
+    }
+}
+
+// 数值格式化：处理时长显示两位小数
+function formatDuration(val) {
+    if (val === null || val === undefined || val === '' || isNaN(Number(val))) return '-';
+    return Number(val).toFixed(2);
+}
+
+// 查看故障详情
+async function viewFaultDetail(faultId) {
+    const modal = document.getElementById('faultDetailModal');
+    const loading = document.getElementById('faultModalLoading');
+    const content = document.getElementById('faultModalContent');
+    const error = document.getElementById('faultModalError');
+    
+    // 显示弹窗和加载状态
+    modal.style.display = 'flex';
+    loading.style.display = 'block';
+    content.style.display = 'none';
+    error.style.display = 'none';
+    
+    try {
+        const response = await fetch(`/fault/detail/${faultId}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            const fault = data.data;
+            content.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <h4>基本信息</h4>
+                        <p><strong>故障名称:</strong> ${fault.fault_name || '-'}</p>
+                        <p><strong>故障日期:</strong> ${fault.fault_date || '-'}</p>
+                        <p><strong>发生时间:</strong> ${fault.start_time || '-'}</p>
+                        <p><strong>结束时间:</strong> ${fault.end_time || '-'}</p>
+                        <p><strong>处理时长:</strong> ${formatDuration(fault.fault_duration_hours)} 小时</p>
+                    </div>
+                    <div>
+                        <h4>分类信息</h4>
+                        <p><strong>故障类型:</strong> ${fault.province_fault_type || '-'}</p>
+                        <p><strong>原因分类:</strong> ${fault.cause_category || '-'}</p>
+                        <p><strong>省-原因分类:</strong> ${fault.province_cause_category || '-'}</p>
+                        <p><strong>通报级别:</strong> ${fault.notification_level || '-'}</p>
+                        <p><strong>主动发现:</strong> ${fault.is_proactive_discovery || '-'}</p>
+                    </div>
+                </div>
+                <div style="margin-top: 20px;">
+                    <h4>详细信息</h4>
+                    <p><strong>故障原因:</strong></p>
+                    <div style="background: #f8f9fa; padding: 10px; border-radius: 4px; margin-bottom: 10px;">
+                        ${fault.fault_cause || '无'}
+                    </div>
+                    <p><strong>故障处理:</strong></p>
+                    <div style="background: #f8f9fa; padding: 10px; border-radius: 4px; margin-bottom: 10px;">
+                        ${fault.fault_handling || '无'}
+                    </div>
+                    <p><strong>省-故障原因分析:</strong></p>
+                    <div style="background: #f8f9fa; padding: 10px; border-radius: 4px; margin-bottom: 10px;">
+                        ${fault.province_cause_analysis || '无'}
+                    </div>
+                    <p><strong>投诉情况:</strong></p>
+                    <div style="background: #f8f9fa; padding: 10px; border-radius: 4px; margin-bottom: 10px;">
+                        ${fault.complaint_situation || '无'}
+                    </div>
+                    <p><strong>备注:</strong></p>
+                    <div style="background: #f8f9fa; padding: 10px; border-radius: 4px;">
+                        ${fault.remarks || '无'}
+                    </div>
+                </div>
+            `;
+            
+            loading.style.display = 'none';
+            content.style.display = 'block';
+        } else {
+            throw new Error(data.message || '加载失败');
+        }
+    } catch (err) {
+        loading.style.display = 'none';
+        error.style.display = 'block';
+        error.innerHTML = `加载失败: ${err.message}`;
+    }
+}
+
+// 关闭故障详情弹窗
+function closeFaultDetailModal() {
+    document.getElementById('faultDetailModal').style.display = 'none';
+}
+
+// 点击弹窗外部关闭
+document.getElementById('faultDetailModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeFaultDetailModal();
+    }
+});
+
+// 初始化颜色块与事件绑定
+document.addEventListener('DOMContentLoaded', function () {
+    // 初始化通报级别颜色块
+    document.querySelectorAll('.color-chip').forEach(function(chip){
+        var color = chip.getAttribute('data-color') || '#999';
+        chip.style.backgroundColor = color;
+    });
+
+    // 绑定“开始分析”按钮（Deepseek R1 深度思考）
+    var startBtn = document.getElementById('start-ai-analysis');
+    if (startBtn) startBtn.addEventListener('click', refreshAIAnalysis);
+
+    // 绑定“展开/收起”按钮
+    var toggleBtn = document.getElementById('toggle-ai-analysis');
+    var box = document.getElementById('ai-analysis-box');
+    var expanded = false;
+    if (toggleBtn && box) {
+        toggleBtn.addEventListener('click', function(){
+            expanded = !expanded;
+            if (expanded) {
+                box.style.maxHeight = '1000px';
+                toggleBtn.textContent = '收起';
+            } else {
+                box.style.maxHeight = '140px';
+                toggleBtn.textContent = '展开全部';
+                box.scrollTop = 0;
+            }
+        });
+    }
+
+    // 绑定“详情”按钮（事件委托）
+    document.addEventListener('click', function(e){
+        var btn = e.target.closest && e.target.closest('.view-fault-btn');
+        if (btn) {
+            var id = btn.getAttribute('data-id');
+            if (id) {
+                viewFaultDetail(id);
+            }
+        }
+    });
+
+    // 绑定筛选 chip 点击（仅移除对应键，并设置 page=1）
+    document.addEventListener('click', function(e){
+        var chip = e.target.closest && e.target.closest('a.filter-chip[data-filter-key]');
+        if (chip) {
+            e.preventDefault();
+            var key = chip.getAttribute('data-filter-key');
+            try {
+                var url = new URL(window.location.href);
+                var params = url.searchParams;
+                if (key) params.delete(key);
+                // 页码归一
+                params.set('page', '1');
+                // 构建新地址
+                var query = params.toString();
+                var target = url.pathname + (query ? ('?' + query) : '');
+                window.location.href = target;
+            } catch (err) {
+                // 兜底：若 URL API 不可用，回退到清空该键后刷新
+                var raw = (window.location.search || '').replace(/^\?/, '');
+                // 删除目标参数（及其尾随的&）
+                raw = raw.replace(new RegExp('(?:^|&)' + key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '=[^&]*(&)?'), function(m, tail){
+                    return tail ? '' : '';
+                });
+                // 规范化多余的分隔符
+                raw = raw.replace(/(^&|&$)/g, '').replace(/&&+/g, '&');
+                // 添加/重置 page=1
+                if (!/(^|&)page=/.test(raw)) {
+                    raw += (raw ? '&' : '') + 'page=1';
+                } else {
+                    raw = raw.replace(/(^|&)page=\d+/,'$1page=1');
+                }
+                var qs = raw ? ('?' + raw) : '';
+                window.location.href = window.location.pathname + qs;
+            }
+        }
+    });
+
+    // 绑定弹窗关闭按钮
+    var closeBtn = document.querySelector('#faultDetailModal .close-btn');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeFaultDetailModal);
+    }
+
+    // 图表点击下钻功能
+    initChartClickEvents();
+});
+
+// 初始化图表点击事件
+function initChartClickEvents() {
+    // 确保 ECharts 已加载
+    if (typeof window.echarts === 'undefined') {
+        console.warn('ECharts 未就绪，稍后重试绑定事件');
+        setTimeout(initChartClickEvents, 800);
+        return;
+    }
+
+    // 收集所有 ECharts 实例
+    var charts = [];
+
+    // 优先：通过 _echarts_instance_ 属性查找（若 pyecharts 注入了该属性）
+    var chartContainers = document.querySelectorAll('div[_echarts_instance_]');
+    chartContainers.forEach(function(container) {
+        var inst = echarts.getInstanceByDom(container);
+        if (inst) charts.push({ instance: inst, container: container });
+    });
+
+    // 兼容：若未找到，则扫描页面所有 div，通过 getInstanceByDom 识别图表容器
+    if (charts.length === 0) {
+        document.querySelectorAll('div').forEach(function(container) {
+            try {
+                var inst = echarts.getInstanceByDom(container);
+                if (inst) charts.push({ instance: inst, container: container });
+            } catch (e) {}
+        });
+    }
+
+    // 若依旧未找到，说明图表可能尚未渲染完毕；稍后重试
+    if (charts.length === 0) {
+        setTimeout(initChartClickEvents, 1000);
+        return;
+    }
+
+    // 为每个图表绑定点击事件
+    charts.forEach(function(chart) {
+        try {
+            chart.instance.off('click'); // 先移除已有的点击事件，避免重复绑定
+            chart.instance.on('click', function(params) {
+                console.debug('ECharts click:', { title: getChartTitle(chart.container), name: params && params.name });
+                handleChartClick(params, chart.container);
+            });
+        } catch (e) {}
+    });
+
+    console.log('ECharts 事件已绑定', charts.length, '个图表');
+}
+
+// 处理图表点击事件
+function handleChartClick(params, container) {
+    try {
+        var url = new URL(window.location.href);
+        var searchParams = url.searchParams;
+        
+        // 重置页码
+        searchParams.set('page', '1');
+        
+        // 根据图表类型和点击的数据项添加筛选条件
+        var chartTitle = getChartTitle(container);
+        var clickedValue = params.name;
+        
+        // 若点击项能解析为月份，直接触发下钻分析（不强依赖标题关键词）
+        if (clickedValue) {
+            var monthStr = normalizeMonth(clickedValue);
+            if (monthStr) {
+                console.log('[drilldown] month detected from click:', clickedValue, '->', monthStr);
+                openDrilldown(monthStr);
+                return;
+            }
+        }
+
+        if (!clickedValue || clickedValue === '未分类' || clickedValue === '未知') {
+            return; // 不处理未分类或未知数据
+        }
+        
+        // 根据图表标题确定筛选参数
+        if (chartTitle.includes('故障类型')) {
+            searchParams.set('fault_type', clickedValue);
+        } else if (chartTitle.includes('原因分类')) {
+            searchParams.set('cause_category', clickedValue);
+        } else if (chartTitle.includes('通报级别')) {
+            searchParams.set('notification_level', clickedValue);
+        } else if (chartTitle.includes('处理时长')) {
+            // 处理时长区间映射
+            var durationMap = {
+                '0-2小时': '0-2',
+                '2-8小时': '2-8', 
+                '8-24小时': '8-24',
+                '24小时以上': '24+'
+            };
+            var durationValue = durationMap[clickedValue];
+            if (durationValue) {
+                searchParams.set('duration_range', durationValue);
+            }
+        }
+        
+        // 构建新URL并跳转
+        var newUrl = url.pathname + '?' + searchParams.toString();
+        window.location.href = newUrl;
+        
+    } catch (error) {
+        console.error('图表点击处理错误:', error);
+    }
+}
+
+// 获取图表标题
+function getChartTitle(container) {
+    try {
+        // 尝试从图表配置中获取标题
+        var chartInstance = echarts.getInstanceByDom(container);
+        if (chartInstance) {
+            var option = chartInstance.getOption();
+            if (option && option.title && option.title[0] && option.title[0].text) {
+                return option.title[0].text;
+            }
+        }
+        
+        // 回退：从父容器的标题元素获取
+        var parentCard = container.closest('.card');
+        if (parentCard) {
+            var titleElement = parentCard.querySelector('.card-title');
+            if (titleElement) {
+                return titleElement.textContent || titleElement.innerText || '';
+            }
+        }
+        
+        return '';
+    } catch (error) {
+        return '';
+    }
+}
+</script>
+
+<!-- 下钻分析弹窗（自定义样式） -->
+<div id="drilldownModal" class="drill-down-modal" style="display:none;">
+    <div class="modal-content" style="width:96vw; max-width:1400px;">
+        <div class="modal-header">
+            <h3>下钻分析 - <span id="drilldown-month">-</span></h3>
+            <span class="close-btn" onclick="closeDrilldownModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div style="display:flex; flex-direction:column; gap:18px;">
+                <div id="chart-pareto" style="height:380px;"></div>
+                <div id="chart-boxplot" style="height:380px;"></div>
+                <div id="chart-control" style="height:380px;"></div>
+                <div id="chart-heatmap" style="height:420px;"></div>
+                <div id="chart-compare" style="height:380px;"></div>
+            </div>
+        </div>
+    </div>
+  </div>
+
+<script>
+// 关闭下钻弹窗
+function closeDrilldownModal(){
+  document.getElementById('drilldownModal').style.display = 'none';
+}
+
+// 规范化月份字符串为 YYYY-MM
+function normalizeMonth(s) {
+  if (!s) return '';
+  const m = String(s).trim().replace(/年|\//g, '-').replace(/\s+/g, '');
+  const m1 = m.match(/^(\d{4})-(\d{1,2})$/);
+  if (m1) {
+    const mm = m1[2].padStart(2, '0');
+    return `${m1[1]}-${mm}`;
+  }
+  const m2 = m.match(/^(\d{4})-(\d{1,2})-?$/);
+  if (m2) {
+    const mm = m2[2].padStart(2, '0');
+    return `${m2[1]}-${mm}`;
+  }
+  if (/^\d{4}-\d{2}$/.test(m)) return m;
+  return '';
+}
+
+// 打开下钻并加载数据
+function openDrilldown(monthStr){
+  var modal = document.getElementById('drilldownModal');
+  document.getElementById('drilldown-month').textContent = monthStr;
+  modal.style.display = 'flex';
+  // 清空并延迟渲染，避免容器尺寸未就绪
+  setTimeout(function() {
+    fetch(`/fault/api/drilldown?month=${encodeURIComponent(monthStr)}`)
+      .then(r => r.json())
+      .then(res => {
+        if (!res.success) throw new Error(res.error || '加载失败');
+        renderPareto(res.data.pareto || []);
+        renderBoxplot(res.data.boxplot || {categories:[], data:[]});
+        renderControl(res.data.control || {series:[], mean:0, ucl:0, lcl:0});
+        renderHeatmap(res.data.heatmap || []);
+        renderGroupCompare(res.data.group_compare || {levels:[], counts:[], avg_duration:[]});
+      })
+      .catch(err => {
+        console.error('下钻数据加载失败:', err);
+        alert('下钻数据加载失败：' + err.message);
+      });
+  }, 0);
+}
+
+// 下钻：帕累托图
+function renderPareto(pareto) {
+  if (typeof echarts === 'undefined') return;
+  const el = echarts.init(document.getElementById('chart-pareto'));
+  const names = pareto.map(i => i.name);
+  const counts = pareto.map(i => i.count);
+  const cum = pareto.map(i => i.cum_percent);
+  el.setOption({
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: 'category', data: names },
+    yAxis: [
+      { type: 'value', name: '数量' },
+      { type: 'value', name: '累计占比(%)', min: 0, max: 100 }
+    ],
+    series: [
+      { type: 'bar', data: counts, name: '数量' },
+      { type: 'line', yAxisIndex: 1, data: cum, name: '累计占比', smooth: true }
+    ]
+  });
+}
+
+// 下钻：箱线图
+function renderBoxplot(box) {
+  if (typeof echarts === 'undefined') return;
+  const el = echarts.init(document.getElementById('chart-boxplot'));
+  el.setOption({
+    tooltip: { trigger: 'item' },
+    xAxis: { type: 'category', data: box.categories },
+    yAxis: { type: 'value', name: '处理时长(小时)' },
+    series: [{ name: '时长分布', type: 'boxplot', data: box.data }]
+  });
+}
+
+// 下钻：控制图
+function renderControl(ctrl) {
+  if (typeof echarts === 'undefined') return;
+  const el = echarts.init(document.getElementById('chart-control'));
+  const n = (ctrl.series || []).length;
+  el.setOption({
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: 'category', data: Array.from({length: n}, (_, i) => i + 1) },
+    yAxis: { type: 'value', name: '处理时长(小时)' },
+    series: [
+      { type: 'line', data: ctrl.series || [], name: '时长', smooth: true },
+      { type: 'line', data: Array(n).fill(ctrl.mean || 0), name: '均值', lineStyle: { type: 'dashed' } },
+      { type: 'line', data: Array(n).fill(ctrl.ucl || 0), name: 'UCL', lineStyle: { type: 'dotted' } },
+      { type: 'line', data: Array(n).fill(ctrl.lcl || 0), name: 'LCL', lineStyle: { type: 'dotted' } }
+    ]
+  });
+}
+
+// 下钻：热力图 (周x小时)
+function renderHeatmap(heatmapData) {
+  if (typeof echarts === 'undefined') return;
+  const el = echarts.init(document.getElementById('chart-heatmap'));
+  const hours = Array.from({length:24}, (_,i)=>i);
+  const days = ['一','二','三','四','五','六','日'];
+  const vmax = heatmapData.length ? Math.max.apply(null, heatmapData.map(i=>i[2])) : 10;
+  el.setOption({
+    tooltip: {},
+    grid: { top: 40 },
+    xAxis: { type: 'category', data: hours, name: '小时' },
+    yAxis: { type: 'category', data: [0,1,2,3,4,5,6].map(i => '周' + days[i]) },
+    visualMap: { min: 0, max: vmax, calculable: true, orient: 'horizontal', left: 'center', bottom: 0 },
+    series: [{ type: 'heatmap', data: heatmapData, emphasis: { itemStyle: { borderColor: '#333' } } }]
+  });
+}
+
+// 下钻：分组对比
+function renderGroupCompare(gc) {
+  if (typeof echarts === 'undefined') return;
+  const el = echarts.init(document.getElementById('chart-compare'));
+  el.setOption({
+    tooltip: { trigger: 'axis' },
+    legend: { data: ['数量', '平均时长'] },
+    xAxis: { type: 'category', data: gc.levels || [] },
+    yAxis: [ { type: 'value', name: '数量' }, { type: 'value', name: '平均时长(小时)' } ],
+    series: [
+      { type: 'bar', data: gc.counts || [], name: '数量' },
+      { type: 'line', data: gc.avg_duration || [], yAxisIndex: 1, name: '平均时长' }
+    ]
+  });
+}
+</script>
+
+<!-- 页面底部占位容器 -->
+<div style="height:60px;width:100%;pointer-events:none;clear:both;"></div>
+{% endblock %}

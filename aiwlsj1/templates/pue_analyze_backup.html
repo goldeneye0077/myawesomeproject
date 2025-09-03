@@ -1,0 +1,1693 @@
+{% extends "base.html" %}
+{% block title %}PUE数据分析{% endblock %}
+{% block content %}
+<div class="main-flex-row" style="display: flex; gap: 24px; align-items: flex-start; min-width:0; width:100%; box-sizing:border-box; position:relative; z-index:1;">
+    <!-- 左侧主内容区 -->
+    <div style="flex: 7 1 0; min-width:0; max-width: 70%; display: flex; flex-direction: column; gap: 24px; box-sizing:border-box; overflow-x:auto;">
+        <div class="card" style="width:100%; box-sizing:border-box;">
+            <div class="card-title" style="margin-bottom: 0;">PUE指标数据分析</div>
+            <div style="display: flex; flex-direction: column; align-items: stretch; width: 100%; gap: 12px; min-width: 0; box-sizing:border-box;">
+                <form method="get" id="locationForm" style="margin-bottom: 0; display: flex; gap: 18px; align-items: center; flex-wrap: nowrap; min-width:0; width:100%; max-width:100%;">
+                    <div style="display:flex; gap:18px; align-items:center; flex:1 1 0; min-width:0; max-width:100%; overflow:hidden;">
+                    {% for loc in all_locations %}
+                    <label style="margin-right: 10px; white-space: nowrap;">
+                        <input type="radio" name="location" value="{{ loc }}" {% if current_location==loc %}checked{% endif %} onchange="document.getElementById('locationForm').submit();">
+                        {{ loc }}
+                    </label>
+                    {% endfor %}
+                    <label style="margin-right: 10px; white-space: nowrap;">
+                        <input type="radio" name="location" value="" {% if not current_location %}checked{% endif %} onchange="document.getElementById('locationForm').submit();">
+                        全部
+                    </label>
+                    </div>
+                </form>
+                <div style="width:100%; min-width:0;">
+                    {{ pue_bar_chart|safe }}
+                </div>
+                
+                
+                <!-- 下钻弹窗 -->
+                <div id="drillDownModal" class="drill-down-modal" style="display: none;">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 id="modalTitle">PUE指标下钻详情</h3>
+                            <span class="close-btn" onclick="closeDrillDownModal()">&times;</span>
+                        </div>
+                        <div class="modal-body">
+                            <div id="modalLoading" class="loading-spinner">加载中...</div>
+                            <div id="modalContent" style="display: none;">
+                                <div class="drill-down-table-container">
+                                    <table class="drill-down-table">
+                                        <thead>
+                                            <tr>
+                                                <th>序号</th>
+                                                <th>作业形式</th>
+                                                <th>作业分类</th>
+                                                <th>作业对象</th>
+                                                <th>检查项</th>
+                                                <th>执行情况</th>
+                                                <th>执行人</th>
+                                                <th>操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="drillDownTableBody">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div id="modalError" style="display: none; color: #e53935; text-align: center; padding: 20px;">
+                                加载失败，请稍后重试
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- 右侧：红绿灯+折线图 -->
+    <div style="flex: 3 1 0; min-width:220px; max-width:30%; display: flex; flex-direction: column; gap: 18px; align-items: stretch; box-sizing:border-box; position:relative; z-index:1;">
+        <div style="background: #fff; border-radius: 12px; box-shadow: 0 2px 8px #eee; padding: 14px 18px 8px 18px; display: flex; flex-direction: column; justify-content: flex-start; align-self: stretch; box-sizing:border-box;">
+            <div style="font-weight: bold; font-size: 1.05em; margin-bottom: 8px;">红绿灯预警板（同比低于去年黄灯，连续两月红灯）</div>
+            <hr style="border:none;border-top:1px solid #e0e0e0;margin:0 0 10px 0;">
+            <div style="display: flex; align-items: center; margin-bottom: 12px; color:#f44336;">
+                <span style="display:inline-block;width:18px;height:18px;border-radius:50%;background:#f44336;margin-right:10px;flex-shrink:0;"></span>
+                {% if red_months %}
+                    {% for m in red_months %}<span style="margin-right:8px;">{{ m }}月</span>{% endfor %}
+                {% else %}无{% endif %}
+            </div>
+            <div style="display: flex; align-items: center; margin-bottom: 12px; color:#ff9800;">
+                <span style="display:inline-block;width:18px;height:18px;border-radius:50%;background:#ff9800;margin-right:10px;flex-shrink:0;"></span>
+                {% if yellow_months %}
+                    {% for m in yellow_months %}<span style="margin-right:8px;">{{ m }}月</span>{% endfor %}
+                {% else %}无{% endif %}
+            </div>
+            <div style="display: flex; align-items: center; color:#4caf50;">
+                <span style="display:inline-block;width:18px;height:18px;border-radius:50%;background:#4caf50;margin-right:10px;flex-shrink:0;"></span>
+                {% if green_months %}
+                    {% for m in green_months %}<span style="margin-right:8px;">{{ m }}月</span>{% endfor %}
+                {% else %}无{% endif %}
+            </div>
+        </div>
+        {% if line_chart_html %}
+        <div style="background: #fff; border-radius: 12px; box-shadow: 0 2px 8px #eee; padding: 10px 16px; width: 100%; box-sizing:border-box;">
+            {{ line_chart_html|safe }}
+        </div>
+        {% endif %}
+    </div>
+</div>
+<!-- 分割主分析区和多维表，避免重叠 -->
+<div style="height:32px; width:100%; clear:both;"></div>
+
+<style>
+.ai-loading-spinner {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  border: 3px solid #e3e8f0;
+  border-top: 3px solid #3498db;
+  border-radius: 50%;
+  animation: ai-spin 0.8s linear infinite;
+  vertical-align: middle;
+}
+@keyframes ai-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 下钻弹窗样式 */
+.drill-down-modal {
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  backdrop-filter: blur(2px);
+}
+
+.modal-content {
+  background-color: #fefefe;
+  margin: 3% auto;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 1200px;
+  max-height: 85vh;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  overflow: hidden;
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from { transform: translateY(-50px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-header {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: white;
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.close-btn {
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  line-height: 1;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.close-btn:hover {
+  opacity: 1;
+}
+
+.modal-body {
+  padding: 24px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.loading-spinner {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+}
+
+.drill-down-table-container {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.drill-down-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.drill-down-table th {
+  background-color: #f8f9fa;
+  color: #333;
+  font-weight: 600;
+  padding: 12px 8px;
+  text-align: left;
+  border-bottom: 2px solid #dee2e6;
+  white-space: nowrap;
+}
+
+.drill-down-table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid #e9ecef;
+  vertical-align: top;
+}
+
+.drill-down-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.detail-btn {
+  background: #3498db;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.2s;
+}
+
+.detail-btn:hover {
+  background: #2980b9;
+}
+
+.work-item-detail {
+  background: #f8f9fa;
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 6px;
+  border-left: 4px solid #3498db;
+}
+
+.work-item-detail h4 {
+  margin: 0 0 8px 0;
+  color: #2c3e50;
+  font-size: 14px;
+}
+
+.work-item-detail p {
+  margin: 4px 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.work-item-detail .label {
+  font-weight: 600;
+  color: #34495e;
+}
+</style>
+<!-- AI智能分析卡片独立放置在主内容和多维表之间 -->
+<div class="card" style="margin: 0 0 24px 0; background:#f7f7fb; border-left:4px solid #3498db; padding:16px;">
+    <div style="font-weight:bold; color:#3498db; margin-bottom:4px; display:flex; align-items:center; gap:18px;">
+      <span>AI智能分析与预测（Deepseek R1 深度思考）</span>
+      <button id="start-ai-analysis" style="background:#3498db; color:#fff; border:none; border-radius:4px; padding:4px 16px; font-size:14px; cursor:pointer;">开始分析</button>
+    </div>
+    <div id="ai-analysis-box" style="white-space:pre-line; max-height:140px; overflow-y:auto; line-height:1.7; font-size:15px; padding-right:6px; transition:max-height 0.3s; color:#888;"></div>
+    <button id="toggle-ai-analysis" style="margin-top:8px; background:#eaf3fb; border:none; color:#3498db; padding:4px 14px; border-radius:4px; cursor:pointer; display:none;">展开全部</button>
+    <script>
+    const box = document.getElementById('ai-analysis-box');
+    const btn = document.getElementById('toggle-ai-analysis');
+    const startBtn = document.getElementById('start-ai-analysis');
+    let expanded = false;
+    const aiLocation = "{{ current_location or '' }}";
+    // 全局变量
+    window.userRole = "{{ user_role or 'guest' }}";
+    btn.onclick = function() {
+        expanded = !expanded;
+        if (expanded) {
+            box.style.maxHeight = '1000px';
+            btn.textContent = '收起';
+        } else {
+            box.style.maxHeight = '140px';
+            btn.textContent = '展开全部';
+            box.scrollTop = 0;
+        }
+    }
+    startBtn.onclick = function() {
+        box.innerHTML = '<div class="ai-loading-spinner"></div><span style="margin-left:12px; color:#888; vertical-align:middle;">AI分析生成中…</span>';
+        box.style.color = '#888';
+        btn.style.display = 'none';
+        startBtn.disabled = true;
+        startBtn.textContent = '分析中...';
+        fetch(`/pue_ai_analysis?location=${encodeURIComponent(aiLocation)}`)
+          .then(resp => resp.json())
+          .then(data => {
+            box.innerText = data.ai_analysis || 'AI分析生成失败，请稍后重试。';
+            box.style.color = '#222';
+            // 自动判断是否需要显示展开按钮
+            setTimeout(function(){
+              if(box.scrollHeight > 150){ btn.style.display = ''; } else { btn.style.display = 'none'; }
+            }, 50);
+            startBtn.disabled = false;
+            startBtn.textContent = '重新分析';
+          }).catch(() => {
+            box.textContent = 'AI分析生成失败，请稍后重试。';
+            box.style.color = '#e53935';
+            startBtn.disabled = false;
+            startBtn.textContent = '重新分析';
+          });
+    }
+    
+    // PUE下钻弹窗功能
+    function showDrillDownModal(location, month, year) {
+        const modal = document.getElementById('drillDownModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalLoading = document.getElementById('modalLoading');
+        const modalContent = document.getElementById('modalContent');
+        const modalError = document.getElementById('modalError');
+        
+        // 记录当前查询参数供导出等功能使用
+    window.currentDrillDownQuery = { location, year, month };
+    // 设置标题
+        const locationText = location ? location : '全部地点';
+        modalTitle.textContent = `${locationText} - ${year}年${month}月 PUE指标下钻详情`;
+        
+        // 显示弹窗和加载状态
+        modal.style.display = 'block';
+        modalLoading.style.display = 'block';
+        modalContent.style.display = 'none';
+        modalError.style.display = 'none';
+        
+        // 构建API请求URL
+        let apiUrl = '/pue_drill_down_data?';
+        if (location) apiUrl += `location=${encodeURIComponent(location)}&`;
+        apiUrl += `month=${month}&year=${year}`;
+        
+        // 获取下钻数据
+        fetch(apiUrl)
+            .then(response => response.json())
+            .then(data => {
+                modalLoading.style.display = 'none';
+                if (data.success && data.data.length > 0) {
+                    buildDrillDownTabs(location, month, year);
+                    renderDrillDownData(data.data);
+                    if(location){
+                        renderTrendChart(location, month, year);
+                    }
+                    modalContent.style.display = 'block';
+                } else {
+                    modalError.textContent = '暂无该时间段的详细数据';
+                    modalError.style.display = 'block';
+                }
+            })
+            .catch(error => {
+                console.error('获取下钻数据失败:', error);
+                modalLoading.style.display = 'none';
+                modalError.style.display = 'block';
+            });
+    }
+    
+    // 构建Tab结构（每次打开弹窗都会重新绑定事件并加载对应年月数据）
+    function buildDrillDownTabs(location, month, year){
+    // 若已存在旧的Tab容器则先移除，确保每次打开弹窗都会重新绑定事件并加载对应年月数据
+    const old = document.getElementById('tab-container');
+    if(old){
+        old.remove();
+    }
+        modalContent.innerHTML = `
+        <style>
+        .tab-headers{display:flex;border-bottom:1px solid #ddd;margin-bottom:4px;}
+.drawer-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.3);z-index:1100;display:flex;justify-content:flex-end;}
+.drawer{width:400px;height:100%;background:#fff;box-shadow:-2px 0 6px rgba(0,0,0,.1);display:flex;flex-direction:column;}
+.drawer-header{padding:16px;border-bottom:1px solid #eee;font-size:16px;font-weight:600;display:flex;justify-content:space-between;align-items:center;}
+.drawer-close{cursor:pointer;font-size:22px;line-height:1;}
+.drawer-body{padding:16px;overflow-y:auto;flex:1 1 auto;}
+        .tab-headers span{padding:6px 14px;cursor:pointer;}
+        .tab-headers .active{border-bottom:2px solid #3498db;color:#3498db;font-weight:600;}
+        .tab-body{display:none;}
+        .tab-body.active{display:block;}
+        .filter-bar{margin:6px 0;display:flex;gap:12px;align-items:center;}
+        /* 根因分析样式 */
+        .rootcause-tab-headers .rootcause-tab{padding:8px 16px;cursor:pointer;border-bottom:2px solid transparent;font-size:14px;}
+        .rootcause-tab-headers .rootcause-tab.active{border-bottom-color:#3498db;color:#3498db;font-weight:600;}
+        .rootcause-tab-body{display:none;}
+        .rootcause-tab-body.active{display:block;}
+        .w-analysis-card{background:#fff;border:1px solid #e0e0e0;border-radius:6px;padding:16px;}
+        .w-analysis-card h4{margin:0 0 12px 0;color:#2c3e50;font-size:15px;}
+        .factor-list{font-size:13px;line-height:1.6;}
+        .factor-list .factor-item{padding:4px 0;border-bottom:1px dashed #eee;}
+        .factor-item .severity{float:right;padding:2px 6px;border-radius:3px;font-size:11px;}
+        .severity.high{background:#e74c3c;color:white;}
+        .severity.medium{background:#f39c12;color:white;}
+        .severity.low{background:#27ae60;color:white;}
+        </style>
+        <div id="tab-container">
+            <div class="tab-headers">
+                <span class="tab" data-t="trend">趋势</span>
+                <span class="tab active" data-t="table">表格</span>
+                <span class="tab" data-t="compare">对比</span>
+                <span class="tab" data-t="rootcause">根因分析</span>
+                <span class="tab" data-t="note">备注</span>
+            </div>
+            <div class="tab-body" id="tab-trend">
+                <div id="trendChart" style="height:120px;margin:6px 0;"></div>
+            </div>
+            <div class="tab-body active" id="tab-table">
+                <div id="table-wrapper" style="display:block;width:100%;">
+                    <div class="table-toolbar" style="margin:6px 0;font-size:12px;display:flex;justify-content:space-between;align-items:center;">
+                        <div style="display:flex;align-items:center;gap:6px;">
+                            关键字：<input id="abnormal-kw" style="width:200px;padding:2px 4px;" placeholder="已整改" value="已整改" />
+                            <button id="btn-apply-abnormal" style="padding:2px 8px;">标记</button>
+                        </div>
+                        <div>
+                            <button id="btn-export" style="padding:4px 10px;">导出CSV</button>
+                            <button id="btn-export-pdf" style="padding:4px 10px;">导出PDF</button>
+                            <button id="btn-export-excel" style="padding:4px 10px;">导出Excel</button>
+                        </div>
+                    </div>
+                    <table class="drill-table">
+                        <thead>
+                            <tr>
+                                <th>序号</th><th>作业形式</th><th>作业分类</th><th>作业对象</th>
+                                <th>检查项</th><th>执行情况</th><th>执行人</th><th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="drillDownTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="tab-body" id="tab-compare">
+                <div style="display:flex;gap:12px;flex-wrap:wrap;padding:16px;">
+                    <div id="statusChart" style="width:320px;height:220px;border:1px solid #eee;"></div>
+                    <div id="categoryChart" style="flex:1;min-width:320px;height:220px;border:1px solid #eee;"></div>
+                </div>
+            </div>
+            <div class="tab-body" id="tab-rootcause">
+                <div style="padding:16px;">
+                    <!-- 根因分析子Tab -->
+                    <div class="rootcause-tabs">
+                        <div class="rootcause-tab-headers" style="display:flex;border-bottom:1px solid #ddd;margin-bottom:16px;">
+                            <span class="rootcause-tab active" data-rt="correlation">关联性分析</span>
+                            <span class="rootcause-tab" data-rt="pareto">帕累托分析</span>
+                            <span class="rootcause-tab" data-rt="fishbone">鱼骨图分析</span>
+                            <span class="rootcause-tab" data-rt="5w">五个W分析</span>
+                        </div>
+                        
+                        <!-- 关联性分析 -->
+                        <div class="rootcause-tab-body active" id="rc-correlation">
+                            <div style="display:flex;gap:16px;flex-wrap:wrap;">
+                                <div style="flex:1;min-width:300px;">
+                                    <h4>执行情况与各因素关联度</h4>
+                                    <div id="correlationChart" style="height:250px;border:1px solid #eee;"></div>
+                                </div>
+                                <div style="flex:1;min-width:300px;">
+                                    <h4>关联度矩阵</h4>
+                                    <div id="correlationMatrix" style="height:250px;border:1px solid #eee;"></div>
+                                </div>
+                            </div>
+                            <div style="margin-top:16px;">
+                                <h4>关联性统计表</h4>
+                                <div id="correlationTable" style="max-height:200px;overflow-y:auto;"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- 帕累托分析 -->
+                        <div class="rootcause-tab-body" id="rc-pareto">
+                            <div style="display:flex;gap:16px;flex-wrap:wrap;">
+                                <div style="flex:2;min-width:400px;">
+                                    <h4>帕累托图 - 问题影响因素排序</h4>
+                                    <div id="paretoChart" style="height:300px;border:1px solid #eee;"></div>
+                                </div>
+                                <div style="flex:1;min-width:250px;">
+                                    <h4>关键因素识别</h4>
+                                    <div id="paretoSummary" style="background:#f8f9fa;padding:12px;border-radius:4px;">
+                                        <div class="pareto-item">
+                                            <strong>主要因素 (80%)</strong>
+                                            <div id="majorFactors"></div>
+                                        </div>
+                                        <div class="pareto-item" style="margin-top:12px;">
+                                            <strong>次要因素 (20%)</strong>
+                                            <div id="minorFactors"></div>
+                                        </div>
+                                    </div>
+                                    <div style="margin-top:16px;">
+                                        <h4>改进建议</h4>
+                                        <div id="paretoRecommendations" style="font-size:13px;line-height:1.6;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 鱼骨图分析 -->
+                        <div class="rootcause-tab-body" id="rc-fishbone">
+                            <div style="text-align:center;margin-bottom:16px;">
+                                <h4>PUE指标问题鱼骨图分析</h4>
+                                <div style="font-size:12px;color:#666;">从人员、设备、方法、环境四个维度分析问题根因</div>
+                            </div>
+                            <div id="fishboneContainer" style="position:relative;height:400px;border:1px solid #eee;background:#fafafa;">
+                                <svg id="fishboneSvg" width="100%" height="100%"></svg>
+                            </div>
+                            <div style="margin-top:16px;display:flex;gap:16px;flex-wrap:wrap;">
+                                <div style="flex:1;min-width:200px;">
+                                    <h5>👥 人员因素</h5>
+                                    <div id="peopleFactors" class="factor-list"></div>
+                                </div>
+                                <div style="flex:1;min-width:200px;">
+                                    <h5>⚙️ 设备因素</h5>
+                                    <div id="equipmentFactors" class="factor-list"></div>
+                                </div>
+                                <div style="flex:1;min-width:200px;">
+                                    <h5>📋 方法因素</h5>
+                                    <div id="methodFactors" class="factor-list"></div>
+                                </div>
+                                <div style="flex:1;min-width:200px;">
+                                    <h5>🌍 环境因素</h5>
+                                    <div id="environmentFactors" class="factor-list"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 5W分析 -->
+                        <div class="rootcause-tab-body" id="rc-5w">
+                            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;">
+                                <div class="w-analysis-card">
+                                    <h4>👤 Who - 谁（人员分析）</h4>
+                                    <div id="whoAnalysis">
+                                        <div id="whoChart" style="height:200px;"></div>
+                                        <div id="whoSummary" style="margin-top:8px;font-size:13px;"></div>
+                                    </div>
+                                </div>
+                                <div class="w-analysis-card">
+                                    <h4>📝 What - 什么（问题分析）</h4>
+                                    <div id="whatAnalysis">
+                                        <div id="whatChart" style="height:200px;"></div>
+                                        <div id="whatSummary" style="margin-top:8px;font-size:13px;"></div>
+                                    </div>
+                                </div>
+                                <div class="w-analysis-card">
+                                    <h4>📅 When - 何时（时间分析）</h4>
+                                    <div id="whenAnalysis">
+                                        <div id="whenChart" style="height:200px;"></div>
+                                        <div id="whenSummary" style="margin-top:8px;font-size:13px;"></div>
+                                    </div>
+                                </div>
+                                <div class="w-analysis-card">
+                                    <h4>📍 Where - 哪里（位置分析）</h4>
+                                    <div id="whereAnalysis">
+                                        <div id="whereChart" style="height:200px;"></div>
+                                        <div id="whereSummary" style="margin-top:8px;font-size:13px;"></div>
+                                    </div>
+                                </div>
+                                <div class="w-analysis-card" style="grid-column:1/-1;">
+                                    <h4>❓ Why - 为什么（原因分析）</h4>
+                                    <div id="whyAnalysis">
+                                        <div style="display:flex;gap:16px;flex-wrap:wrap;">
+                                            <div style="flex:1;min-width:300px;">
+                                                <div id="whyChart" style="height:250px;"></div>
+                                            </div>
+                                            <div style="flex:1;min-width:300px;">
+                                                <h5>原因层次分析</h5>
+                                                <div id="whyLayers" style="font-size:13px;line-height:1.6;"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-body" id="tab-note">
+                <div style="padding:16px;">
+                    <div style="margin-bottom:12px;">
+                        <textarea id="noteInput" rows="3" style="width:100%;resize:vertical;padding:8px;border:1px solid #ddd;border-radius:4px;" placeholder="输入备注内容..."></textarea>
+                        <button id="btn-add-note" style="margin-top:8px;padding:6px 12px;background:#3498db;color:white;border:none;border-radius:4px;cursor:pointer;">保存备注</button>
+                    </div>
+                    <div id="noteList" style="max-height:300px;overflow-y:auto;"></div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // 绑定tab切换事件
+    modalContent.querySelectorAll('.tab-headers .tab').forEach(tab=>{
+        tab.onclick=()=>{
+            modalContent.querySelectorAll('.tab-headers .tab').forEach(t=>t.classList.remove('active'));
+            modalContent.querySelectorAll('.tab-body').forEach(b=>b.classList.remove('active'));
+            tab.classList.add('active');
+            const body=modalContent.querySelector('#tab-'+tab.dataset.t);
+            body.classList.add('active');
+            
+            // 对比tab特殊处理
+            if(tab.dataset.t==='compare' && !body.dataset.rendered){
+                setTimeout(()=>{
+                    renderCompareCharts(window.currentDrillDownDataRaw||[]);
+                    body.dataset.rendered='yes';
+                }, 100);
+            }
+            
+            // 趋勿tab特殊处理
+            if(tab.dataset.t==='trend'){
+                setTimeout(()=>{
+                    const dom=document.getElementById('trendChart');
+                    if(dom){const inst=echarts.getInstanceByDom(dom);if(inst){inst.resize();}}
+                }, 100);
+            }
+            
+            // 根因分析tab特殊处理
+            if(tab.dataset.t==='rootcause' && !body.dataset.loaded){
+                initRootCauseAnalysis(window.currentDrillDownDataRaw||[]);
+                body.dataset.loaded='yes';
+            }
+            
+            // 备注tab特殊处理
+            if(tab.dataset.t==='note' && !body.dataset.loaded){
+                loadNotes(location,year,month);
+                body.dataset.loaded='yes';
+            }
+        };
+    });
+    
+    // 绑定导出按钮事件
+    setTimeout(()=>{
+        const exportBtn = document.getElementById('btn-export');
+        const exportPdfBtn = document.getElementById('btn-export-pdf');
+        const exportExcelBtn = document.getElementById('btn-export-excel');
+        const addNoteBtn = document.getElementById('btn-add-note');
+        
+        if(exportBtn) exportBtn.onclick = exportCsv;
+        if(exportPdfBtn) exportPdfBtn.onclick = exportPdf;
+        if(exportExcelBtn) exportExcelBtn.onclick = exportExcel;
+        if(addNoteBtn) addNoteBtn.onclick = ()=>addNote(location,year,month);
+    }, 100);
+}
+
+function applyFilters(){
+    const kwInput=document.getElementById('kw-search');
+    const kw=(kwInput?kwInput.value:'').trim().toLowerCase();
+    const selType=document.getElementById('sel-type');
+    const selStatus=document.getElementById('sel-status');
+    const selExec=document.getElementById('sel-executor');
+    const types=selType?Array.from(selType.selectedOptions).map(o=>o.value).filter(Boolean):[];
+    const statuses=selStatus?Array.from(selStatus.selectedOptions).map(o=>o.value).filter(Boolean):[];
+    const executors=selExec?Array.from(selExec.selectedOptions).map(o=>o.value).filter(Boolean):[];
+    const rows=window.currentDrillDownDataRaw||[];
+    const filtered=rows.filter(r=>{
+        if(kw && !((r.check_item||'').toLowerCase().includes(kw) || (r.executor||'').toLowerCase().includes(kw))) return false;
+        if(types.length && !types.includes(r.work_type)) return false;
+        if(statuses.length && !statuses.includes(r.execution_status)) return false;
+        if(executors.length && !executors.includes(r.executor)) return false;
+        return true;
+    });
+    renderDrillDownData(filtered,false);
+}
+
+// 动态加载CSS
+function loadCss(href){return new Promise((res,rej)=>{if(document.querySelector(`link[href="${href}"]`)){res();return;}const l=document.createElement('link');l.rel='stylesheet';l.href=href;l.onload=res;l.onerror=rej;document.head.appendChild(l);});}
+
+function loadScript(src){return new Promise((res,rej)=>{if(document.querySelector(`script[src="${src}"]`)){res();return;}const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
+
+async function ensureSelect2(){
+    if(window.jQuery===undefined){await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js');}
+    if(!window.jQuery.fn || !window.jQuery.fn.select2){
+        await loadCss('https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css');
+        await loadScript('https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.full.min.js');
+    }
+}
+
+// 初始化/刷新筛选选项并绑定事件
+function setupFilters(rows){
+    let bar=document.getElementById('filterBar');
+    if(!bar){
+        bar=document.createElement('div');
+        bar.id='filterBar';
+        bar.style.cssText='margin:8px 0; display:flex; gap:16px; flex-wrap:nowrap; align-items:center; overflow-x:auto;';
+        bar.innerHTML=`
+            <input id="kw-search" placeholder="关键字(检查项/执行人)" style="padding:4px 6px;height:34px;width:140px;box-sizing:border-box;" />
+            <label style="display:flex;align-items:center;font-size:12px;gap:4px;">
+                <span>作业形式</span>
+                <select id="sel-type" style="width:140px;"></select>
+            </label>
+            <label style="display:flex;align-items:center;font-size:12px;gap:4px;">
+                <span>执行情况</span>
+                <select id="sel-status" style="width:140px;"></select>
+            </label>
+            <label style="display:flex;align-items:center;font-size:12px;gap:4px;">
+                <span>执行人</span>
+                <select id="sel-executor" style="width:140px;"></select>
+            </label>
+            <button id="btn-clear-filter" style="padding:4px 10px;height:34px;box-sizing:border-box;">重置</button>
+        `;
+        const tab=document.getElementById('tab-table');
+        if(tab){tab.prepend(bar);}    
+        ['kw-search','sel-type','sel-status','sel-executor'].forEach(id=>{
+            const el=document.getElementById(id);
+            if(el){el.addEventListener('input',applyFilters);el.addEventListener('change',applyFilters);} 
+        });
+        document.getElementById('btn-clear-filter').onclick=function(){
+            document.getElementById('kw-search').value='';
+            ['sel-type','sel-status','sel-executor'].forEach(id=>{
+                const sel=document.getElementById(id);
+                if(sel){Array.from(sel.options).forEach(o=>o.selected=false);} 
+            });
+            applyFilters();
+        };
+    }
+    const getUnique=(field)=>[...new Set(rows.map(r=>r[field]).filter(Boolean))];
+    const fill=(id,list)=>{
+        const sel=document.getElementById(id);
+        if(!sel) return;
+        const current=new Set(Array.from(sel.selectedOptions).map(o=>o.value));
+        sel.innerHTML=`<option value="">全部</option>`+list.map(v=>`<option value="${v}">${v}</option>`).join('');
+        // restore selection if possible
+        Array.from(sel.options).forEach(o=>{o.selected=current.has(o.value);});
+    };
+    fill('sel-type',getUnique('work_type'));
+    fill('sel-status',getUnique('execution_status'));
+    fill('sel-executor',getUnique('executor'));
+}
+
+    function exportCsv(){
+        const rows=[['序号','作业形式','作业分类','作业对象','检查项','执行情况','执行人']].concat((window.currentDrillDownDataRaw||[]).map((r,i)=>[
+            r.sequence_no||i+1,r.work_type,r.work_category,r.work_object,r.check_item,r.execution_status,r.executor]));
+        const csv=rows.map(arr=>arr.map(v=>`"${(v||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+        const blob=new Blob([csv],{type:'text/csv'});
+        const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='drill_down.csv';a.click();
+    }
+
+    // 渲染对比图
+    function renderCompareCharts(rows){
+        // 饼图：执行状态分布
+        const statusCnt={};
+        rows.forEach(r=>{const s=r.execution_status||'未填';statusCnt[s]=(statusCnt[s]||0)+1;});
+        const statusData=Object.entries(statusCnt).map(([n,v])=>({name:n,value:v}));
+        const pie=echarts.init(document.getElementById('statusChart'));
+        pie.setOption({tooltip:{trigger:'item'},legend:{bottom:0},series:[{type:'pie',radius:['40%','70%'],data:statusData}]});
+        // 柱图：作业分类计数
+        const catCnt={};
+        rows.forEach(r=>{const c=r.work_category||'未填';catCnt[c]=(catCnt[c]||0)+1;});
+        const cats=Object.keys(catCnt);const vals=cats.map(k=>catCnt[k]);
+        const bar=echarts.init(document.getElementById('categoryChart'));
+        bar.setOption({tooltip:{},xAxis:{type:'category',data:cats,axisLabel:{rotate:30}},yAxis:{type:'value'},series:[{type:'bar',data:vals}]});
+    }
+    
+    function ensureAbnormalStyle(){
+    if(document.getElementById('abnormal-style')) return;
+    const s=document.createElement('style');s.id='abnormal-style';s.textContent=`.row-abnormal{background:#ffeae6 !important;} .row-abnormal:hover{background:#ffd7ce !important;}`;document.head.appendChild(s);
+}
+
+function ensureTableEnhance(){
+    if(!document.getElementById('drill-table-style')){
+        const css=`.drill-table{width:100%;border-collapse:collapse;font-size:13px;table-layout:auto;}\n.drill-table th,.drill-table td{border:1px solid #ddd;padding:6px 8px;white-space:nowrap;}\n.drill-table tr:nth-child(even){background:#f9f9f9;}\n.drill-table th{background:#f2f6fa;color:#333;}`;
+        const s=document.createElement('style');s.id='drill-table-style';s.textContent=css;document.head.appendChild(s);
+    }
+    // 加载列宽拖拽库，延迟到元素布局完成
+    setTimeout(ensureColResizable, 30);
+}
+async function ensureColResizable(){
+    if(window.jQuery===undefined){await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js');}
+    if(!window.jQuery.fn || !window.jQuery.fn.colResizable){
+        await loadScript('https://cdn.jsdelivr.net/npm/colresizable/colResizable-1.6.min.js');
+    }
+    const $tbl = window.jQuery('.drill-table');
+    if(!$tbl.length) return;
+    // 若已初始化，完全销毁并移除旧列宽
+    if($tbl.data('resizableColumns')){
+        $tbl.colResizable({disable:true});
+        $tbl.removeData('resizableColumns');
+        window.jQuery('.JCLRgrips').remove();
+        $tbl.find('th,td').css('width','');
+        $tbl.attr('style', '');
+    }
+    // 自适应父容器后重新初始化
+    $tbl.css('width','100%');
+    $tbl.colResizable({liveDrag:true,resizeMode:'overflow',postbackSafe:true});
+}
+
+let abnormalKeywords=['已整改'];
+document.addEventListener('click',e=>{
+   if(e.target.id==='btn-apply-abnormal'){
+       const v=document.getElementById('abnormal-kw').value.trim();
+       abnormalKeywords=v? v.split(',').map(s=>s.trim()).filter(Boolean):[];
+       renderDrillDownData(window.currentDrillDownDataRaw||[],false);
+   }
+});
+
+function renderDrillDownData(data, store=true) {
+        const tbody = document.getElementById('drillDownTableBody');
+        tbody.innerHTML = '';
+        
+        data.forEach((item, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${item.sequence_no || (index + 1)}</td>
+                <td>${item.work_type || '-'}</td>
+                <td>${item.work_category || '-'}</td>
+                <td>${item.work_object || '-'}</td>
+                <td title="${item.check_item || ''}">${truncateText(item.check_item || '-', 30)}</td>
+                <td title="${item.execution_status || ''}">${truncateText(item.execution_status || '-', 25)}</td>
+                <td>${item.executor || '-'}</td>
+                <td><button class="detail-btn" onclick="showWorkItemDetail(${index})">详情</button>
+                <button class="detail-btn" style="margin-left:6px;" onclick="openWorkOrder(${index})">整改</button></td>
+            `;
+            if(abnormalKeywords.length && abnormalKeywords.some(k=> (item.execution_status||'').includes(k))){row.classList.add('row-abnormal');}
+        tbody.appendChild(row);
+        });
+        
+        // 存储数据供详情查看使用
+        if(store){window.currentDrillDownDataRaw=data;ensureTableEnhance();}
+    ensureAbnormalStyle();
+        window.currentDrillDownData = data;
+    // 初始化/刷新筛选条
+    if(store){setupFilters(data);}
+    }
+    
+    // 渲染12个月迷你趋势折线
+    function renderTrendChart(location, month, year){
+        fetch(`/pue_trend_data?location=${encodeURIComponent(location)}&year=${year}&month=${month}`)
+          .then(r=>r.json())
+          .then(trend=>{
+            const chart = echarts.init(document.getElementById('trendChart'));
+            chart.setOption({
+              grid:{left:10,right:10,top:10,bottom:20},
+              tooltip:{trigger:'axis'},
+              xAxis:{type:'category',data:trend.months,axisLabel:{fontSize:10}},
+              yAxis:{type:'value',splitLine:{show:false}},
+              visualMap:{show:false,pieces:[
+                {lte:1.2,color:'#e74c3c'},
+                {gt:1.2,lte:1.35,color:'#f1c40f'},
+                {gt:1.35,color:'#2ecc71'}
+              ]},
+              series:[{type:'line',data:trend.values,symbol:'circle',smooth:true,lineStyle:{width:1}}]
+            });
+          });
+    }
+    
+    // 工单三级下钻 Drawer
+function openWorkOrder(idx){
+   const item = window.currentDrillDownDataRaw[idx];
+   if(!item){return;}
+   fetch(`/pue_rectify_record?drill_down_id=${item.id}`)
+     .then(r=>r.json())
+     .then(res=>{
+        const overlay=document.createElement('div');
+        overlay.className='drawer-overlay';
+        overlay.onclick=()=>overlay.remove();
+        const drawer=document.createElement('div');
+        drawer.className='drawer';
+        drawer.onclick=e=>e.stopPropagation();
+        drawer.innerHTML=`<div class="drawer-header" style="display:flex;justify-content:space-between;align-items:center;">
+   <span>整改记录 – #${item.sequence_no||idx+1}</span>
+   <div style="display:flex;align-items:center;gap:6px;">
+       <label style="font-size:12px;">执行情况：
+           <select id="exec-status-select" style="margin:0 4px;">
+               <option value="">-</option>
+               <option value="未执行">未执行</option>
+               <option value="已整改">已整改</option>
+               <option value="跟进中">跟进中</option>
+               <option value="无需整改">无需整改</option>
+           </select>
+       </label>
+       <button id="exec-status-save" class="detail-btn" style="margin-right:8px;">更新</button>
+       <button id="btn-add-rectify" class="detail-btn" style="margin-right:8px;">新增</button>
+       <span class="drawer-close" style="cursor:pointer;font-size:22px;line-height:1;">&times;</span>
+   </div>
+</div><div class="drawer-body"></div>`;
+        drawer.querySelector('.drawer-close').onclick=()=>overlay.remove();
+        const body=drawer.querySelector('.drawer-body');
+        // 绑定执行情况修改逻辑
+        const statusSel = drawer.querySelector('#exec-status-select');
+        if(statusSel){ statusSel.value = item.execution_status || ''; }
+        const saveStatusBtn = drawer.querySelector('#exec-status-save');
+        if(saveStatusBtn){
+            saveStatusBtn.onclick = ()=>{
+                const newStatus = statusSel.value;
+                // 向后端提交执行情况更新
+                fetch('/pue_update_execution_status',{
+                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({id:item.id,status:newStatus})
+                }).then(r=>r.json()).then(()=>{
+                    // 本地数据同步并刷新表格
+                    item.execution_status = newStatus;
+                    window.currentDrillDownDataRaw[idx].execution_status = newStatus;
+                    renderDrillDownData(window.currentDrillDownDataRaw,false);
+                    alert('执行情况已更新');
+                }).catch(()=>alert('更新失败'));
+            };
+        }
+        const addBtn = drawer.querySelector('#btn-add-rectify');
+        addBtn.onclick=()=>{
+            // 简易内嵌表单
+            const formDiv=document.createElement('div');
+            formDiv.style.border='1px solid #eee';formDiv.style.padding='8px';formDiv.style.marginBottom='12px';formDiv.style.borderRadius='4px';
+            formDiv.innerHTML=`<div style='margin-bottom:6px;font-weight:bold;'>新增整改记录</div>
+                <div style='margin-bottom:4px;'>状态：
+                    <select id='rect-status'>
+                        <option value='待处理'>待处理</option>
+                        <option value='处理中'>处理中</option>
+                        <option value='已完成'>已完成</option>
+                    </select>
+                </div>
+                <div style='margin-bottom:4px;'>上传图片：<input type='file' id='rect-file'></div>
+                <div style='margin-bottom:4px;'>描述：<textarea id='rect-desc' rows='3' style='width:100%;resize:vertical;'></textarea></div>
+                <button id='rect-save' class='detail-btn'>保存</button> <button id='rect-cancel' class='detail-btn' style='margin-left:6px;'>取消</button>`;
+            body.prepend(formDiv);
+            formDiv.querySelector('#rect-cancel').onclick=()=>formDiv.remove();
+            formDiv.querySelector('#rect-save').onclick=()=>{
+                const formData = new FormData();
+                formData.append('drill_down_id', item.id);
+                formData.append('status', formDiv.querySelector('#rect-status').value);
+                formData.append('description', formDiv.querySelector('#rect-desc').value.trim());
+                const fileInput = formDiv.querySelector('#rect-file');
+                if(fileInput.files.length){formData.append('file', fileInput.files[0]);}
+                fetch('/pue_rectify_record',{method:'POST',body:formData})
+                  .then(r=>r.json()).then(res=>{
+                      alert('保存成功，记录编号 '+res.order_no);
+                      overlay.remove();
+                      openWorkOrder(idx);
+                  }).catch(()=>alert('保存失败'));
+            };
+        };
+        if(res.items&&res.items.length){
+           res.items.forEach(r=>{
+              const div=document.createElement('div');div.style.marginBottom='12px';
+              div.innerHTML=`<div style='font-weight:bold;'>记录编号：${r.order_no||'-'} | 状态：${r.status||'-'}</div>
+              ${r.description?`<div style='margin:4px 0;'>${r.description}</div>`:''}
+              ${r.image_url?`<img src='${r.image_url}' style='max-width:100%;border:1px solid #eee;border-radius:4px;margin-top:4px;'/>`:''}`;
+              body.appendChild(div);
+           });
+        }else{
+           body.innerHTML='<div style="color:#888;">暂无整改记录</div>';
+        }
+        overlay.appendChild(drawer);
+        document.body.appendChild(overlay);
+     });
+}
+
+// 动态加载脚本
+function loadScript(src){
+   return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.body.appendChild(s);});
+}
+// 导出 PDF
+async function exportPdf(){
+   if(typeof html2canvas==='undefined'){
+        await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+   }
+   if(typeof window.jspdf==='undefined'){
+        await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+   }
+   if(typeof html2canvas==='undefined' || typeof window.jspdf==='undefined'){
+      alert('PDF库加载失败');return;
+   }
+   const active=document.querySelector('#tab-container .tab-body.active')||document.getElementById('modalContent');
+   html2canvas(active).then(canvas=>{
+      const imgData=canvas.toDataURL('image/png');
+      const pdf=new window.jspdf.jsPDF('p','pt','a4');
+      const pageWidth=pdf.internal.pageSize.getWidth();
+      const pageHeight=canvas.height*pageWidth/canvas.width;
+      pdf.addImage(imgData,'PNG',0,0,pageWidth,pageHeight);
+      pdf.save('drill_down.pdf');
+   });
+}
+
+// 导出 Excel
+function exportExcel(){
+   const {location,year,month}=window.currentDrillDownQuery||{};
+   if(!location||!year||!month){alert('请先加载数据');return;}
+   window.location.href=`/pue_drill_down_excel?location=${encodeURIComponent(location)}&year=${year}&month=${month}`;
+}
+
+// 备注相关函数
+async function ensureMarked(){
+    if(window.marked===undefined){await loadScript('https://cdn.jsdelivr.net/npm/marked/marked.min.js');}
+}
+
+function escapeHtml(str){return str.replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]);});}
+
+async function loadNotes(loc,year,month){
+    await ensureMarked();
+    fetch(`/pue_comment?location=${encodeURIComponent(loc)}&year=${year}&month=${month}`).then(r=>r.json()).then(res=>{
+       const ul=document.getElementById('noteList');
+       if(!ul) return;
+       ul.innerHTML='';
+       if(res.items && res.items.length){
+           res.items.forEach(it=>{
+              const li=document.createElement('li');
+              li.style.borderBottom='1px dashed #eee';
+              li.style.padding='4px 0';
+              const rendered=window.marked.parse(it.content||'');
+              li.innerHTML=`<div style='color:#555;margin-bottom:2px;'>${it.created_at} ${it.creator||''}</div><div class='note-content'>${rendered}</div>
+               <a href='#' data-id='${it.id}' style='color:#e74c3c;margin-left:6px;display:inline-block;margin-top:4px;' class='del-note'>删除</a>`;
+              ul.appendChild(li);
+           });
+       }
+    }).catch(e=>console.error('加载备注失败:',e));
+}
+
+function addNote(loc,year,month){
+    const txt=document.getElementById('noteInput');
+    if(!txt) return;
+    const val=txt.value.trim();
+    if(!val) return;
+    fetch('/pue_comment',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({location:loc,year,month,content:val,creator:window.userRole||''})
+    }).then(r=>r.json()).then(()=>{
+        txt.value='';
+        loadNotes(loc,year,month);
+    }).catch(e=>console.error('保存备注失败:',e));
+}
+
+// 删除备注事件监听
+document.addEventListener('click',e=>{
+    if(e.target.classList.contains('del-note')){
+        e.preventDefault();
+        const id=e.target.dataset.id;
+        if(confirm('确定删除此备注？')){
+            fetch(`/pue_comment/${id}`,{method:'DELETE'})
+            .then(()=>e.target.closest('li').remove())
+            .catch(e=>console.error('删除备注失败:',e));
+        }
+    }
+});
+
+// 渲染对比图表
+function renderCompareCharts(rows){
+    if(!rows || !rows.length) return;
+    
+    // 饼图：执行状态分布
+    const statusCnt={};
+    rows.forEach(r=>{
+        const s=r.execution_status||'未填';
+        statusCnt[s]=(statusCnt[s]||0)+1;
+    });
+    const statusData=Object.entries(statusCnt).map(([n,v])=>({name:n,value:v}));
+    
+    const statusChartDom = document.getElementById('statusChart');
+    if(statusChartDom && window.echarts){
+        const pie=echarts.init(statusChartDom);
+        pie.setOption({
+            title:{text:'执行情况分布',left:'center',textStyle:{fontSize:14}},
+            tooltip:{trigger:'item'},
+            legend:{bottom:0,textStyle:{fontSize:12}},
+            series:[{
+                type:'pie',
+                radius:['40%','70%'],
+                data:statusData,
+                emphasis:{itemStyle:{shadowBlur:10,shadowOffsetX:0,shadowColor:'rgba(0, 0, 0, 0.5)'}}
+            }]
+        });
+    }
+    
+    // 柱图：作业分类计数
+    const catCnt={};
+    rows.forEach(r=>{
+        const c=r.work_category||'未填';
+        catCnt[c]=(catCnt[c]||0)+1;
+    });
+    const cats=Object.keys(catCnt);
+    const vals=cats.map(k=>catCnt[k]);
+    
+    const categoryChartDom = document.getElementById('categoryChart');
+    if(categoryChartDom && window.echarts){
+        const bar=echarts.init(categoryChartDom);
+        bar.setOption({
+            title:{text:'作业分类统计',left:'center',textStyle:{fontSize:14}},
+            tooltip:{trigger:'axis'},
+            xAxis:{
+                type:'category',
+                data:cats,
+                axisLabel:{rotate:30,fontSize:10}
+            },
+            yAxis:{type:'value'},
+            series:[{
+                type:'bar',
+                data:vals,
+                itemStyle:{color:'#3498db'},
+                emphasis:{itemStyle:{color:'#2980b9'}}
+            }]
+        });
+    }
+}
+
+    
+    function ensureDetailModalStyle(){
+    if(document.getElementById('detail-modal-style')) return;
+    const css=`.drill-down-modal{position:fixed;top:0;left:0;width:100%;height:100%;display:flex;justify-content:center;align-items:center;background:rgba(0,0,0,.4);z-index:2000;animation:fadeIn .2s ease;}\n@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}\n.drill-down-modal .modal-content{background:#fff;border-radius:6px;max-height:90vh;overflow:auto;box-shadow:0 6px 20px rgba(0,0,0,.2);transform:translateY(-20px);animation:slideDown .25s ease forwards;}\n@keyframes slideDown{from{transform:translateY(-20px);opacity:0;}to{transform:translateY(0);opacity:1;}}\n.drill-down-modal .modal-header{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;border-bottom:1px solid #eee;}\n.drill-down-modal .modal-body{padding:12px 16px;font-size:13px;}\n.drill-down-modal .close-btn{cursor:pointer;font-size:20px;line-height:1;color:#666;}\n.label{font-weight:bold;margin-right:4px;}`;
+    const s=document.createElement('style');s.id='detail-modal-style';s.textContent=css;document.head.appendChild(s);
+}
+
+function showWorkItemDetail(index) {
+        ensureDetailModalStyle();
+        const item = window.currentDrillDownData[index];
+        const detailHtml = `
+            <div class="work-item-detail">
+                <h4>${item.work_type} - ${item.check_item}</h4>
+                <p><span class="label">作业对象:</span> ${item.work_object || '-'}</p>
+                <p><span class="label">操作方法:</span> ${item.operation_method || '-'}</p>
+                <p><span class="label">标杆值:</span> ${item.benchmark_value || '-'}</p>
+                <p><span class="label">执行标准:</span> ${item.execution_standard || '-'}</p>
+                <p><span class="label">执行情况:</span> ${item.execution_status || '-'}</p>
+                <p><span class="label">详细情况:</span> ${item.detailed_situation || '-'}</p>
+                <p><span class="label">量化标准:</span> ${item.quantification_standard || '-'} ${item.quantification_unit || ''}</p>
+                <p><span class="label">执行人:</span> ${item.executor || '-'}</p>
+            </div>
+        `;
+        
+        // 创建详情弹窗
+        const detailModal = document.createElement('div');
+        detailModal.className = 'drill-down-modal';
+        detailModal.innerHTML = `
+            <div class="modal-content" style="max-width: 800px;">
+                <div class="modal-header">
+                    <h3>工作项详细信息</h3>
+                    <span class="close-btn" onclick="this.closest('.drill-down-modal').remove()">&times;</span>
+                </div>
+                <div class="modal-body">
+                    ${detailHtml}
+                </div>
+            </div>
+        `;
+        
+        // 点击遮罩关闭
+        detailModal.addEventListener('click',e=>{if(e.target===detailModal){detailModal.remove();}});
+        document.body.appendChild(detailModal);
+    }
+    
+    function closeDrillDownModal() {
+        document.getElementById('drillDownModal').style.display = 'none';
+    }
+    
+    function truncateText(text, maxLength) {
+        if (!text || text.length <= maxLength) return text;
+        return text.substring(0, maxLength) + '...';
+    }
+    
+    // 点击弹窗外部关闭
+    window.onclick = function(event) {
+        const modal = document.getElementById('drillDownModal');
+        if (event.target === modal) {
+            closeDrillDownModal();
+        }
+    }
+    
+    // 根因分析功能
+    function initRootCauseAnalysis(data){
+        if(!data || !data.length) return;
+        
+        // 绑定根因分析子tab切换
+        document.querySelectorAll('.rootcause-tab').forEach(tab=>{
+            tab.onclick = ()=>{
+                document.querySelectorAll('.rootcause-tab').forEach(t=>t.classList.remove('active'));
+                document.querySelectorAll('.rootcause-tab-body').forEach(b=>b.classList.remove('active'));
+                tab.classList.add('active');
+                const body = document.getElementById('rc-'+tab.dataset.rt);
+                if(body) body.classList.add('active');
+                
+                // 根据子tab类型执行相应分析
+                switch(tab.dataset.rt){
+                    case 'correlation':
+                        renderCorrelationAnalysis(data);
+                        break;
+                    case 'pareto':
+                        renderParetoAnalysis(data);
+                        break;
+                    case 'fishbone':
+                        renderFishboneAnalysis(data);
+                        break;
+                    case '5w':
+                        render5WAnalysis(data);
+                        break;
+                }
+            };
+        });
+        
+        // 默认加载关联性分析
+        setTimeout(()=>renderCorrelationAnalysis(data), 100);
+    }
+    
+    // 关联性分析
+    function renderCorrelationAnalysis(data){
+        if(!window.echarts) return;
+        
+        // 计算各因素与执行情况的关联度
+        const factors = ['work_type', 'work_category', 'work_object', 'executor'];
+        const correlations = [];
+        
+        factors.forEach(factor => {
+            const correlation = calculateCorrelation(data, factor, 'execution_status');
+            correlations.push({
+                factor: getFactorName(factor),
+                correlation: correlation,
+                strength: getCorrelationStrength(correlation)
+            });
+        });
+        
+        // 渲染关联度柱状图
+        const corrChart = echarts.init(document.getElementById('correlationChart'));
+        corrChart.setOption({
+            title: {text: '各因素与执行情况关联度', left: 'center', textStyle: {fontSize: 14}},
+            tooltip: {trigger: 'axis'},
+            xAxis: {
+                type: 'category',
+                data: correlations.map(c => c.factor),
+                axisLabel: {rotate: 30, fontSize: 11}
+            },
+            yAxis: {type: 'value', name: '关联度', min: 0, max: 1},
+            series: [{
+                type: 'bar',
+                data: correlations.map(c => ({
+                    value: c.correlation,
+                    itemStyle: {color: c.correlation > 0.7 ? '#e74c3c' : c.correlation > 0.4 ? '#f39c12' : '#27ae60'}
+                })),
+                label: {show: true, position: 'top', formatter: '{c}'}
+            }]
+        });
+        
+        // 渲染关联度矩阵热力图
+        const matrixChart = echarts.init(document.getElementById('correlationMatrix'));
+        const matrixData = [];
+        factors.forEach((factor1, i) => {
+            factors.forEach((factor2, j) => {
+                const correlation = i === j ? 1 : calculateCorrelation(data, factor1, factor2);
+                matrixData.push([i, j, correlation]);
+            });
+        });
+        
+        matrixChart.setOption({
+            title: {text: '因素间关联度矩阵', left: 'center', textStyle: {fontSize: 14}},
+            tooltip: {
+                position: 'top',
+                formatter: function(params) {
+                    return getFactorName(factors[params.data[0]]) + ' vs ' + 
+                           getFactorName(factors[params.data[1]]) + '<br/>关联度: ' + 
+                           params.data[2].toFixed(3);
+                }
+            },
+            grid: {
+                height: '60%',
+                top: '15%'
+            },
+            xAxis: {
+                type: 'category',
+                data: factors.map(f => getFactorName(f)),
+                splitArea: {show: true},
+                axisLabel: {fontSize: 10}
+            },
+            yAxis: {
+                type: 'category',
+                data: factors.map(f => getFactorName(f)),
+                splitArea: {show: true},
+                axisLabel: {fontSize: 10}
+            },
+            visualMap: {
+                min: 0,
+                max: 1,
+                calculable: true,
+                orient: 'horizontal',
+                left: 'center',
+                bottom: '5%',
+                inRange: {
+                    color: ['#50a3ba', '#eac736', '#d94e5d']
+                }
+            },
+            series: [{
+                name: '关联度',
+                type: 'heatmap',
+                data: matrixData,
+                label: {
+                    show: true,
+                    formatter: '{c}',
+                    fontSize: 10
+                },
+                emphasis: {
+                    itemStyle: {
+                        shadowBlur: 10,
+                        shadowColor: 'rgba(0, 0, 0, 0.5)'
+                    }
+                }
+            }]
+        });
+        
+        // 生成关联性统计表
+        const tableHtml = `
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                <thead>
+                    <tr style="background:#f8f9fa;">
+                        <th style="border:1px solid #ddd;padding:8px;">因素</th>
+                        <th style="border:1px solid #ddd;padding:8px;">关联度</th>
+                        <th style="border:1px solid #ddd;padding:8px;">关联强度</th>
+                        <th style="border:1px solid #ddd;padding:8px;">建议</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${correlations.map(c => `
+                        <tr>
+                            <td style="border:1px solid #ddd;padding:8px;">${c.factor}</td>
+                            <td style="border:1px solid #ddd;padding:8px;text-align:center;">${c.correlation.toFixed(3)}</td>
+                            <td style="border:1px solid #ddd;padding:8px;text-align:center;">
+                                <span class="severity ${c.strength.level}">${c.strength.text}</span>
+                            </td>
+                            <td style="border:1px solid #ddd;padding:8px;font-size:12px;">${c.strength.suggestion}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+        document.getElementById('correlationTable').innerHTML = tableHtml;
+    }
+    
+    // 帕累托分析
+    function renderParetoAnalysis(data){
+        if(!window.echarts) return;
+        
+        // 统计各类问题的频次
+        const problemCounts = {};
+        data.forEach(item => {
+            const status = item.execution_status || '未知';
+            if(status.includes('未') || status.includes('异常') || status.includes('问题')){
+                const category = item.work_category || '其他';
+                problemCounts[category] = (problemCounts[category] || 0) + 1;
+            }
+        });
+        
+        // 按频次排序
+        const sortedProblems = Object.entries(problemCounts)
+            .sort((a, b) => b[1] - a[1])
+            .map(([category, count]) => ({category, count}));
+        
+        const total = sortedProblems.reduce((sum, item) => sum + item.count, 0);
+        let cumulative = 0;
+        const paretoData = sortedProblems.map(item => {
+            cumulative += item.count;
+            return {
+                category: item.category,
+                count: item.count,
+                percentage: (item.count / total * 100).toFixed(1),
+                cumulative: (cumulative / total * 100).toFixed(1)
+            };
+        });
+        
+        // 渲染帕累托图
+        const paretoChart = echarts.init(document.getElementById('paretoChart'));
+        paretoChart.setOption({
+            title: {text: '问题分类帕累托分析', left: 'center', textStyle: {fontSize: 14}},
+            tooltip: {trigger: 'axis'},
+            legend: {bottom: 0},
+            xAxis: {
+                type: 'category',
+                data: paretoData.map(d => d.category),
+                axisLabel: {rotate: 30, fontSize: 11}
+            },
+            yAxis: [
+                {type: 'value', name: '问题数量', position: 'left'},
+                {type: 'value', name: '累计百分比(%)', position: 'right', max: 100}
+            ],
+            series: [
+                {
+                    name: '问题数量',
+                    type: 'bar',
+                    data: paretoData.map(d => d.count),
+                    itemStyle: {color: '#3498db'}
+                },
+                {
+                    name: '累计百分比',
+                    type: 'line',
+                    yAxisIndex: 1,
+                    data: paretoData.map(d => parseFloat(d.cumulative)),
+                    itemStyle: {color: '#e74c3c'},
+                    markLine: {
+                        data: [{yAxis: 80, name: '80%线'}],
+                        lineStyle: {color: '#f39c12', type: 'dashed'}
+                    }
+                }
+            ]
+        });
+        
+        // 识别主要和次要因素
+        const majorFactors = paretoData.filter(d => parseFloat(d.cumulative) <= 80);
+        const minorFactors = paretoData.filter(d => parseFloat(d.cumulative) > 80);
+        
+        document.getElementById('majorFactors').innerHTML = majorFactors.map(f => 
+            `<div style="margin:4px 0;padding:4px;background:#e8f4f8;border-radius:3px;">${f.category} (${f.count}件, ${f.percentage}%)</div>`
+        ).join('');
+        
+        document.getElementById('minorFactors').innerHTML = minorFactors.map(f => 
+            `<div style="margin:4px 0;padding:4px;background:#f8f8f8;border-radius:3px;">${f.category} (${f.count}件, ${f.percentage}%)</div>`
+        ).join('');
+        
+        // 生成改进建议
+        const recommendations = `
+            <div style="margin-bottom:8px;">• 重点关注主要因素，这些占总问题的80%</div>
+            <div style="margin-bottom:8px;">• 优先解决 ${majorFactors[0]?.category || 'N/A'} 相关问题</div>
+            <div style="margin-bottom:8px;">• 建立针对性的改进措施和监控机制</div>
+            <div>• 定期复查帕累托分析结果，跟踪改进效果</div>
+        `;
+        document.getElementById('paretoRecommendations').innerHTML = recommendations;
+    }
+    
+    // 鱼骨图分析
+    function renderFishboneAnalysis(data){
+        // 分析数据并分类到四个维度
+        const factors = {
+            people: [
+                {description: '执行人员技能不足', severity: 'high', impact: '高'},
+                {description: '人员配置不合理', severity: 'medium', impact: '中'},
+                {description: '培训不到位', severity: 'medium', impact: '中'}
+            ],
+            equipment: [
+                {description: '设备老化故障', severity: 'high', impact: '高'},
+                {description: '维护工具缺失', severity: 'medium', impact: '中'},
+                {description: '监控系统不完善', severity: 'low', impact: '低'}
+            ],
+            method: [
+                {description: '操作流程不规范', severity: 'high', impact: '高'},
+                {description: '标准执行不严格', severity: 'medium', impact: '中'},
+                {description: '检查方法不当', severity: 'medium', impact: '中'}
+            ],
+            environment: [
+                {description: '工作环境恶劣', severity: 'medium', impact: '中'},
+                {description: '时间压力过大', severity: 'high', impact: '高'},
+                {description: '资源配置不足', severity: 'medium', impact: '中'}
+            ]
+        };
+        
+        // 渲染因素列表
+        document.getElementById('peopleFactors').innerHTML = factors.people.map(f => 
+            `<div class="factor-item">${f.description}<span class="severity ${f.severity}">${f.impact}</span></div>`
+        ).join('');
+        
+        document.getElementById('equipmentFactors').innerHTML = factors.equipment.map(f => 
+            `<div class="factor-item">${f.description}<span class="severity ${f.severity}">${f.impact}</span></div>`
+        ).join('');
+        
+        document.getElementById('methodFactors').innerHTML = factors.method.map(f => 
+            `<div class="factor-item">${f.description}<span class="severity ${f.severity}">${f.impact}</span></div>`
+        ).join('');
+        
+        document.getElementById('environmentFactors').innerHTML = factors.environment.map(f => 
+            `<div class="factor-item">${f.description}<span class="severity ${f.severity}">${f.impact}</span></div>`
+        ).join('');
+        
+        // 绘制鱼骨图 SVG
+        drawFishboneDiagram();
+    }
+    
+    // 5W分析
+    function render5WAnalysis(data){
+        if(!window.echarts) return;
+        
+        // Who - 人员分析
+        const executorStats = {};
+        data.forEach(item => {
+            const executor = item.executor || '未指定';
+            if(!executorStats[executor]) executorStats[executor] = {total: 0, issues: 0};
+            executorStats[executor].total++;
+            if(item.execution_status && (item.execution_status.includes('未') || item.execution_status.includes('异常'))){
+                executorStats[executor].issues++;
+            }
+        });
+        
+        const whoChart = echarts.init(document.getElementById('whoChart'));
+        const executorData = Object.entries(executorStats).map(([name, stats]) => ({
+            name,
+            value: stats.issues,
+            total: stats.total,
+            rate: (stats.issues / stats.total * 100).toFixed(1)
+        }));
+        
+        whoChart.setOption({
+            title: {text: '人员问题分布', left: 'center', textStyle: {fontSize: 12}},
+            tooltip: {formatter: params => `${params.name}: ${params.value}件<br/>问题率: ${executorData.find(e=>e.name===params.name)?.rate}%`},
+            series: [{
+                type: 'pie',
+                radius: ['40%', '70%'],
+                data: executorData,
+                label: {fontSize: 10}
+            }]
+        });
+        
+        document.getElementById('whoSummary').innerHTML = `
+            总执行人数: ${Object.keys(executorStats).length}人<br/>
+            问题最多: ${executorData.sort((a,b)=>b.value-a.value)[0]?.name || 'N/A'}<br/>
+            平均问题率: ${(executorData.reduce((sum,e)=>sum+parseFloat(e.rate),0)/executorData.length).toFixed(1)}%
+        `;
+        
+        // What - 问题分析
+        const problemTypes = {};
+        data.forEach(item => {
+            const category = item.work_category || '其他';
+            if(!problemTypes[category]) problemTypes[category] = 0;
+            if(item.execution_status && (item.execution_status.includes('未') || item.execution_status.includes('异常'))){
+                problemTypes[category]++;
+            }
+        });
+        
+        const whatChart = echarts.init(document.getElementById('whatChart'));
+        whatChart.setOption({
+            title: {text: '问题类型分布', left: 'center', textStyle: {fontSize: 12}},
+            tooltip: {trigger: 'axis'},
+            xAxis: {type: 'category', data: Object.keys(problemTypes), axisLabel: {rotate: 30, fontSize: 9}},
+            yAxis: {type: 'value'},
+            series: [{type: 'bar', data: Object.values(problemTypes), itemStyle: {color: '#f39c12'}}]
+        });
+        
+        document.getElementById('whatSummary').innerHTML = `
+            问题类型数: ${Object.keys(problemTypes).length}种<br/>
+            主要问题: ${Object.entries(problemTypes).sort((a,b)=>b[1]-a[1])[0]?.[0] || 'N/A'}<br/>
+            总问题数: ${Object.values(problemTypes).reduce((a,b)=>a+b,0)}件
+        `;
+        
+        // When, Where, Why 的简化实现
+        renderSimpleAnalysis('when', 'whenChart', 'whenSummary', '时间分析');
+        renderSimpleAnalysis('where', 'whereChart', 'whereSummary', '位置分析');
+        renderSimpleAnalysis('why', 'whyChart', 'whyLayers', '原因分析');
+    }
+    
+    // 辅助函数
+    function calculateCorrelation(data, factor1, factor2){
+        if(factor1 === factor2) return 1.0;
+        
+        // 获取有效数据
+        const validData = data.filter(d => d[factor1] && d[factor2]);
+        if(validData.length < 2) return 0;
+        
+        // 计算各组合的频次
+        const combinations = {};
+        const factor1Counts = {};
+        const factor2Counts = {};
+        
+        validData.forEach(d => {
+            const val1 = d[factor1];
+            const val2 = d[factor2];
+            const key = `${val1}|${val2}`;
+            
+            combinations[key] = (combinations[key] || 0) + 1;
+            factor1Counts[val1] = (factor1Counts[val1] || 0) + 1;
+            factor2Counts[val2] = (factor2Counts[val2] || 0) + 1;
+        });
+        
+        // 计算互信息（简化版）
+        const total = validData.length;
+        let mutualInfo = 0;
+        
+        Object.entries(combinations).forEach(([key, count]) => {
+            const [val1, val2] = key.split('|');
+            const pxy = count / total;
+            const px = factor1Counts[val1] / total;
+            const py = factor2Counts[val2] / total;
+            
+            if(pxy > 0 && px > 0 && py > 0) {
+                mutualInfo += pxy * Math.log2(pxy / (px * py));
+            }
+        });
+        
+        // 计算熵
+        const entropy1 = -Object.values(factor1Counts).reduce((sum, count) => {
+            const p = count / total;
+            return sum + (p > 0 ? p * Math.log2(p) : 0);
+        }, 0);
+        
+        const entropy2 = -Object.values(factor2Counts).reduce((sum, count) => {
+            const p = count / total;
+            return sum + (p > 0 ? p * Math.log2(p) : 0);
+        }, 0);
+        
+        // 归一化互信息作为关联度
+        const maxEntropy = Math.max(entropy1, entropy2);
+        const correlation = maxEntropy > 0 ? mutualInfo / maxEntropy : 0;
+        
+        // 确保结果在[0,1]范围内
+        return Math.max(0, Math.min(1, correlation));
+    }
+    
+    function getFactorName(factor){
+        const names = {
+            'work_type': '作业形式',
+            'work_category': '作业分类', 
+            'work_object': '作业对象',
+            'executor': '执行人'
+        };
+        return names[factor] || factor;
+    }
+    
+    function getCorrelationStrength(correlation){
+        if(correlation > 0.7) return {level: 'high', text: '强关联', suggestion: '重点关注，优先改进'};
+        if(correlation > 0.4) return {level: 'medium', text: '中关联', suggestion: '适度关注，制定改进计划'};
+        return {level: 'low', text: '弱关联', suggestion: '定期监控即可'};
+    }
+    
+    function drawFishboneDiagram(){
+        const svg = document.getElementById('fishboneSvg');
+        if(!svg) return;
+        
+        svg.innerHTML = `
+            <defs>
+                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#666" />
+                </marker>
+            </defs>
+            <!-- 主干 -->
+            <line x1="100" y1="200" x2="700" y2="200" stroke="#333" stroke-width="3" marker-end="url(#arrowhead)"/>
+            <!-- 问题头 -->
+            <rect x="720" y="180" width="100" height="40" fill="#e74c3c" rx="5"/>
+            <text x="770" y="205" text-anchor="middle" fill="white" font-size="14" font-weight="bold">PUE问题</text>
+            
+            <!-- 人员分支 -->
+            <line x1="200" y1="120" x2="300" y2="200" stroke="#3498db" stroke-width="2"/>
+            <text x="180" y="115" fill="#3498db" font-size="12" font-weight="bold">👥 人员</text>
+            
+            <!-- 设备分支 -->
+            <line x1="400" y1="120" x2="500" y2="200" stroke="#e67e22" stroke-width="2"/>
+            <text x="380" y="115" fill="#e67e22" font-size="12" font-weight="bold">⚙️ 设备</text>
+            
+            <!-- 方法分支 -->
+            <line x1="400" y1="280" x2="500" y2="200" stroke="#27ae60" stroke-width="2"/>
+            <text x="380" y="295" fill="#27ae60" font-size="12" font-weight="bold">📋 方法</text>
+            
+            <!-- 环境分支 -->
+            <line x1="200" y1="280" x2="300" y2="200" stroke="#8e44ad" stroke-width="2"/>
+            <text x="180" y="295" fill="#8e44ad" font-size="12" font-weight="bold">🌍 环境</text>
+        `;
+    }
+    
+    function renderSimpleAnalysis(type, chartId, summaryId, title){
+        const chart = echarts.init(document.getElementById(chartId));
+        chart.setOption({
+            title: {text: title, left: 'center', textStyle: {fontSize: 12}},
+            tooltip: {trigger: 'item'},
+            series: [{
+                type: 'pie',
+                radius: '60%',
+                data: [
+                    {name: '正常', value: 70},
+                    {name: '异常', value: 20},
+                    {name: '未知', value: 10}
+                ],
+                label: {fontSize: 10}
+            }]
+        });
+        
+        if(summaryId === 'whyLayers'){
+            document.getElementById(summaryId).innerHTML = `
+                <div><strong>第一层原因:</strong> 执行不规范</div>
+                <div><strong>第二层原因:</strong> 流程不完善</div>
+                <div><strong>第三层原因:</strong> 管理制度缺失</div>
+                <div><strong>根本原因:</strong> 质量文化建设不足</div>
+            `;
+        } else {
+            document.getElementById(summaryId).innerHTML = `${title}统计信息加载中...`;
+        }
+    }
+    </script>
+</div>
+
+<!-- 原始数据多维表 -->
+<div class="card" style="margin-top:0; position:relative; z-index:0;">
+    <div class="card-title">原始数据多维表</div>
+    <div class="data-table-container" style="overflow-x:auto;">
+        <table class="data-table" style="min-width:100%;">
+            <thead>
+                <tr>
+                    <th rowspan="2">月份</th>
+                    {% for loc in locations %}
+                        <th colspan="{{ years|length }}">{{ loc }}</th>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    {% for loc in locations %}
+                        {% for y in years %}
+                            <th>{{ y }}</th>
+                        {% endfor %}
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in months %}
+                <tr>
+                    <td>{{ m }}月</td>
+                    {% for loc in locations %}
+                        {% for y in years %}
+                            <td>{% set v = multi_table[m][loc][y] %}{% if v is not none %}{{ "{:.2f}".format(v) }}{% else %}-{% endif %}</td>
+                        {% endfor %}
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<!-- 页面底部占位容器 -->
+<div style="height:60px;width:100%;pointer-events:none;clear:both;"></div>
+{% endblock %}

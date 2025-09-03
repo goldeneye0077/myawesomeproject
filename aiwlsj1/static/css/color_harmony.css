@@ -1,0 +1,443 @@
+/* 协调配色方案 - 专门解决顶部横幅和左侧导航的协调性问题 */
+
+/* 方案一：专业蓝色系 - 推荐 */
+.theme-professional {
+    /* 顶部横幅：深蓝渐变 */
+    --header-bg: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+    --header-text: #ffffff;
+    
+    /* 侧边栏：浅灰蓝色 */
+    --sidebar-bg: #f8fafc;
+    --sidebar-border: #e2e8f0;
+    --sidebar-text: #475569;
+    --sidebar-hover: #f1f5f9;
+    --sidebar-active: #dbeafe;
+    --sidebar-active-text: #1d4ed8;
+}
+
+/* 方案二：现代灰色系 */
+.theme-modern {
+    /* 顶部横幅：深灰渐变 */
+    --header-bg: linear-gradient(135deg, #374151 0%, #6b7280 100%);
+    --header-text: #ffffff;
+    
+    /* 侧边栏：纯白色 */
+    --sidebar-bg: #ffffff;
+    --sidebar-border: #e5e7eb;
+    --sidebar-text: #374151;
+    --sidebar-hover: #f9fafb;
+    --sidebar-active: #f3f4f6;
+    --sidebar-active-text: #111827;
+}
+
+/* 方案三：温和绿色系 */
+.theme-nature {
+    /* 顶部横幅：绿色渐变 */
+    --header-bg: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    --header-text: #ffffff;
+    
+    /* 侧边栏：浅绿灰色 */
+    --sidebar-bg: #f0fdf4;
+    --sidebar-border: #dcfce7;
+    --sidebar-text: #374151;
+    --sidebar-hover: #ecfdf5;
+    --sidebar-active: #d1fae5;
+    --sidebar-active-text: #065f46;
+}
+
+/* 默认应用专业蓝色系主题 */
+:root {
+    --header-bg: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+    --header-text: #ffffff;
+    --sidebar-bg: #f8fafc;
+    --sidebar-border: #e2e8f0;
+    --sidebar-text: #475569;
+    --sidebar-hover: #f1f5f9;
+    --sidebar-active: #dbeafe;
+    --sidebar-active-text: #1d4ed8;
+    
+    /* 通用颜色 */
+    --content-bg: #ffffff;
+    --shadow-light: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-medium: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --border-radius: 0.75rem;
+}
+
+/* 重新定义顶部横幅样式 */
+.header {
+    background: var(--header-bg) !important;
+    color: var(--header-text) !important;
+    box-shadow: var(--shadow-medium) !important;
+    border-radius: var(--border-radius) !important;
+    padding: 1.25rem 2rem !important;
+    margin-bottom: 0 !important;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.header:hover {
+    background: var(--header-bg) !important;
+    filter: brightness(1.05);
+}
+
+/* 横幅内容布局 */
+.header {
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.header-content {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: 100% !important;
+    padding: 0 160px 0 2rem !important; /* 给logo留出空间 */
+    position: relative !important;
+    z-index: 2 !important;
+}
+
+/* Logo背景区域 */
+.header-logo-bg {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    width: 140px !important;
+    background: linear-gradient(90deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 70%, transparent 100%) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    padding-left: 0 !important;
+    z-index: 1 !important;
+    backdrop-filter: blur(1px) !important;
+}
+
+.logo-image {
+    height: 100% !important; /* 与横幅高度完全一致 */
+    width: auto !important;
+    max-width: 130px !important;
+    object-fit: contain !important;
+    filter: brightness(1.1) contrast(1.1) drop-shadow(0 2px 8px rgba(0,0,0,0.3)) !important;
+    transition: all 0.4s ease !important;
+    opacity: 0.95 !important;
+}
+
+.logo-image:hover {
+    transform: scale(1.02) !important;
+    filter: brightness(1.2) contrast(1.15) drop-shadow(0 3px 12px rgba(0,0,0,0.4)) !important;
+    opacity: 1 !important;
+}
+
+.header h1 {
+    color: var(--header-text) !important;
+    font-size: 2.25rem !important;
+    font-weight: 600 !important;
+    margin: 0 !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.header h1 a {
+    color: inherit !important;
+    text-decoration: none !important;
+    transition: all 0.3s ease;
+}
+
+.header h1 a:hover {
+    color: inherit !important;
+    text-decoration: none !important;
+    transform: translateY(-1px);
+}
+
+/* 移除分割线 */
+.header-divider {
+    display: none !important;
+}
+
+/* 重新定义侧边栏样式 */
+.sidebar {
+    background: var(--sidebar-bg) !important;
+    border: 1px solid var(--sidebar-border) !important;
+    border-radius: var(--border-radius) var(--border-radius) var(--border-radius) 0 !important;
+    box-shadow: var(--shadow-light) !important;
+    margin: 2px 0 1rem 0 !important;
+    padding: 1.5rem 0 !important;
+    height: calc(100vh - 1rem - 2px - 72px) !important; /* 响应式高度：视窗高度 - 下边距 - 上边距 - 横幅高度 */
+    min-height: 500px !important; /* 最小高度 */
+    overflow-y: auto !important; /* 内容溢出时滚动 */
+}
+
+/* 导航菜单标题 */
+.sidebar > a {
+    color: var(--sidebar-text) !important;
+    padding: 0 1.5rem 1rem 1.5rem !important;
+    border-bottom: 1px solid var(--sidebar-border) !important;
+    margin-bottom: 1rem !important;
+}
+
+.sidebar > a .fs-4 {
+    font-weight: 600 !important;
+    font-size: 1.125rem !important;
+    color: #000000 !important;
+}
+
+/* 导航项基础样式 */
+.sidebar .nav-pills .nav-item {
+    margin: 0.25rem 1rem !important;
+    border: none !important;
+    border-radius: calc(var(--border-radius) - 0.25rem) !important;
+}
+
+.sidebar .nav-pills .nav-link {
+    color: #000000 !important;
+    background: transparent !important;
+    border-radius: var(--border-radius) !important;
+    margin: 0.125rem 0.5rem !important;
+    padding: 0.5rem 1rem !important;
+    font-weight: 500 !important;
+    transition: all 0.2s ease !important;
+    border: 1px solid transparent !important;
+}
+
+.sidebar .nav-pills .nav-link:hover {
+    background: var(--sidebar-hover) !important;
+    color: var(--sidebar-active-text) !important;
+    border-color: var(--sidebar-border) !important;
+    transform: translateX(2px);
+}
+
+.sidebar .nav-pills .nav-link.active,
+.sidebar .nav-pills .nav-link[aria-expanded="true"] {
+    background: var(--sidebar-active) !important;
+    color: var(--sidebar-active-text) !important;
+    font-weight: 600 !important;
+    border-color: var(--sidebar-border) !important;
+}
+
+/* 子菜单样式 */
+.collapse .btn-toggle-nav {
+    background: rgba(0, 0, 0, 0.02) !important;
+    border: 1px solid var(--sidebar-border) !important;
+    border-radius: calc(var(--border-radius) - 0.25rem) !important;
+    margin: 0.5rem 1rem !important;
+    padding: 0.5rem 0 !important;
+}
+
+.collapse .btn-toggle-nav .nav-link {
+    color: var(--sidebar-text) !important;
+    padding: 0.5rem 1rem !important;
+    font-size: 0.875rem !important;
+    margin: 0.125rem 0.5rem !important;
+    border-radius: calc(var(--border-radius) - 0.5rem) !important;
+}
+
+.collapse .btn-toggle-nav .nav-link:hover {
+    background: var(--sidebar-hover) !important;
+    color: var(--sidebar-active-text) !important;
+}
+
+.collapse .btn-toggle-nav .nav-link.active {
+    background: var(--sidebar-active) !important;
+    color: var(--sidebar-active-text) !important;
+    font-weight: 600 !important;
+}
+
+/* 分割线 */
+.sidebar .border-top {
+    border-color: var(--sidebar-border) !important;
+    margin: 1rem 1.5rem !important;
+    opacity: 0.6;
+}
+
+/* 预览链接特殊样式 */
+.sidebar .nav-link[target="_blank"] {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+    color: white !important;
+    font-weight: 600 !important;
+    text-align: center !important;
+    margin: 0.25rem 1rem !important;
+}
+
+.sidebar .nav-link[target="_blank"]:hover {
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important;
+    color: white !important;
+    transform: translateY(-1px) !important;
+    box-shadow: var(--shadow-medium) !important;
+}
+
+/* 内容区域 */
+.content {
+    background: var(--content-bg) !important;
+    border: 1px solid var(--sidebar-border) !important;
+    border-radius: var(--border-radius) 0 0 0 !important;
+    box-shadow: var(--shadow-light) !important;
+    margin: 2px 0 1rem 2px !important;
+    padding: 2rem !important;
+    height: calc(100vh - 1rem - 2px - 72px) !important; /* 与sidebar保持一致的高度 */
+    min-height: 500px !important;
+    overflow-y: auto !important; /* 内容溢出时滚动 */
+    box-sizing: border-box !important;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .header {
+        padding: 1rem 1rem !important;
+    }
+    
+    .header-content {
+        padding: 0 120px 0 1rem !important; /* 缩小logo区域 */
+    }
+    
+    .header-logo-bg {
+        width: 100px !important;
+    }
+    
+    .logo-image {
+        height: 100% !important;
+        max-width: 80px !important;
+    }
+    
+    .header h1 {
+        font-size: 1.875rem !important;
+    }
+    
+    .sidebar {
+        margin: 2px 0.5rem 0.5rem 0 !important;
+        border-radius: var(--border-radius) !important;
+        height: calc(100vh - 0.5rem - 2px - 72px) !important; /* 平板端高度调整 */
+        min-height: 400px !important;
+    }
+    
+    .content {
+        margin: 2px 0 0.5rem 2px !important;
+        border-radius: var(--border-radius) 0 0 0 !important;
+        padding: 1rem !important;
+        height: calc(100vh - 0.5rem - 2px - 72px) !important; /* 与sidebar保持一致 */
+        min-height: 400px !important;
+    }
+}
+
+/* 超小屏幕适配 */
+@media (max-width: 480px) {
+    .header-content {
+        padding: 0 80px 0 0.5rem !important; /* 进一步缩小 */
+    }
+    
+    .header-logo-bg {
+        width: 70px !important;
+    }
+    
+    .logo-image {
+        max-height: 32px !important;
+        max-width: 60px !important;
+    }
+    
+    .header h1 {
+        font-size: 1.5rem !important;
+    }
+    
+    .header h1 a {
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+}
+
+/* 主题切换类 */
+body.theme-modern {
+    --header-bg: linear-gradient(135deg, #374151 0%, #6b7280 100%);
+    --header-text: #f9fafb;
+    --sidebar-bg: #ffffff;
+    --sidebar-text: #374151;
+    --sidebar-hover: #f3f4f6;
+    --sidebar-active: #e5e7eb;
+}
+
+body.theme-modern .header-logo-bg {
+    background: linear-gradient(90deg, rgba(249,250,251,0.2) 0%, rgba(249,250,251,0.1) 70%, transparent 100%) !important;
+}
+
+body.theme-modern .sidebar .nav-link[target="_blank"] {
+    background: linear-gradient(135deg, #374151 0%, #6b7280 100%) !important;
+    color: white !important;
+    font-weight: 600 !important;
+}
+
+body.theme-modern .sidebar .nav-link[target="_blank"]:hover {
+    background: linear-gradient(135deg, #1f2937 0%, #374151 100%) !important;
+    color: white !important;
+    transform: translateY(-1px) !important;
+    box-shadow: var(--shadow-medium) !important;
+}
+
+body.theme-nature {
+    --header-bg: linear-gradient(135deg, #065f46 0%, #10b981 100%);
+    --header-text: #f0fdf4;
+    --sidebar-bg: #f0fdf4;
+    --sidebar-text: #065f46;
+    --sidebar-hover: #dcfce7;
+    --sidebar-active: #bbf7d0;
+}
+
+body.theme-nature .header-logo-bg {
+    background: linear-gradient(90deg, rgba(240,253,244,0.25) 0%, rgba(240,253,244,0.12) 70%, transparent 100%) !important;
+}
+
+body.theme-nature .sidebar .nav-link[target="_blank"] {
+    background: linear-gradient(135deg, #065f46 0%, #10b981 100%) !important;
+    color: white !important;
+    font-weight: 600 !important;
+}
+
+body.theme-nature .sidebar .nav-link[target="_blank"]:hover {
+    background: linear-gradient(135deg, #064e3b 0%, #059669 100%) !important;
+    color: white !important;
+    transform: translateY(-1px) !important;
+    box-shadow: var(--shadow-medium) !important;
+}
+
+/* 默认主题（蓝色）logo背景优化 */
+body:not(.theme-modern):not(.theme-nature) .header-logo-bg {
+    background: linear-gradient(90deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.1) 70%, transparent 100%) !important;
+}
+
+/* 默认主题（蓝色）底部按钮样式 */
+body:not(.theme-modern):not(.theme-nature) .sidebar .nav-link[target="_blank"] {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+    color: white !important;
+    font-weight: 600 !important;
+}
+
+body:not(.theme-modern):not(.theme-nature) .sidebar .nav-link[target="_blank"]:hover {
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important;
+    color: white !important;
+    transform: translateY(-1px) !important;
+    box-shadow: var(--shadow-medium) !important;
+}
+
+/* 平滑过渡动画 */
+.header,
+.sidebar,
+.sidebar .nav-link,
+.content {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* 微交互增强 */
+.sidebar .nav-link::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 60%;
+    background: var(--sidebar-active-text);
+    border-radius: 0 2px 2px 0;
+    transition: width 0.2s ease;
+}
+
+.sidebar .nav-link:hover::before,
+.sidebar .nav-link.active::before {
+    width: 3px;
+}

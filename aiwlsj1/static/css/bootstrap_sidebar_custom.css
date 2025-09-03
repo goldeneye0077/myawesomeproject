@@ -1,0 +1,25 @@
+/* 可选：用于自定义覆盖Bootstrap默认侧边栏样式的内容 */
+.sidebar {
+    min-height: 100vh;
+    background: #f8f9fa;
+    border-right: 1px solid #dee2e6;
+    padding-top: 1rem;
+}
+.sidebar .nav-link {
+    color: #333;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    border-radius: 0.25rem;
+}
+.sidebar .nav-link.active, .sidebar .nav-link:hover {
+    background: #e9ecef;
+    color: #0d6efd;
+}
+.sidebar .nav-link svg {
+    margin-right: 0.5em;
+}
+@media (max-width: 767px) {
+    .sidebar {
+        display: none;
+    }
+}

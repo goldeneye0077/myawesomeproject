@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}网络视界指标后台管理{% endblock %}</title>
+    <!-- Bootstrap 5 CSS (use BootCDN for better availability in CN) -->
+    <link href="https://cdn.bootcdn.net/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/bootstrap_sidebar_custom.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/modern_theme.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/color_harmony.css') }}">
+    <script src="{{ url_for('static', path='/js/sidebar.js') }}"></script>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- 顶部横幅 -->
+    <div class="header">
+        <div class="header-logo-bg">
+            <img src="{{ url_for('static', path='/images/移动logo.png') }}" alt="移动logo" class="logo-image">
+        </div>
+        <div class="header-content">
+            <h1><a href="/">网络视界指标后台管理</a></h1>
+        </div>
+    </div>
+    <div class="header-divider"></div>
+
+    <!-- 主体内容区：左右两栏flex布局 -->
+    <div class="d-flex" style="height:100vh;">
+        <!-- 左侧导航栏（Bootstrap Sidebar）-->
+        <nav class="sidebar d-flex flex-column flex-shrink-0 p-3 bg-light border-end" style="width: 260px;">
+            <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-dark text-decoration-none">
+                <span class="fs-4">导航菜单</span>
+            </a>
+            <hr>
+            <ul class="nav nav-pills flex-column mb-auto">
+                <!-- 折叠菜单示例 -->
+                <li>
+                    <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapseContract" role="button" aria-expanded="false" aria-controls="collapseContract">
+                        契约化指标大屏管理
+                        <span class="bi bi-chevron-down small"></span>
+                    </a>
+                    <div class="collapse" id="collapseContract">
+                        <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small ms-3">
+                            <li><a href="/center_top_top" class="nav-link {% if request.url.path == '/center_top_top' %}active{% endif %}">故障割接管理</a></li>
+                            <li><a href="/center_top_bottom" class="nav-link {% if request.url.path == '/center_top_bottom' %}active{% endif %}">地图管理</a></li>
+                            <li><a href="/left_top" class="nav-link {% if request.url.path == '/left_top' %}active{% endif %}">汇聚骨干管理</a></li>
+                            <li><a href="/left_middle" class="nav-link {% if request.url.path == '/left_middle' %}active{% endif %}">机楼PUE管理</a></li>
+                            <li><a href="/right_top" class="nav-link {% if request.url.path == '/right_top' %}active{% endif %}">资源数据准确率管理</a></li>
+                            <li><a href="/right_middle" class="nav-link {% if request.url.path == '/right_middle' %}active{% endif %}">机楼耗电量管理</a></li>
+                            <li><a href="/bottom" class="nav-link {% if request.url.path == '/bottom' %}active{% endif %}">关键数据准确性管理</a></li>
+                        </ul>
+                    </div>
+                </li>
+                <li>
+                    <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapseKPI" role="button" aria-expanded="false" aria-controls="collapseKPI">
+                        KPI指标大屏管理
+                        <span class="bi bi-chevron-down small"></span>
+                    </a>
+                    <div class="collapse" id="collapseKPI">
+                        <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small ms-3">
+                            <li><a href="/kpi_indicators" class="nav-link {% if request.url.path == '/kpi_indicators' %}active{% endif %}">KPI数据管理</a></li>
+                            <li><a href="/left_middle_kpi" class="nav-link {% if request.url.path == '/left_middle_kpi' %}active{% endif %}">机楼PUE KPI管理</a></li>
+                            <li><a href="/center_middle_kpi" class="nav-link {% if request.url.path == '/center_middle_kpi' %}active{% endif %}">宽带装机交付KPI管理</a></li>
+                            <li><a href="/right_middle_kpi" class="nav-link {% if request.url.path == '/right_middle_kpi' %}active{% endif %}">研发完成率KPI管理</a></li>
+                            <li><a href="/left_bottom_kpi" class="nav-link {% if request.url.path == '/left_bottom_kpi' %}active{% endif %}">指标达成KPI管理</a></li>
+                            <li><a href="/right_bottom_kpi" class="nav-link {% if request.url.path == '/right_bottom_kpi' %}active{% endif %}">宽带率KPI管理</a></li>
+                            <li><a href="/top_kpi" class="nav-link {% if request.url.path == '/top_kpi' %}active{% endif %}">KPI头部管理</a></li>
+                        </ul>
+                    </div>
+                </li>
+                <li class="border-top my-2"></li>
+                <li>
+                    <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapseContractAnalysis" role="button" aria-expanded="false" aria-controls="collapseContractAnalysis">
+                        契约化指标分析
+                        <span class="bi bi-chevron-down small"></span>
+                    </a>
+                    <div class="collapse" id="collapseContractAnalysis">
+                        <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small ms-3">
+                            <li>
+                                <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapsePUE" role="button" aria-expanded="false" aria-controls="collapsePUE">
+                                    PUE指标
+                                    <span class="bi bi-chevron-down small"></span>
+                                </a>
+                                <div class="collapse" id="collapsePUE">
+                                    <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 ms-3">
+                                        <li><a href="/pue_data" class="nav-link {% if request.url.path == '/pue_data' %}active{% endif %}">PUE指标数据管理</a></li>
+<li><a href="/pue_drill_down_manage" class="nav-link {% if request.url.path == '/pue_drill_down_manage' %}active{% endif %}">PUE下钻数据管理</a></li>
+                                        <li><a href="/pue_analyze" class="nav-link {% if request.url.path == '/pue_analyze' %}active{% endif %}">PUE指标数据分析</a></li>
+                                    </ul>
+                                </div>
+                            </li>
+                            <li>
+                                <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapseHuiju" role="button" aria-expanded="false" aria-controls="collapseHuiju">
+                                    汇聚骨干指标
+                                    <span class="bi bi-chevron-down small"></span>
+                                </a>
+                                <div class="collapse" id="collapseHuiju">
+                                    <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 ms-3">
+                                        <li><a href="/huiju/data" class="nav-link {% if request.url.path == '/huiju_data' %}active{% endif %}">汇聚骨干指标数据管理</a></li>
+                                        <li><a href="/huiju/analyze" class="nav-link {% if request.url.path == '/huiju_analyze' %}active{% endif %}">汇聚骨干指标数据分析</a></li>
+                                    </ul>
+                                </div>
+                            </li>
+                            <li>
+                                <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapseFault" role="button" aria-expanded="false" aria-controls="collapseFault">
+                                    故障指标分析
+                                    <span class="bi bi-chevron-down small"></span>
+                                </a>
+                                <div class="collapse" id="collapseFault">
+                                    <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 ms-3">
+                                        <li><a href="/fault/data" class="nav-link {% if request.url.path == '/fault/data' %}active{% endif %}">故障指标数据管理</a></li>
+                                        <li><a href="/fault/dashboard" class="nav-link {% if request.url.path == '/fault/dashboard' %}active{% endif %}">故障指标数据分析</a></li>
+                                    </ul>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
+                <li class="border-top my-2"></li>
+                <li>
+                    <a href="/bi" class="nav-link" target="_blank">契约化指标大屏预览</a>
+                </li>
+                <li>
+                    <a href="/bi2" class="nav-link" target="_blank">KPI指标大屏预览</a>
+                </li>
+            </ul>
+        </nav>
+        <!-- 右侧内容区 -->
+        <div class="content flex-fill" style="padding-top:28px; overflow-y: auto; box-sizing: border-box; min-height:200vh;">
+            {% block content %}
+            <!-- 内容将由子模板提供 -->
+            {% endblock %}
+        </div>
+    </div>
+    <!-- Bootstrap 5 JS Bundle with Popper (use BootCDN) -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    <!-- 主题切换工具 -->
+    <script src="{{ url_for('static', path='/js/theme_switcher.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+    {% block scripts %}
+    <!-- 页面特定脚本将由子模板提供 -->
+    {% endblock %}
+</body>
+</html>

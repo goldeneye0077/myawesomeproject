@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>手动测试下钻弹窗</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-button { 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            margin: 10px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+        }
+        .test-button:hover { background: #0056b3; }
+        
+        /* 下钻弹窗样式 */
+        .drill-down-modal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 1200px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 24px;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+
+        .close-btn:hover {
+            opacity: 1;
+        }
+
+        .modal-body {
+            padding: 24px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .loading-spinner {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .drill-down-table-container {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .drill-down-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .drill-down-table th {
+            background-color: #f8f9fa;
+            color: #333;
+            font-weight: 600;
+            padding: 12px 8px;
+            text-align: left;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .drill-down-table td {
+            padding: 12px 8px;
+            border-bottom: 1px solid #dee2e6;
+            vertical-align: top;
+        }
+
+        .drill-down-table tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .detail-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .detail-btn:hover {
+            background: #218838;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <h1>手动测试PUE下钻弹窗功能</h1>
+    
+    <p>点击下面的按钮来测试下钻弹窗功能：</p>
+    
+    <button class="test-button" onclick="testDrillDown('', 1, 2025)">
+        测试: 全部地点 - 2025年1月
+    </button>
+    
+    <button class="test-button" onclick="testDrillDown('深圳宝安区宝城', 1, 2025)">
+        测试: 深圳宝安区宝城 - 2025年1月
+    </button>
+    
+    <button class="test-button" onclick="testDrillDown('', 2, 2025)">
+        测试: 全部地点 - 2025年2月 (无数据)
+    </button>
+
+    <!-- 下钻弹窗 -->
+    <div id="drillDownModal" class="drill-down-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">PUE指标下钻详情</h3>
+                <span class="close-btn" onclick="closeDrillDownModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="modalLoading" class="loading-spinner" style="display: none;">加载中...</div>
+                <div id="modalContent" style="display: none;">
+                    <div class="drill-down-table-container">
+                        <table class="drill-down-table">
+                            <thead>
+                                <tr>
+                                    <th>序号</th>
+                                    <th>作业形式</th>
+                                    <th>作业分类</th>
+                                    <th>作业对象</th>
+                                    <th>检查项</th>
+                                    <th>执行情况</th>
+                                    <th>执行人</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="drillDownTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="modalError" style="display: none; text-align: center; padding: 40px; color: #dc3545;">
+                    加载失败，请稍后重试
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function testDrillDown(location, month, year) {
+            showDrillDownModal(location, month, year);
+        }
+
+        function showDrillDownModal(location, month, year) {
+            const modal = document.getElementById('drillDownModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalLoading = document.getElementById('modalLoading');
+            const modalContent = document.getElementById('modalContent');
+            const modalError = document.getElementById('modalError');
+            
+            // 设置标题
+            const locationText = location ? location : '全部地点';
+            modalTitle.textContent = `${locationText} - ${year}年${month}月 PUE指标下钻详情`;
+            
+            // 显示弹窗和加载状态
+            modal.style.display = 'block';
+            modalLoading.style.display = 'block';
+            modalContent.style.display = 'none';
+            modalError.style.display = 'none';
+            
+            // 构建API请求URL
+            let apiUrl = '/pue_drill_down_data?';
+            if (location) apiUrl += `location=${encodeURIComponent(location)}&`;
+            apiUrl += `month=${month}&year=${year}`;
+            
+            console.log('请求URL:', apiUrl);
+            
+            // 获取下钻数据
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('API响应:', data);
+                    modalLoading.style.display = 'none';
+                    if (data.success && data.data.length > 0) {
+                        renderDrillDownData(data.data);
+                        modalContent.style.display = 'block';
+                    } else {
+                        modalError.textContent = '暂无该时间段的详细数据';
+                        modalError.style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    console.error('获取下钻数据失败:', error);
+                    modalLoading.style.display = 'none';
+                    modalError.style.display = 'block';
+                });
+        }
+        
+        function renderDrillDownData(data) {
+            const tableBody = document.getElementById('drillDownTableBody');
+            tableBody.innerHTML = '';
+            
+            data.forEach((item, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.sequence_no || (index + 1)}</td>
+                    <td>${item.work_type || '-'}</td>
+                    <td>${item.work_category || '-'}</td>
+                    <td>${item.work_object || '-'}</td>
+                    <td style="max-width: 200px; word-wrap: break-word;">${item.check_item || '-'}</td>
+                    <td>${item.execution_status || '-'}</td>
+                    <td>${item.executor || '-'}</td>
+                    <td>
+                        <button class="detail-btn" onclick="showWorkItemDetail(${item.id})">详情</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        
+        function showWorkItemDetail(itemId) {
+            alert('查看详情功能 - 工作项ID: ' + itemId);
+        }
+        
+        function closeDrillDownModal() {
+            document.getElementById('drillDownModal').style.display = 'none';
+        }
+        
+        // 点击弹窗外部关闭
+        window.onclick = function(event) {
+            const modal = document.getElementById('drillDownModal');
+            if (event.target === modal) {
+                closeDrillDownModal();
+            }
+        }
+    </script>
+</body>
+</html>

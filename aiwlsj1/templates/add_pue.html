@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}添加PUE数据 - 网络视界指标后台管理{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 class="card-title">添加PUE数据</h2>
+
+    <!-- 添加选项卡 -->
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('manual')">手动添加</div>
+        <div class="tab" onclick="switchTab('upload')">批量导入</div>
+    </div>
+
+    <!-- 手动添加表单 -->
+    <div id="manual-tab" class="tab-content active">
+        <form action="/add_pue" method="post" style="display:flex;flex-direction:row;gap:32px;align-items:center;flex-wrap:wrap;background:#fff;padding:32px 28px 24px 28px;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,0.07);margin-bottom:24px;max-width:100%;width:auto;">
+            <div style="display:flex;align-items:center;gap:8px;flex:1 1 220px;min-width:220px;max-width:320px;margin-bottom:12px;">
+                <label for="location" style="font-weight:500;color:#333;white-space:nowrap;min-width:56px;">地点</label>
+                <input type="text" id="location" name="location" class="form-control" required style="flex:1 1 120px;padding:10px 14px;border:1px solid #e0e0e0;border-radius:6px;font-size:15px;min-width:0;">
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex:1 1 220px;min-width:220px;max-width:320px;margin-bottom:12px;">
+                <label for="month" style="font-weight:500;color:#333;white-space:nowrap;min-width:56px;">月份</label>
+                <select id="month" name="month" class="form-control" required style="flex:1 1 120px;padding:10px 14px;border:1px solid #e0e0e0;border-radius:6px;font-size:15px;min-width:0;">
+                    <option value="">请选择</option>
+                    <option value="1">1月</option>
+                    <option value="2">2月</option>
+                    <option value="3">3月</option>
+                    <option value="4">4月</option>
+                    <option value="5">5月</option>
+                    <option value="6">6月</option>
+                    <option value="7">7月</option>
+                    <option value="8">8月</option>
+                    <option value="9">9月</option>
+                    <option value="10">10月</option>
+                    <option value="11">11月</option>
+                    <option value="12">12月</option>
+                </select>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex:1 1 220px;min-width:220px;max-width:320px;margin-bottom:12px;">
+                <label for="pue_value" style="font-weight:500;color:#333;white-space:nowrap;min-width:56px;">PUE值</label>
+                <input type="number" id="pue_value" name="pue_value" step="0.01" min="1" max="3" required style="flex:1 1 120px;padding:10px 14px;border:1px solid #e0e0e0;border-radius:6px;font-size:15px;min-width:0;">
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex:1 1 220px;min-width:220px;max-width:320px;margin-bottom:12px;">
+                <label for="year" style="font-weight:500;color:#333;white-space:nowrap;min-width:56px;">年份</label>
+                <input type="text" id="year" name="year" pattern="\d{4}" title="请输入4位数字年份" required style="flex:1 1 120px;padding:10px 14px;border:1px solid #e0e0e0;border-radius:6px;font-size:15px;min-width:0;">
+            </div>
+            <button type="submit" class="btn btn-primary" style="height:40px;min-width:80px;font-size:16px;margin-bottom:12px;">保存</button>
+        </form>
+    </div>
+
+    <!-- Excel上传表单 -->
+    <div id="upload-tab" class="tab-content">
+        <!-- 上传区域内容 -->
+        <div class="upload-header">
+            <h3>Excel批量导入</h3>
+            <a href="/download_pue_template" class="btn btn-info download-btn">
+                <span class="download-icon">📥</span>下载Excel模板
+            </a>
+        </div>
+
+        <form action="/upload-pue-excel" method="post" enctype="multipart/form-data">
+            <div class="upload-area" id="drop-area">
+                <div class="upload-icon">📊</div>
+                <div class="upload-text">点击选择Excel文件或拖拽文件到此区域</div>
+                <input type="file" id="file-input" name="file" class="file-input" accept=".xls,.xlsx" onchange="updateFileName(this)">
+                <label for="file-input" class="btn btn-primary">选择文件</label>
+                <div id="file-name" class="file-name"></div>
+            </div>
+            <button type="submit" class="btn btn-success">上传并导入</button>
+        </form>
+
+        <div class="card info-card">
+            <h3 class="card-title">Excel导入说明</h3>
+            <p>请确保您的Excel文件包含以下列：</p>
+            <ul class="info-list">
+                <li>地点</li>
+                <li>月份</li>
+                <li>PUE值</li>
+                <li>年份</li>
+            </ul>
+            <p>系统将按照列名自动匹配相应的字段。如果列名不完全匹配，系统会尝试进行模糊匹配。</p>
+            <p>您可以点击上方的"<strong>下载Excel模板</strong>"按钮获取标准格式的Excel模板文件。</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 设置默认年份为当前年
+    document.addEventListener('DOMContentLoaded', function() {
+        var currentYear = new Date().getFullYear();
+        document.getElementById('year').value = currentYear;
+
+        // 初始化拖拽上传区域
+        initDropArea();
+    });
+
+    // 选项卡切换功能
+    function switchTab(tabName) {
+        // 隐藏所有tab内容
+        var tabContents = document.getElementsByClassName('tab-content');
+        for (var i = 0; i < tabContents.length; i++) {
+            tabContents[i].classList.remove('active');
+        }
+
+        // 取消所有tab的active状态
+        var tabs = document.getElementsByClassName('tab');
+        for (var i = 0; i < tabs.length; i++) {
+            tabs[i].classList.remove('active');
+        }
+
+        // 激活选中的tab和内容
+        document.getElementById(tabName + '-tab').classList.add('active');
+        var clickedTab = event.target;
+        clickedTab.classList.add('active');
+    }
+
+    // 更新选择的文件名显示
+    function updateFileName(input) {
+        var fileName = input.files[0] ? input.files[0].name : '未选择文件';
+        document.getElementById('file-name').textContent = fileName;
+    }
+
+    // 初始化拖拽区域
+    function initDropArea() {
+        var dropArea = document.getElementById('drop-area');
+        var fileInput = document.getElementById('file-input');
+
+        if (!dropArea) return;
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight() {
+            dropArea.classList.add('highlight');
+        }
+
+        function unhighlight() {
+            dropArea.classList.remove('highlight');
+        }
+
+        dropArea.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            var dt = e.dataTransfer;
+            var files = dt.files;
+
+            if (files.length > 0) {
+                fileInput.files = files;
+                updateFileName(fileInput);
+            }
+        }
+    }
+</script>
+{% endblock %}

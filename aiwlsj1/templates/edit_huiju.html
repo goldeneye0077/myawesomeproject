@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}编辑汇聚骨干数据{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 class="card-title">编辑汇聚骨干数据</h2>
+    <form method="post" class="form-container">
+        <div class="form-group">
+            <label for="month">月份</label>
+            <input type="text" id="month" name="month" required class="form-control" value="{{ item.month }}">
+        </div>
+        
+        <div class="form-group">
+            <label for="city">城市</label>
+            <input type="text" id="city" name="city" required class="form-control" value="{{ item.city }}">
+        </div>
+        
+        <div class="form-group">
+            <label for="huiju_amount">汇聚全量</label>
+            <input type="number" id="huiju_amount" name="huiju_amount" required class="form-control" min="0" value="{{ item.huiju_amount }}">
+        </div>
+        
+        <div class="form-group">
+            <label for="over_4h">超4小时数量</label>
+            <input type="number" id="over_4h" name="over_4h" required class="form-control" min="0" value="{{ item.over_4h }}">
+        </div>
+        
+        <div class="form-group">
+            <label for="important_amount">重要环全量</label>
+            <input type="number" id="important_amount" name="important_amount" required class="form-control" min="0" value="{{ item.important_amount }}">
+        </div>
+        
+        <div class="form-group">
+            <label for="over_12h">超12小时数量</label>
+            <input type="number" id="over_12h" name="over_12h" required class="form-control" min="0" value="{{ item.over_12h }}">
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">保存</button>
+            <a href="{{ url_for('huiju_data_page') }}" class="btn btn-secondary">取消</a>
+        </div>
+    </form>
+</div>
+
+<style>
+.form-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.form-control {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.form-actions {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+.btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    color: white;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.btn:hover {
+    opacity: 0.9;
+}
+</style>
+{% endblock %}

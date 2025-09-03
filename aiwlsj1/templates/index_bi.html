@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}网络视界指标后台管理 - BI大屏{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', path='/css/index.css') }}" />
+<link rel="stylesheet" href="{{ url_for('static', path='/element-ui/lib/theme-chalk/index.css') }}" />
+<style>
+#yearSelect:hover {
+    background-color: #66b1ff !important;
+    color: #fff;
+}
+#yearSelect:focus {
+    outline: none;
+}
+/* 调整BI大屏内容以适应右侧内容区 */
+#scaleBox {
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+}
+#pageContainer {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, #0c1e3f, #1a365d);
+    color: white;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="scaleBox">
+    <div id="pageContainer">
+        <div id="headContainer">
+            <h1>契约化攻坚指标</h1>
+            <span id="showTime" v-text="curTime+'   '+curDate"></span>
+            <div id="button" style="display:inline-block;vertical-align:middle;">
+                <a href="/bi2"><button style="margin-right:8px;width:88px;height:32px;background-color:#409EFF;color:#fff;border:none;border-radius:16px;cursor:pointer;font-size:16px;">KPI</button></a>
+                <select id="yearSelect" name="year" style="width:88px;height:32px;vertical-align:middle;background-color:#409EFF;color:#fff;border:none;padding:0 16px;border-radius:16px;cursor:pointer;font-size:16px;appearance:none;-webkit-appearance:none;-moz-appearance:none;text-align:center;">
+                    <option value="2023">2023年</option>
+                    <option value="2024">2024年</option>
+                    <option value="2025" selected>2025年</option>
+                </select>
+            </div>
+        </div>
+        <div id="mainContainer">
+            <div id="leftTop" class="panel">
+                <div class="panelTitle">汇聚骨干</div>
+                <div class="panelContent"></div>
+            </div>
+            <div id="leftMiddle" class="panel" style="cursor:pointer;" onclick="window.location.href='/pue_analyze'">
+                <div class="panelTitle">通信机楼PUE达标率</div>
+                <div class="panelContent"></div>
+            </div>                
+            
+            <div id="centerTop" class="panel">
+                <div id="centerTopTop">
+                    <div class="item" v-for="item in centerTopTopData">
+                        <div class="rowOne" v-text="item[0]"></div>
+                        <div class="rowTwo">
+                            <div class="rowLeft"></div>
+                            <div class="rowCenter" v-text="item[1]"></div>
+                            <div class="rowRight">
+                                <div class="dot" :class="{'green':item[1]=='达标','red':item[1]!='达标'}"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="centerTopBottom">
+                    <div class="panelContent"></div>
+                </div>
+            </div>
+
+            <div id="rightTop" class="panel">
+                <div class="panelTitle">资源数据端到端应用准确率</div>
+                <div class="panelContent"></div>
+            </div>
+            <div id="rightMiddle" class="panel">
+                <div class="panelTitle">通信机楼耗电量相对增幅系数</div>
+                <div class="panelContent"></div>
+            </div>
+
+            <div id="bottomContainer" class="panel">
+                <div class="panelTitle">关键数据准确性</div>
+                <div class="panelContent"></div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', path='/js/scaleBox.js') }}"></script>
+<script src="{{ url_for('static', path='/js/showTime.js') }}"></script>
+<script src="{{ url_for('static', path='/js/map.js') }}"></script>
+<script src="{{ url_for('static', path='/js/theme.js') }}"></script>
+<script src="{{ url_for('static', path='/js/echarts.min.js') }}"></script>
+<script src="{{ url_for('static', path='/js/vchart.min.js') }}"></script>
+<script src="{{ url_for('static', path='/js/vue.js') }}"></script>
+<script src="{{ url_for('static', path='/js/axios.min.js') }}"></script>
+<script src="{{ url_for('static', path='/js/element-ui/lib/index.js') }}"></script>
+<script src="{{ url_for('static', path='/js/index.js') }}"></script>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // window.xxxData 注入已废弃，前端 index.js 通过 /api/bi_data 动态获取数据
+</script>
+{% endblock %}

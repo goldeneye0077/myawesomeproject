@@ -1,0 +1,172 @@
+{% extends "base.html" %}  
+
+{% block title %}新增契约化攻坚指标 - 网络视界指标后台管理{% endblock %}  
+
+{% block content %}  
+<!-- 添加指标卡片 -->  
+<div class="card">  
+    <h2 class="card-title">添加契约化攻坚指标</h2>  
+
+    <!-- 添加选项卡 -->  
+    <div class="tabs">  
+        <div class="tab active" onclick="switchTab('manual')">手动添加</div>  
+        <div class="tab" onclick="switchTab('upload')">批量导入</div>  
+    </div>  
+
+    <!-- 手动添加表单 -->  
+    <div id="manual-tab" class="tab-content active">  
+        <form action="/add" method="post">  
+            <!-- 表单内容 -->
+            <div class="form-row">
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label for="zbx">指标项</label>
+                                    <input type="text" id="zbx" name="zbx" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label for="fz">分值</label>
+                                    <input type="text" id="fz" name="fz" class="form-control" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label for="qspm">全省排名</label>
+                                    <input type="text" id="qspm" name="qspm" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label for="qnljdfzb">全年累计得分</label>
+                                    <input type="text" id="qnljdfzb" name="qnljdfzb" class="form-control" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label for="nddcpg">年度达成评估</label>
+                                    <input type="text" id="nddcpg" name="nddcpg" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label for="y1zb">1月指标</label>
+                                    <input type="text" id="y1zb" name="y1zb" class="form-control" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label for="y2zb">2月指标</label>
+                                    <input type="text" id="y2zb" name="y2zb" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label for="y3zb">3月指标</label>
+                                    <input type="text" id="y3zb" name="y3zb" class="form-control" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label for="y4zb">4月指标</label>
+                                    <input type="text" id="y4zb" name="y4zb" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label for="y5zb">5月指标</label>
+                                    <input type="text" id="y5zb" name="y5zb" class="form-control" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label for="y6zb">6月指标</label>
+                                    <input type="text" id="y6zb" name="y6zb" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label for="jzz">基准值</label>
+                                    <input type="text" id="jzz" name="jzz" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label for="tzz">挑战值</label>
+                                    <input type="text" id="tzz" name="tzz" class="form-control">
+                                </div>
+                            </div>
+                            <div class="form-col">
+                                <!-- 留空，保持对称 -->
+                            </div>
+                        </div>
+            <button type="submit" class="btn btn-primary">保存</button>  
+        </form>  
+    </div>  
+
+    <!-- Excel上传表单 -->  
+    <div id="upload-tab" class="tab-content">  
+        <!-- 上传区域内容 -->
+         <div class="upload-header">
+                        <h3>Excel批量导入</h3>
+                        <a href="/download-template" class="btn btn-info download-btn">
+                            <span class="download-icon">📥</span>下载Excel模板
+                        </a>
+                    </div>
+
+                    <form action="/upload-excel" method="post" enctype="multipart/form-data">
+                        <div class="upload-area" id="drop-area">
+                            <div class="upload-icon">📊</div>
+                            <div class="upload-text">点击选择Excel文件或拖拽文件到此区域</div>
+                            <input type="file" id="file-input" name="file" class="file-input" accept=".xls,.xlsx" onchange="updateFileName(this)">
+                            <label for="file-input" class="btn btn-primary">选择文件</label>
+                            <div id="file-name" class="file-name"></div>
+                        </div>
+                        <button type="submit" class="btn btn-success">上传并导入</button>
+                    </form>
+
+                    <div class="card info-card">
+                        <h3 class="card-title">Excel导入说明</h3>
+                        <p>请确保您的Excel文件包含以下列：</p>
+                        <ul class="info-list">
+                            <li>指标项</li>
+                            <li>分值</li>
+                            <li>全省排名</li>
+                            <li>全年累计得分</li>
+                            <li>年度达成评估</li>
+                            <li>1月指标、2月指标、3月指标、4月指标、5月指标、6月指标</li>
+                            <li>基准值(可选)、挑战值(可选)</li>
+                        </ul>
+                        <p>系统将按照列名自动匹配相应的字段。如果列名不完全匹配，系统会尝试进行模糊匹配。</p>
+                        <p>您可以点击上方的"<strong>下载Excel模板</strong>"按钮获取标准格式的Excel模板文件。</p>
+                    </div>
+    </div>  
+</div>  
+{% endblock %}  
+
+{% block scripts %}  
+<script>  
+    document.addEventListener('DOMContentLoaded', function() {  
+        // 初始化拖拽上传区域  
+        initDropArea();  
+    });  
+</script>  
+{% endblock %}

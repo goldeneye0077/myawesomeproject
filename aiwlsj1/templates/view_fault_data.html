@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+
+{% block title %}故障数据详情 - 网络视界指标后台管理{% endblock %}
+
+{% block content %}
+<!-- 故障数据详情卡片 -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">故障数据详情</h2>
+        <div class="card-actions">
+            <a href="/fault/edit_fault_data/{{ fault_record.id }}" class="btn btn-primary">编辑</a>
+            <a href="/fault/data" class="btn btn-secondary">返回列表</a>
+        </div>
+    </div>
+    
+    <div class="detail-content">
+        <!-- 基本信息 -->
+        <div class="detail-section">
+            <h3 class="section-title">基本信息</h3>
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <label>序号</label>
+                    <span>{{ fault_record.sequence_no or '-' }}</span>
+                </div>
+                <div class="detail-item">
+                    <label>故障日期</label>
+                    <span>{{ fault_record.fault_date.strftime('%Y-%m-%d %H:%M:%S') if fault_record.fault_date else '-' }}</span>
+                </div>
+                <div class="detail-item full-width">
+                    <label>故障名称</label>
+                    <span>{{ fault_record.fault_name or '-' }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 分类信息 -->
+        <div class="detail-section">
+            <h3 class="section-title">分类信息</h3>
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <label>省-故障类型</label>
+                    <span class="badge badge-info">{{ fault_record.province_fault_type or '-' }}</span>
+                </div>
+                <div class="detail-item">
+                    <label>原因分类</label>
+                    <span class="badge badge-warning">{{ fault_record.cause_category or '-' }}</span>
+                </div>
+                <div class="detail-item">
+                    <label>通报级别</label>
+                    <span class="badge {% if fault_record.notification_level and ('重大' in fault_record.notification_level or '严重' in fault_record.notification_level) %}badge-danger{% elif fault_record.notification_level and '一般' in fault_record.notification_level %}badge-warning{% else %}badge-info{% endif %}">
+                        {{ fault_record.notification_level or '-' }}
+                    </span>
+                </div>
+                <div class="detail-item">
+                    <label>省-原因分类</label>
+                    <span>{{ fault_record.province_cause_category or '-' }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 时间信息 -->
+        <div class="detail-section">
+            <h3 class="section-title">时间信息</h3>
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <label>发生时间</label>
+                    <span>{{ fault_record.start_time.strftime('%Y-%m-%d %H:%M:%S') if fault_record.start_time else '-' }}</span>
+                </div>
+                <div class="detail-item">
+                    <label>结束时间</label>
+                    <span>{{ fault_record.end_time.strftime('%Y-%m-%d %H:%M:%S') if fault_record.end_time else '-' }}</span>
+                </div>
+                <div class="detail-item">
+                    <label>故障处理时长</label>
+                    <span>{{ "{:.2f}".format(fault_record.fault_duration_hours) if fault_record.fault_duration_hours else '-' }} 小时</span>
+                </div>
+                <div class="detail-item">
+                    <label>主动发现</label>
+                    <span class="badge {% if fault_record.is_proactive_discovery == '是' %}badge-success{% elif fault_record.is_proactive_discovery == '否' %}badge-secondary{% else %}badge-light{% endif %}">
+                        {{ fault_record.is_proactive_discovery or '-' }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 详细描述 -->
+        <div class="detail-section">
+            <h3 class="section-title">详细描述</h3>
+            <div class="detail-text-grid">
+                <div class="detail-text-item">
+                    <label>省-故障原因分析</label>
+                    <div class="text-content">{{ fault_record.province_cause_analysis or '-' }}</div>
+                </div>
+                <div class="detail-text-item">
+                    <label>故障原因</label>
+                    <div class="text-content">{{ fault_record.fault_cause or '-' }}</div>
+                </div>
+                <div class="detail-text-item">
+                    <label>故障处理</label>
+                    <div class="text-content">{{ fault_record.fault_handling or '-' }}</div>
+                </div>
+                <div class="detail-text-item">
+                    <label>投诉情况</label>
+                    <div class="text-content">{{ fault_record.complaint_situation or '-' }}</div>
+                </div>
+                <div class="detail-text-item">
+                    <label>备注</label>
+                    <div class="text-content">{{ fault_record.remarks or '-' }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 系统信息 -->
+        <div class="detail-section">
+            <h3 class="section-title">系统信息</h3>
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <label>创建时间</label>
+                    <span>{{ fault_record.created_at.strftime('%Y-%m-%d %H:%M:%S') if fault_record.created_at else '-' }}</span>
+                </div>
+                <div class="detail-item">
+                    <label>更新时间</label>
+                    <span>{{ fault_record.updated_at.strftime('%Y-%m-%d %H:%M:%S') if fault_record.updated_at else '-' }}</span>
+                </div>
+                <div class="detail-item">
+                    <label>记录ID</label>
+                    <span>{{ fault_record.id }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #dee2e6;
+    margin-bottom: 1.5rem;
+}
+
+.card-actions .btn {
+    margin-left: 0.5rem;
+}
+
+.detail-content {
+    max-width: 1000px;
+}
+
+.detail-section {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #007bff;
+}
+
+.section-title {
+    margin: 0 0 1rem 0;
+    color: #2c3e50;
+    font-size: 1.2em;
+    font-weight: 600;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.detail-item.full-width {
+    grid-column: 1 / -1;
+}
+
+.detail-item label {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.9em;
+    margin-bottom: 0.25rem;
+}
+
+.detail-item span {
+    color: #212529;
+    font-size: 1em;
+    padding: 0.25rem 0;
+}
+
+.detail-text-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.detail-text-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.detail-text-item label {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.9em;
+}
+
+.text-content {
+    background: white;
+    padding: 0.75rem;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+    color: #212529;
+    line-height: 1.5;
+    min-height: 2.5rem;
+    white-space: pre-wrap;
+}
+
+.badge {
+    padding: 0.25em 0.6em;
+    font-size: 0.75em;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 0.25rem;
+}
+
+.badge-primary { background-color: #007bff; color: white; }
+.badge-secondary { background-color: #6c757d; color: white; }
+.badge-success { background-color: #28a745; color: white; }
+.badge-danger { background-color: #dc3545; color: white; }
+.badge-warning { background-color: #ffc107; color: #212529; }
+.badge-info { background-color: #17a2b8; color: white; }
+.badge-light { background-color: #f8f9fa; color: #212529; border: 1px solid #dee2e6; }
+
+@media (max-width: 768px) {
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .card-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .card-actions .btn {
+        margin-left: 0;
+    }
+}
+</style>
+{% endblock %}

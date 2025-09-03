@@ -1,0 +1,277 @@
+// css 初始化
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+// 删除li的样式
+li {
+    list-style: none;
+}
+
+// 添加字体
+@font-face {
+    font-family: electronicFont;
+    src: url(../font/DS-DIGIT.TTF);
+}
+
+@font-face {
+    font-family: textFont;
+    src: url(../font/清平简书.TTF);
+}
+
+
+
+
+body {
+    background-image: url(../images/bg.png);
+    background-attachment: fixed;
+    background-position: center center;
+    background-size: 100%;
+    // background-color: #000e28;
+}
+
+#scaleBox {
+    --scale: 1;
+    position: absolute;
+    transform: scale(var(--scale)) translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    transform-origin: 0 0;
+    top: 50%;
+    left: 50%;
+    transition: 0.3s;
+    z-index: 999;
+}
+
+
+#pageContainer {
+    width: 1920px;
+    height: 1080px;
+
+    #app {
+        width: 100%;
+        height: 100%;
+        background-color: transparent;
+    }
+
+    #headContainer {
+        position: relative;
+        height: 80px;
+        background-image: url(../images/head_bg.png);
+        background-size: 120% 130%;
+        background-position: center top;
+
+        h1 {
+            font-size: 30px;
+            text-align: center;
+            line-height: 80px;
+            font-weight: bolder;
+            background-image: -webkit-linear-gradient(bottom, #86919e, #fff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        #showTime {
+            position: absolute;
+            top: 5px;
+            right: 30px;
+            line-height: 65px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 30px;
+            white-space: pre;
+            font-family: electronicFont;
+        }
+        #button {
+            position: absolute;
+            top: 10px;
+            left: 30px;
+            
+            button {
+                width: 130px;
+                font-size: 17px;
+                padding: 0.5em 2em;
+                border: transparent;
+                box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
+                background: dodgerblue;
+                color: white;
+                border-radius: 4px;
+                font-size: 18px;
+            }
+
+            button:hover {
+                background: rgb(2, 0, 36);
+                background: linear-gradient(90deg, rgba(30, 144, 255, 1) 0%, rgba(0, 212, 255, 1) 100%);
+            }
+
+            button:active {
+                transform: translate(0em, 0.2em);
+            }
+        }
+    }
+
+    #mainContainer {
+        width: 1920px;
+        height: calc(100% - 80px);
+        margin: 0 auto;
+        display: grid;
+        grid-auto-flow: row dense;
+        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-rows: 1.5fr 5fr 5fr;
+        grid-template-areas:
+            "top top top"
+            "leftMiddle centerMiddle rightMiddle"
+            "leftBottom leftBottom rightBottom";
+    }
+}
+
+
+#topContainer {
+    grid-area: top;
+    display: flex;
+    justify-content: space-evenly;
+    color: #fff;
+
+    .item {
+        margin: 5px;
+        width: 20%;
+        background-image: url(../images/top.png);
+        background-size: 100% 100%;
+
+        .rowOne {
+            height: 30%;
+            padding-top: 10px;
+            padding-left: 20px;
+        }
+
+        .rowTwo {
+            height: 70%;
+            display: flex;
+
+            .rowLeft {
+                width: 40%;
+                background-image: url(../images/top_1.png);
+                background-size: 60% 75%;
+                background-repeat: no-repeat;
+                background-position: center center;
+            }
+
+            .rowCenter {
+                width: 30%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                font-size: 28px;              
+            }
+
+            .rowRight {
+                width: 30%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                .dot{
+                    width: 15px;
+                    height: 15px;
+                    border-radius: 50%;
+                }
+            }
+        }
+    }
+    .item:nth-child(2){
+        .rowLeft {
+            background-image: url(../images/top_2.png);
+        }
+    }
+    .item:nth-child(3){
+        .rowLeft {
+            background-image: url(../images/top_3.png);
+        }
+    }
+    .item:nth-child(4){
+        .rowLeft {
+            background-image: url(../images/top_4.png);
+        }
+    }
+    .item:nth-child(5){
+        .rowLeft {
+            background-image: url(../images/top_5.png);
+        }
+    }
+    .item:nth-child(6){
+        .rowLeft {
+            background-image: url(../images/top_6.png);
+        }
+    }
+}
+
+#leftMiddle {
+    grid-area: leftMiddle;
+}
+
+#centerMiddle {
+    grid-area: centerMiddle;
+}
+
+#rightMiddle {
+    grid-area: rightMiddle;
+}
+
+
+#leftBottom {
+    grid-area: leftBottom;
+}
+
+#rightBottom {
+    grid-area: rightBottom;
+}
+
+
+
+
+.panel {
+    position: relative;
+    background: linear-gradient(#063a5b99, #063a5b00);
+    border-radius: 5px;
+    margin: 5px;
+    border: 1px solid rgba(25, 186, 139, 0.17);
+    overflow: hidden;
+    padding: 0 20px;
+}
+
+.panelTitle {
+    height: 40px;
+    line-height: 40px;
+    width: 400px;
+    background-image: url('../images/panelTitle.png');
+    background-size: 100% 100%;
+    background-position: center center;
+    background-repeat: no-repeat;
+    margin-top: 10px;
+    text-align: center;
+    margin: 0 auto;
+    margin-top: 5px;
+    cursor: pointer;
+    color: #fff;
+    font-size: 20px;
+    opacity: 0.9;
+    position: relative;
+}
+
+.panelContent {
+    width: 100%;
+    height: calc(100% - 50px);
+    z-index: 1;
+    opacity: 0.9;
+}
+
+
+.red{
+    background-color: rgb(148, 9, 9);
+}
+.yellow{
+    background-color: rgb(170, 170, 9);
+}
+.green{
+    background-color: green;
+}

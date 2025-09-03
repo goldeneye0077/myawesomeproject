@@ -1,0 +1,122 @@
+{% extends "base.html" %}  
+
+{% block title %}新增契约化攻坚指标 - 网络视界指标后台管理{% endblock %}  
+
+{% block content %}  
+<!-- 添加指标卡片 -->  
+<div class="card">  
+    <h2 class="card-title">添加契约化攻坚指标</h2>  
+
+    <!-- 添加选项卡 -->  
+    <div class="tabs">  
+        <div class="tab active" onclick="switchTab('manual')">手动添加</div>  
+        <div class="tab" onclick="switchTab('upload')">批量导入</div>  
+    </div>  
+
+    <!-- 手动添加表单 -->  
+    <div id="manual-tab" class="tab-content active">  
+        <form action="/add" method="post" style="display:flex;flex-direction:row;gap:32px;align-items:center;flex-wrap:wrap;background:#fff;padding:32px 28px 24px 28px;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,0.07);margin-bottom:24px;max-width:100%;width:auto;">  
+            <div style="display:flex;align-items:center;gap:8px;flex:1 1 220px;min-width:220px;max-width:320px;margin-bottom:12px;">  
+                <label for="zbx" style="font-weight:500;color:#333;white-space:nowrap;min-width:56px;">指标项</label>  
+                <input type="text" id="zbx" name="zbx" required style="flex:1 1 120px;padding:10px 14px;border:1px solid #e0e0e0;border-radius:6px;font-size:15px;min-width:0;">  
+            </div>  
+            <div style="display:flex;align-items:center;gap:8px;flex:1 1 220px;min-width:220px;max-width:320px;margin-bottom:12px;">  
+                <label for="fz" style="font-weight:500;color:#333;white-space:nowrap;min-width:56px;">分值</label>  
+                <input type="text" id="fz" name="fz" required style="flex:1 1 120px;padding:10px 14px;border:1px solid #e0e0e0;border-radius:6px;font-size:15px;min-width:0;">  
+            </div>  
+            <div style="display:flex;align-items:center;gap:8px;flex:1 1 220px;min-width:220px;max-width:320px;margin-bottom:12px;">  
+                <label for="qspm" style="font-weight:500;color:#333;white-space:nowrap;min-width:56px;">全省排名</label>  
+                <input type="text" id="qspm" name="qspm" required style="flex:1 1 120px;padding:10px 14px;border:1px solid #e0e0e0;border-radius:6px;font-size:15px;min-width:0;">  
+            </div>  
+            <div style="display:flex;align-items:center;gap:8px;flex:1 1 220px;min-width:220px;max-width:320px;margin-bottom:12px;">  
+                <label for="qnljdfzb" style="font-weight:500;color:#333;white-space:nowrap;min-width:56px;">全年累计得分</label>  
+                <input type="text" id="qnljdfzb" name="qnljdfzb" required style="flex:1 1 120px;padding:10px 14px;border:1px solid #e0e0e0;border-radius:6px;font-size:15px;min-width:0;">  
+            </div>  
+            <div style="display:flex;align-items:center;gap:8px;flex:1 1 220px;min-width:220px;max-width:320px;margin-bottom:12px;">  
+                <label for="nddcpg" style="font-weight:500;color:#333;white-space:nowrap;min-width:56px;">年度达成评估</label>  
+                <input type="text" id="nddcpg" name="nddcpg" required style="flex:1 1 120px;padding:10px 14px;border:1px solid #e0e0e0;border-radius:6px;font-size:15px;min-width:0;">  
+            </div>  
+            <div style="display:flex;align-items:center;gap:8px;flex:1 1 220px;min-width:220px;max-width:320px;margin-bottom:12px;">  
+                <label for="y1zb" style="font-weight:500;color:#333;white-space:nowrap;min-width:56px;">1月指标</label>  
+                <input type="number" id="y1zb" name="y1zb" step="any" required style="flex:1 1 120px;padding:10px 14px;border:1px solid #e0e0e0;border-radius:6px;font-size:15px;min-width:0;">  
+            </div>  
+            <div style="display:flex;align-items:center;gap:8px;flex:1 1 220px;min-width:220px;max-width:320px;margin-bottom:12px;">  
+                <label for="y2zb" style="font-weight:500;color:#333;white-space:nowrap;min-width:56px;">2月指标</label>  
+                <input type="number" id="y2zb" name="y2zb" step="any" required style="flex:1 1 120px;padding:10px 14px;border:1px solid #e0e0e0;border-radius:6px;font-size:15px;min-width:0;">  
+            </div>  
+            <div style="display:flex;align-items:center;gap:8px;flex:1 1 220px;min-width:220px;max-width:320px;margin-bottom:12px;">  
+                <label for="y3zb" style="font-weight:500;color:#333;white-space:nowrap;min-width:56px;">3月指标</label>  
+                <input type="number" id="y3zb" name="y3zb" step="any" required style="flex:1 1 120px;padding:10px 14px;border:1px solid #e0e0e0;border-radius:6px;font-size:15px;min-width:0;">  
+            </div>  
+            <div style="display:flex;align-items:center;gap:8px;flex:1 1 220px;min-width:220px;max-width:320px;margin-bottom:12px;">  
+                <label for="y4zb" style="font-weight:500;color:#333;white-space:nowrap;min-width:56px;">4月指标</label>  
+                <input type="number" id="y4zb" name="y4zb" step="any" required style="flex:1 1 120px;padding:10px 14px;border:1px solid #e0e0e0;border-radius:6px;font-size:15px;min-width:0;">  
+            </div>  
+            <div style="display:flex;align-items:center;gap:8px;flex:1 1 220px;min-width:220px;max-width:320px;margin-bottom:12px;">  
+                <label for="y5zb" style="font-weight:500;color:#333;white-space:nowrap;min-width:56px;">5月指标</label>  
+                <input type="number" id="y5zb" name="y5zb" step="any" required style="flex:1 1 120px;padding:10px 14px;border:1px solid #e0e0e0;border-radius:6px;font-size:15px;min-width:0;">  
+            </div>  
+            <div style="display:flex;align-items:center;gap:8px;flex:1 1 220px;min-width:220px;max-width:320px;margin-bottom:12px;">  
+                <label for="y6zb" style="font-weight:500;color:#333;white-space:nowrap;min-width:56px;">6月指标</label>  
+                <input type="number" id="y6zb" name="y6zb" step="any" required style="flex:1 1 120px;padding:10px 14px;border:1px solid #e0e0e0;border-radius:6px;font-size:15px;min-width:0;">  
+            </div>  
+            <div style="display:flex;align-items:center;gap:8px;flex:1 1 220px;min-width:220px;max-width:320px;margin-bottom:12px;">  
+                <label for="jzz" style="font-weight:500;color:#333;white-space:nowrap;min-width:56px;">基准值</label>  
+                <input type="number" id="jzz" name="jzz" step="any" style="flex:1 1 120px;padding:10px 14px;border:1px solid #e0e0e0;border-radius:6px;font-size:15px;min-width:0;">  
+            </div>  
+            <div style="display:flex;align-items:center;gap:8px;flex:1 1 220px;min-width:220px;max-width:320px;margin-bottom:12px;">  
+                <label for="tzz" style="font-weight:500;color:#333;white-space:nowrap;min-width:56px;">挑战值</label>  
+                <input type="number" id="tzz" name="tzz" step="any" style="flex:1 1 120px;padding:10px 14px;border:1px solid #e0e0e0;border-radius:6px;font-size:15px;min-width:0;">  
+            </div>  
+            <button type="submit" class="btn btn-primary" style="height:40px;min-width:80px;font-size:16px;margin-bottom:12px;">保存</button>  
+        </form>  
+    </div>  
+
+    <!-- Excel上传表单 -->  
+    <div id="upload-tab" class="tab-content">  
+        <!-- 上传区域内容 -->
+         <div class="upload-header">
+                        <h3>Excel批量导入</h3>
+                        <a href="/download-template" class="btn btn-info download-btn">
+                            <span class="download-icon">📥</span>下载Excel模板
+                        </a>
+                    </div>
+
+                    <form action="/upload-excel" method="post" enctype="multipart/form-data">
+                        <div class="upload-area" id="drop-area">
+                            <div class="upload-icon">📊</div>
+                            <div class="upload-text">点击选择Excel文件或拖拽文件到此区域</div>
+                            <input type="file" id="file-input" name="file" class="file-input" accept=".xls,.xlsx" onchange="updateFileName(this)">
+                            <label for="file-input" class="btn btn-primary">选择文件</label>
+                            <div id="file-name" class="file-name"></div>
+                        </div>
+                        <button type="submit" class="btn btn-success">上传并导入</button>
+                    </form>
+
+                    <div class="card info-card">
+                        <h3 class="card-title">Excel导入说明</h3>
+                        <p>请确保您的Excel文件包含以下列：</p>
+                        <ul class="info-list">
+                            <li>指标项</li>
+                            <li>分值</li>
+                            <li>全省排名</li>
+                            <li>全年累计得分</li>
+                            <li>年度达成评估</li>
+                            <li>1月指标、2月指标、3月指标、4月指标、5月指标、6月指标</li>
+                            <li>基准值(可选)、挑战值(可选)</li>
+                        </ul>
+                        <p>系统将按照列名自动匹配相应的字段。如果列名不完全匹配，系统会尝试进行模糊匹配。</p>
+                        <p>您可以点击上方的"<strong>下载Excel模板</strong>"按钮获取标准格式的Excel模板文件。</p>
+                    </div>
+    </div>  
+</div>  
+{% endblock %}  
+
+{% block scripts %}  
+<script>  
+    document.addEventListener('DOMContentLoaded', function() {  
+        // 初始化拖拽上传区域  
+        initDropArea();  
+    });  
+</script>  
+{% endblock %}

@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}添加故障数据 - 网络视界指标后台管理{% endblock %}
+
+{% block content %}
+<!-- 添加故障数据卡片 -->
+<div class="card">
+    <h2 class="card-title">添加故障数据</h2>
+    
+    <form method="post" action="/fault/add_fault_data" class="fault-form">
+        <div class="form-row">
+            <div class="form-group col-md-6">
+                <label for="sequence_no">序号</label>
+                <input type="number" class="form-control" id="sequence_no" name="sequence_no" required>
+            </div>
+            <div class="form-group col-md-6">
+                <label for="fault_date">故障日期</label>
+                <input type="datetime-local" class="form-control" id="fault_date" name="fault_date" required>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="fault_name">故障名称</label>
+            <input type="text" class="form-control" id="fault_name" name="fault_name" required>
+        </div>
+
+        <div class="form-group">
+            <label for="province_cause_analysis">省-故障原因分析</label>
+            <textarea class="form-control" id="province_cause_analysis" name="province_cause_analysis" rows="3"></textarea>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group col-md-4">
+                <label for="province_cause_category">省-原因分类</label>
+                <input type="text" class="form-control" id="province_cause_category" name="province_cause_category">
+            </div>
+            <div class="form-group col-md-4">
+                <label for="province_fault_type">省-故障类型</label>
+                <select class="form-control" id="province_fault_type" name="province_fault_type">
+                    <option value="">请选择</option>
+                    <option value="无线退服">无线退服</option>
+                    <option value="核心网故障">核心网故障</option>
+                    <option value="传输故障">传输故障</option>
+                    <option value="电源故障">电源故障</option>
+                    <option value="其他">其他</option>
+                </select>
+            </div>
+            <div class="form-group col-md-4">
+                <label for="notification_level">通报级别</label>
+                <select class="form-control" id="notification_level" name="notification_level">
+                    <option value="">请选择</option>
+                    <option value="快讯">快讯</option>
+                    <option value="通报">通报</option>
+                    <option value="重要">重要</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group col-md-6">
+                <label for="cause_category">原因分类</label>
+                <select class="form-control" id="cause_category" name="cause_category">
+                    <option value="">请选择</option>
+                    <option value="供电局停电">供电局停电</option>
+                    <option value="设备故障">设备故障</option>
+                    <option value="人为因素">人为因素</option>
+                    <option value="环境因素">环境因素</option>
+                    <option value="其他">其他</option>
+                </select>
+            </div>
+            <div class="form-group col-md-6">
+                <label for="fault_duration_hours">故障处理时长（小时）</label>
+                <input type="number" step="0.1" class="form-control" id="fault_duration_hours" name="fault_duration_hours">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="complaint_situation">投诉情况</label>
+            <textarea class="form-control" id="complaint_situation" name="complaint_situation" rows="2"></textarea>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group col-md-6">
+                <label for="start_time">发生时间</label>
+                <input type="datetime-local" class="form-control" id="start_time" name="start_time">
+            </div>
+            <div class="form-group col-md-6">
+                <label for="end_time">结束时间</label>
+                <input type="datetime-local" class="form-control" id="end_time" name="end_time">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="fault_cause">故障原因</label>
+            <textarea class="form-control" id="fault_cause" name="fault_cause" rows="3"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="fault_handling">故障处理</label>
+            <textarea class="form-control" id="fault_handling" name="fault_handling" rows="3"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="is_proactive_discovery">主动发现</label>
+            <select class="form-control" id="is_proactive_discovery" name="is_proactive_discovery">
+                <option value="">请选择</option>
+                <option value="是">是</option>
+                <option value="否">否</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="remarks">备注</label>
+            <textarea class="form-control" id="remarks" name="remarks" rows="2"></textarea>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">保存故障数据</button>
+            <a href="/fault/data" class="btn btn-secondary">取消</a>
+        </div>
+    </form>
+</div>
+
+<style>
+.fault-form {
+    max-width: 800px;
+}
+
+.form-row {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0 -15px;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.col-md-4 {
+    flex: 0 0 33.333333%;
+    max-width: 33.333333%;
+    padding: 0 15px;
+}
+
+.col-md-6 {
+    flex: 0 0 50%;
+    max-width: 50%;
+    padding: 0 15px;
+}
+
+.form-control {
+    display: block;
+    width: 100%;
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #495057;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus {
+    color: #495057;
+    background-color: #fff;
+    border-color: #80bdff;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+label {
+    display: inline-block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #333;
+}
+
+.form-actions {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #dee2e6;
+}
+
+.form-actions .btn {
+    margin-right: 10px;
+}
+
+@media (max-width: 768px) {
+    .col-md-4,
+    .col-md-6 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+}
+</style>
+
+<script>
+// 设置默认的故障日期为当前时间
+document.addEventListener('DOMContentLoaded', function() {
+    const now = new Date();
+    const localDateTime = now.getFullYear() + '-' + 
+        String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+        String(now.getDate()).padStart(2, '0') + 'T' + 
+        String(now.getHours()).padStart(2, '0') + ':' + 
+        String(now.getMinutes()).padStart(2, '0');
+    
+    document.getElementById('fault_date').value = localDateTime;
+});
+</script>
+{% endblock %}

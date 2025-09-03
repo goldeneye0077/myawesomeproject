@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}宽带装机交付管理{% endblock %}
+{% block content %}
+<div class="card">
+    <h2>宽带装机交付管理</h2>
+    <div class="form-card" style="max-width:100%;width:auto;margin:0 auto 24px auto;padding:32px 28px 24px 28px;background:#fff;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,0.07);">
+        <form method="post" action="/center_middle_kpi/add" style="display:flex;flex-direction:row;gap:32px;align-items:center;justify-content:flex-start;flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:8px;flex:1 1 220px;min-width:220px;max-width:320px;margin-bottom:12px;">
+                <label for="month" style="font-weight:500;color:#333;white-space:nowrap;min-width:56px;">月份</label>
+                <input type="text" id="month" name="month" placeholder="月份" required style="flex:1 1 120px;padding:10px 14px;border:1px solid #e0e0e0;border-radius:6px;font-size:15px;min-width:0;">
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex:1 1 220px;min-width:220px;max-width:320px;margin-bottom:12px;">
+                <label for="baseline" style="font-weight:500;color:#333;white-space:nowrap;min-width:56px;">基准值</label>
+                <input type="number" id="baseline" name="baseline" placeholder="基准值" step="any" style="flex:1 1 120px;padding:10px 14px;border:1px solid #e0e0e0;border-radius:6px;font-size:15px;min-width:0;">
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex:1 1 220px;min-width:220px;max-width:320px;margin-bottom:12px;">
+                <label for="challenge" style="font-weight:500;color:#333;white-space:nowrap;min-width:56px;">挑战值</label>
+                <input type="number" id="challenge" name="challenge" placeholder="挑战值" step="any" style="flex:1 1 120px;padding:10px 14px;border:1px solid #e0e0e0;border-radius:6px;font-size:15px;min-width:0;">
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex:1 1 220px;min-width:220px;max-width:320px;margin-bottom:12px;">
+                <label for="broadband_rate" style="font-weight:500;color:#333;white-space:nowrap;min-width:56px;">家企宽回单率</label>
+                <input type="number" id="broadband_rate" name="broadband_rate" placeholder="宽带达标率" step="any" style="flex:1 1 120px;padding:10px 14px;border:1px solid #e0e0e0;border-radius:6px;font-size:15px;min-width:0;">
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex:1 1 220px;min-width:220px;max-width:320px;margin-bottom:12px;">
+                <label for="delivery_rate" style="font-weight:500;color:#333;white-space:nowrap;min-width:56px;">到企网络侧交付率</label>
+                <input type="number" id="delivery_rate" name="delivery_rate" placeholder="交付达标率" step="any" style="flex:1 1 120px;padding:10px 14px;border:1px solid #e0e0e0;border-radius:6px;font-size:15px;min-width:0;">
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex:1 1 220px;min-width:220px;max-width:320px;margin-bottom:12px;">
+                <label for="year" style="font-weight:500;color:#333;white-space:nowrap;min-width:56px;">年份</label>
+                <input type="number" id="year" name="year" placeholder="年份" required style="flex:1 1 120px;padding:10px 14px;border:1px solid #e0e0e0;border-radius:6px;font-size:15px;min-width:0;">
+            </div>
+            <button type="submit" class="btn btn-success" style="height:40px;min-width:80px;font-size:16px;margin-bottom:12px;">新增数据</button>
+        </form>
+    </div>
+    <table class="data-table">
+        <thead>
+            <tr><th>ID</th><th>月份</th><th>基准值</th><th>挑战值</th><th>家企宽回单率</th><th>到企网络侧交付率</th><th>年份</th><th>操作</th></tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                <td>{{ row.id }}</td>
+                <td>{{ row.month }}</td>
+                <td>{{ row.baseline }}</td>
+                <td>{{ row.challenge }}</td>
+                <td>{{ row.broadband_rate }}</td>
+                <td>{{ row.delivery_rate }}</td>
+                <td>{{ row.year }}</td>
+                <td>
+                    <form method="post" action="/center_middle_kpi/delete" style="display:inline;">
+                        <input type="hidden" name="id" value="{{ row.id }}">
+                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('确定删除？');">删除</button>
+                    </form>
+                    <button class="btn btn-info btn-sm" onclick="showEdit({{ row.id }}, '{{ row.month }}', {{ row.baseline if row.baseline is not none else '' }}, {{ row.challenge if row.challenge is not none else '' }}, {{ row.broadband_rate if row.broadband_rate is not none else '' }}, {{ row.delivery_rate if row.delivery_rate is not none else '' }}, {{ row.year if row.year is not none else '' }})">编辑</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <!-- 编辑弹窗 -->
+    <div id="editModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.2);z-index:1000;align-items:center;justify-content:center;">
+        <form method="post" action="/center_middle_kpi/update" class="card" style="max-width:480px;margin:auto;padding:30px;">
+            <input type="hidden" id="editId" name="id">
+            <input type="text" id="editMonth" name="month" placeholder="月份" required class="form-col">
+            <input type="number" id="editBaseline" name="baseline" placeholder="基准值" min="0" max="1" step="any" required class="form-col">
+            <input type="number" id="editChallenge" name="challenge" placeholder="挑战值" min="0" max="1" step="any" required class="form-col">
+            <input type="number" id="editBroadbandRate" name="broadband_rate" placeholder="宽带达标率" min="0" max="1" step="any" required class="form-col">
+            <input type="number" id="editDeliveryRate" name="delivery_rate" placeholder="交付达标率" min="0" max="1" step="any" required class="form-col">
+            <input type="number" id="editYear" name="year" placeholder="年份" required class="form-col">
+            <div style="text-align:right;margin-top:18px;">
+                <button type="button" onclick="hideEdit()" class="btn btn-secondary" style="margin-right:8px;">取消</button>
+                <button type="submit" class="btn btn-success">保存</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+function showEdit(id, month, baseline, challenge, broadband_rate, delivery_rate, year) {
+    document.getElementById('editId').value = id;
+    document.getElementById('editMonth').value = (month === null || month === undefined) ? '' : month;
+    document.getElementById('editBaseline').value = (baseline === null || baseline === undefined) ? '' : baseline;
+    document.getElementById('editChallenge').value = (challenge === null || challenge === undefined) ? '' : challenge;
+    document.getElementById('editBroadbandRate').value = (broadband_rate === null || broadband_rate === undefined) ? '' : broadband_rate;
+    document.getElementById('editDeliveryRate').value = (delivery_rate === null || delivery_rate === undefined) ? '' : delivery_rate;
+    document.getElementById('editYear').value = (year === null || year === undefined) ? '' : year;
+    document.getElementById('editModal').style.display = 'flex';
+}
+function hideEdit() {
+    document.getElementById('editModal').style.display = 'none';
+}
+</script>
+{% endblock %}

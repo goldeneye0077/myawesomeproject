@@ -1,0 +1,123 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据可视化大屏</title>
+    <link rel="stylesheet" href="/static/css/index.css">
+    <script src="/static/js/scaleBox.js"></script>
+    <script src="/static/js/showTime.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.2/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts-gl@2/dist/echarts-gl.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts-wordcloud@2.0.0/dist/echarts-wordcloud.min.js"></script>
+</head>
+<body>
+    <div id="scaleBox">
+        <div id="pageContainer">
+            <!-- 头部 -->
+            <div id="headContainer">
+                <h1>契约化攻坚指标</h1>
+                <span id="showTime">{{ time.curTime }}   {{ time.curDate }}</span>
+                <div id="button">
+                    <a href="pageTwo.html"><button>KPI</button></a>
+                </div>
+            </div>
+
+            <!-- 主体内容 -->
+            <div id="mainContainer">
+                <!-- 左侧区域 -->
+                <div id="leftTop" class="panel">
+                    <div class="panelTitle">汇聚骨干</div>
+                    <div class="panelContent" id="leftTopChart"></div>
+                </div>
+
+                <div id="leftMiddle" class="panel">
+                    <div class="panelTitle">通信机楼PUE达标率</div>
+                    <div class="panelContent" id="leftMiddleChart"></div>
+                </div>
+
+                <!-- 中间区域 -->
+                <div id="centerTop" class="panel">
+                    <div id="centerTopTop">
+                        {% for item in centerTopTopData %}
+                        <div class="item">
+                            <div class="rowOne">{{ item[0] }}</div>
+                            <div class="rowTwo">
+                                <div class="rowLeft"></div>
+                                <div class="rowCenter">{{ item[1] }}</div>
+                                <div class="rowRight">
+                                    <div class="dot {{ 'green' if item[1] == '达标' else 'red' }}"></div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div id="centerTopBottom">
+                        <div class="panelContent" id="centerTopBottomChart"></div>
+                    </div>
+                </div>
+
+                <!-- 右侧区域 -->
+                <div id="rightTop" class="panel">
+                    <div class="panelTitle">资源数据端到端应用准确率</div>
+                    <div class="panelContent" id="rightTopChart"></div>
+                </div>
+
+                <div id="rightMiddle" class="panel">
+                    <div class="panelTitle">通信机楼耗电量相对增幅系数</div>
+                    <div class="panelContent" id="rightMiddleChart"></div>
+                </div>
+
+                <!-- 底部区域 -->
+                <div id="bottomContainer" class="panel">
+                    <div class="panelTitle">关键数据准确性</div>
+                    <div class="panelContent" id="bottomChart"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 图表初始化
+        function initCharts() {
+            const charts = {
+                leftTopChart: initChart('leftTopChart'),
+                leftMiddleChart: initChart('leftMiddleChart'),
+                rightTopChart: initChart('rightTopChart'),
+                rightMiddleChart: initChart('rightMiddleChart'),
+                bottomChart: initChart('bottomChart'),
+                centerTopBottomChart: initChart('centerTopBottomChart')
+            };
+
+            // 设置图表选项
+            charts.leftTopChart.setOption({{ leftTop_options | safe }});
+            charts.leftMiddleChart.setOption({{ leftMiddle_options | safe }});
+            charts.rightTopChart.setOption({{ rightTop_options | safe }});
+            charts.rightMiddleChart.setOption({{ rightMiddle_options | safe }});
+            charts.bottomChart.setOption({{ bottom_options | safe }});
+            charts.centerTopBottomChart.setOption({{ centerTopBottom_options | safe }});
+
+            // 自适应处理
+            window.addEventListener('resize', () => {
+                Object.values(charts).forEach(chart => chart.resize());
+            });
+        }
+
+        function initChart(domId) {
+            return echarts.init(
+                document.getElementById(domId),
+                'dark',
+                { renderer: 'canvas', devicePixelRatio: 2 }
+            );
+        }
+
+        // 启动初始化
+        window.onload = function() {
+            initCharts();
+            setScale();
+            updateDate();
+        }
+    </script>
+</body>
+</html>
