@@ -18,7 +18,8 @@
       "Read(/E:\\myawesomeproject/**)",
       "Read(/E:\\myawesomeproject\\aiwlsj1/**)",
       "Read(/E:\\myawesomeproject\\aiwlsj1/**)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
