@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(/E:\\myawesomeproject\\aiwlsj1/**)",
+      "Read(/E:\\myawesomeproject\\aiwlsj1/**)",
+      "Read(/E:\\myawesomeproject\\aiwlsj1/**)",
+      "Read(/E:\\myawesomeproject\\aiwlsj1/**)",
+      "Read(/E:\\myawesomeproject\\aiwlsj1/**)",
+      "Read(/E:\\myawesomeproject\\aiwlsj1/**)",
+      "Read(/E:\\myawesomeproject\\aiwlsj1/**)",
+      "Read(/E:\\myawesomeproject\\aiwlsj1\\db/**)",
+      "Read(/E:\\myawesomeproject\\aiwlsj1\\db/**)",
+      "Read(/E:\\myawesomeproject\\aiwlsj1/**)",
+      "Read(/E:\\myawesomeproject\\aiwlsj1/**)",
+      "Read(/E:\\myawesomeproject\\aiwlsj1/**)",
+      "Read(/E:\\myawesomeproject\\aiwlsj1/**)",
+      "Read(/E:\\myawesomeproject\\aiwlsj1/**)",
+      "Read(/E:\\myawesomeproject/**)",
+      "Read(/E:\\myawesomeproject\\aiwlsj1/**)",
+      "Read(/E:\\myawesomeproject\\aiwlsj1/**)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

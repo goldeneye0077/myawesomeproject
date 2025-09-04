@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>指标管理 - 指标管理系统</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- 自定义样式 -->
+    <link href="/static/css/styles.css" rel="stylesheet">
+    <link href="/static/css/modern_theme.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- 面包屑导航 -->
+        <nav aria-label="breadcrumb" class="mt-3">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">首页</a></li>
+                <li class="breadcrumb-item active" aria-current="page">指标管理</li>
+            </ol>
+        </nav>
+
+        <!-- 页面标题 -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-chart-line me-2"></i>指标管理
+            </h1>
+            <div class="btn-group" role="group">
+                <a href="/your-indicator/add" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>添加指标
+                </a>
+                <button type="button" class="btn btn-success" onclick="showImportModal()">
+                    <i class="fas fa-file-import me-1"></i>批量导入
+                </button>
+                <button type="button" class="btn btn-info" onclick="exportData()">
+                    <i class="fas fa-file-export me-1"></i>导出数据
+                </button>
+            </div>
+        </div>
+
+        <!-- 统计卡片 -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="stat-icon bg-primary">
+                                <i class="fas fa-chart-bar"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h6 class="card-title text-muted mb-1">总指标数</h6>
+                                <h3 class="mb-0" id="totalCount">-</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="stat-icon bg-success">
+                                <i class="fas fa-arrow-up"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h6 class="card-title text-muted mb-1">本月新增</h6>
+                                <h3 class="mb-0" id="monthlyCount">-</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="stat-icon bg-warning">
+                                <i class="fas fa-tags"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h6 class="card-title text-muted mb-1">分类数量</h6>
+                                <h3 class="mb-0" id="categoryCount">-</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="stat-icon bg-info">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h6 class="card-title text-muted mb-1">最近更新</h6>
+                                <h3 class="mb-0" id="recentUpdate">-</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 搜索和筛选 -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="searchInput" class="form-label">搜索关键词</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            <input type="text" class="form-control" id="searchInput" placeholder="输入指标名称...">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="categoryFilter" class="form-label">分类筛选</label>
+                        <select class="form-select" id="categoryFilter">
+                            <option value="">全部分类</option>
+                            <!-- 动态加载分类选项 -->
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="dateRange" class="form-label">创建时间</label>
+                        <select class="form-select" id="dateRange">
+                            <option value="">不限时间</option>
+                            <option value="today">今天</option>
+                            <option value="week">本周</option>
+                            <option value="month">本月</option>
+                            <option value="quarter">本季度</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-grid">
+                            <button type="button" class="btn btn-outline-primary" onclick="searchData()">
+                                <i class="fas fa-search me-1"></i>搜索
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 数据表格 -->
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">指标数据</h5>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" class="btn btn-outline-secondary" onclick="refreshTable()">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="toggleView()">
+                            <i class="fas fa-th-list"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- 加载状态 -->
+                <div id="loadingSpinner" class="text-center py-5" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">加载中...</span>
+                    </div>
+                    <p class="mt-2 text-muted">正在加载数据...</p>
+                </div>
+
+                <!-- 数据表格 -->
+                <div class="table-responsive">
+                    <table class="table table-hover" id="dataTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>
+                                    <input type="checkbox" class="form-check-input" id="selectAll">
+                                </th>
+                                <th>ID</th>
+                                <th>指标名称</th>
+                                <th>指标值</th>
+                                <th>分类</th>
+                                <th>描述</th>
+                                <th>创建时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <!-- 动态加载数据 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 空状态 -->
+                <div id="emptyState" class="text-center py-5" style="display: none;">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">暂无数据</h5>
+                    <p class="text-muted">点击上方按钮添加新的指标数据</p>
+                </div>
+            </div>
+            
+            <!-- 分页 -->
+            <div class="card-footer">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="text-muted">
+                        显示第 <span id="startIndex">0</span> 到 <span id="endIndex">0</span> 条，共 <span id="totalRecords">0</span> 条记录
+                    </div>
+                    <nav aria-label="数据分页">
+                        <ul class="pagination mb-0" id="pagination">
+                            <!-- 动态生成分页 -->
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 导入数据模态框 -->
+    <div class="modal fade" id="importModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">批量导入数据</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="importForm" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="importFile" class="form-label">选择文件</label>
+                            <input type="file" class="form-control" id="importFile" accept=".xlsx,.xls,.csv" required>
+                            <div class="form-text">支持 Excel (.xlsx, .xls) 和 CSV 格式文件</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">文件格式说明</label>
+                            <div class="alert alert-info">
+                                <small>
+                                    <strong>必需列：</strong>name (指标名称), value (指标值)<br>
+                                    <strong>可选列：</strong>category (分类), description (描述)
+                                </small>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="importData()">
+                        <i class="fas fa-upload me-1"></i>导入
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除确认模态框 -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">确认删除</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>确定要删除选中的指标数据吗？此操作不可撤销。</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">确认删除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript库 -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/common.js"></script>
+
+    <script>
+    // 全局变量
+    let currentPage = 1;
+    let pageSize = 20;
+    let totalRecords = 0;
+    
+    // 页面加载完成后执行
+    document.addEventListener('DOMContentLoaded', function() {
+        loadStatistics();
+        loadCategories();
+        loadData();
+        
+        // 绑定搜索事件
+        document.getElementById('searchInput').addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') {
+                searchData();
+            }
+        });
+    });
+    
+    // 加载统计数据
+    async function loadStatistics() {
+        try {
+            const response = await fetch('/api/your-indicator/statistics');
+            const result = await response.json();
+            
+            if (result.success) {
+                const data = result.data;
+                document.getElementById('totalCount').textContent = data.total_count || 0;
+                document.getElementById('monthlyCount').textContent = data.recent_additions || 0;
+                document.getElementById('categoryCount').textContent = Object.keys(data.category_distribution || {}).length;
+                document.getElementById('recentUpdate').textContent = '今天';
+            }
+        } catch (error) {
+            console.error('加载统计数据失败:', error);
+        }
+    }
+    
+    // 加载分类选项
+    async function loadCategories() {
+        try {
+            // 这里应该从API获取分类数据
+            const categorySelect = document.getElementById('categoryFilter');
+            // 示例数据
+            const categories = ['性能指标', '质量指标', '安全指标', '效率指标'];
+            
+            categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category;
+                option.textContent = category;
+                categorySelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error('加载分类失败:', error);
+        }
+    }
+    
+    // 加载数据
+    async function loadData(page = 1) {
+        showLoading(true);
+        currentPage = page;
+        
+        try {
+            const search = document.getElementById('searchInput').value;
+            const category = document.getElementById('categoryFilter').value;
+            
+            const params = new URLSearchParams({
+                page: page,
+                page_size: pageSize
+            });
+            
+            if (search) params.append('search', search);
+            if (category) params.append('category', category);
+            
+            const response = await fetch(`/api/your-indicator/data?${params}`);
+            const result = await response.json();
+            
+            if (result.success) {
+                totalRecords = result.total;
+                renderTable(result.data);
+                renderPagination();
+                updateRecordInfo();
+            } else {
+                showAlert('error', result.message || '加载数据失败');
+            }
+        } catch (error) {
+            console.error('加载数据失败:', error);
+            showAlert('error', '网络错误，请稍后重试');
+        } finally {
+            showLoading(false);
+        }
+    }
+    
+    // 渲染表格
+    function renderTable(data) {
+        const tbody = document.getElementById('tableBody');
+        const emptyState = document.getElementById('emptyState');
+        
+        if (data.length === 0) {
+            tbody.innerHTML = '';
+            emptyState.style.display = 'block';
+            return;
+        }
+        
+        emptyState.style.display = 'none';
+        tbody.innerHTML = data.map(item => `
+            <tr>
+                <td>
+                    <input type="checkbox" class="form-check-input row-checkbox" value="${item.id}">
+                </td>
+                <td>${item.id}</td>
+                <td><strong>${item.name}</strong></td>
+                <td><span class="badge bg-primary">${item.value}</span></td>
+                <td>${item.category || '-'}</td>
+                <td>${item.description ? (item.description.length > 50 ? item.description.substring(0, 50) + '...' : item.description) : '-'}</td>
+                <td>${formatDateTime(item.created_at)}</td>
+                <td>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <a href="/your-indicator/edit/${item.id}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <button type="button" class="btn btn-outline-info btn-sm" onclick="viewDetails(${item.id})">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="deleteItem(${item.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+    
+    // 渲染分页
+    function renderPagination() {
+        const totalPages = Math.ceil(totalRecords / pageSize);
+        const pagination = document.getElementById('pagination');
+        
+        if (totalPages <= 1) {
+            pagination.innerHTML = '';
+            return;
+        }
+        
+        let paginationHTML = '';
+        
+        // 上一页
+        paginationHTML += `
+            <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="loadData(${currentPage - 1})">上一页</a>
+            </li>
+        `;
+        
+        // 页码
+        const startPage = Math.max(1, currentPage - 2);
+        const endPage = Math.min(totalPages, currentPage + 2);
+        
+        for (let i = startPage; i <= endPage; i++) {
+            paginationHTML += `
+                <li class="page-item ${i === currentPage ? 'active' : ''}">
+                    <a class="page-link" href="#" onclick="loadData(${i})">${i}</a>
+                </li>
+            `;
+        }
+        
+        // 下一页
+        paginationHTML += `
+            <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="loadData(${currentPage + 1})">下一页</a>
+            </li>
+        `;
+        
+        pagination.innerHTML = paginationHTML;
+    }
+    
+    // 更新记录信息
+    function updateRecordInfo() {
+        const startIndex = (currentPage - 1) * pageSize + 1;
+        const endIndex = Math.min(currentPage * pageSize, totalRecords);
+        
+        document.getElementById('startIndex').textContent = totalRecords > 0 ? startIndex : 0;
+        document.getElementById('endIndex').textContent = endIndex;
+        document.getElementById('totalRecords').textContent = totalRecords;
+    }
+    
+    // 搜索数据
+    function searchData() {
+        loadData(1);
+    }
+    
+    // 刷新表格
+    function refreshTable() {
+        loadData(currentPage);
+    }
+    
+    // 显示/隐藏加载状态
+    function showLoading(show) {
+        document.getElementById('loadingSpinner').style.display = show ? 'block' : 'none';
+        document.getElementById('dataTable').style.display = show ? 'none' : 'table';
+    }
+    
+    // 显示导入模态框
+    function showImportModal() {
+        const modal = new bootstrap.Modal(document.getElementById('importModal'));
+        modal.show();
+    }
+    
+    // 导入数据
+    async function importData() {
+        const fileInput = document.getElementById('importFile');
+        const file = fileInput.files[0];
+        
+        if (!file) {
+            showAlert('warning', '请选择要导入的文件');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        try {
+            const response = await fetch('/api/your-indicator/import', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showAlert('success', result.message);
+                const modal = bootstrap.Modal.getInstance(document.getElementById('importModal'));
+                modal.hide();
+                loadData();
+                loadStatistics();
+            } else {
+                showAlert('error', result.message || '导入失败');
+            }
+        } catch (error) {
+            console.error('导入失败:', error);
+            showAlert('error', '网络错误，请稍后重试');
+        }
+    }
+    
+    // 导出数据
+    function exportData() {
+        const category = document.getElementById('categoryFilter').value;
+        const params = new URLSearchParams();
+        
+        if (category) params.append('category', category);
+        
+        const url = `/api/your-indicator/export?${params}`;
+        window.open(url, '_blank');
+    }
+    
+    // 删除项目
+    function deleteItem(id) {
+        const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        
+        confirmBtn.onclick = async function() {
+            try {
+                const response = await fetch(`/api/your-indicator/delete/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert('success', '删除成功');
+                    modal.hide();
+                    loadData();
+                    loadStatistics();
+                } else {
+                    showAlert('error', result.message || '删除失败');
+                }
+            } catch (error) {
+                console.error('删除失败:', error);
+                showAlert('error', '网络错误，请稍后重试');
+            }
+        };
+        
+        modal.show();
+    }
+    
+    // 查看详情
+    function viewDetails(id) {
+        // 实现查看详情功能
+        console.log('查看详情:', id);
+    }
+    
+    // 格式化日期时间
+    function formatDateTime(dateString) {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        return date.toLocaleString('zh-CN');
+    }
+    
+    // 显示提示信息
+    function showAlert(type, message) {
+        // 这里使用toast或其他方式显示提示信息
+        console.log(`${type}: ${message}`);
+    }
+    </script>
+</body>
+</html>

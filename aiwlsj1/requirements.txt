@@ -11,3 +11,13 @@ aiofiles
 python-multipart
 requests
 plotly
+pydantic[email]
+python-dotenv
+alembic
+
+# 测试相关依赖
+pytest
+pytest-asyncio
+pytest-cov
+httpx
+pytest-mock

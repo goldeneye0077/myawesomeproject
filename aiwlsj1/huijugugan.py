@@ -20,12 +20,21 @@ import calendar
 
 from fastapi.templating import Jinja2Templates
 import requests
+from config import settings
+import logging
+
 router = APIRouter(prefix="/huiju", tags=["汇聚骨干指标管理"])
 templates = Jinja2Templates(directory="templates")
+logger = logging.getLogger(__name__)
 
 def analyze_and_predict_with_deepseek(df, city=None, max_rounds=3):
-    api_url = "https://DeepSeek-R1-wzrba.eastus2.models.ai.azure.com/chat/completions"
-    api_key = "HyYc4J6EcwlktQLXMcXQJNAtkRgioiqi"
+    """使用DeepSeek API分析和预测数据趋势"""
+    if not settings.DEEPSEEK_API_KEY:
+        logger.warning("DeepSeek API密钥未配置")
+        return "AI分析功能未配置，请联系管理员配置API密钥。"
+    
+    api_url = settings.DEEPSEEK_API_URL
+    api_key = settings.DEEPSEEK_API_KEY
     prompt = f"请对如下{('城市：'+city) if city else '全部城市'}的汇聚骨干指标数据进行简要分析、总结规律，并预测未来几个月的趋势：\n{df.to_string(index=False)}"
     headers = {
         "Content-Type": "application/json",
