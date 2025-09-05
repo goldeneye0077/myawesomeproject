@@ -1,0 +1,718 @@
+{% extends "monitor/base_monitor.html" %}
+
+{% block monitor_title %}系统监控仪表盘{% endblock %}
+{% block monitor_subtitle %}系统状态综合概览 - 一站式监控所有关键指标{% endblock %}
+
+{% block monitor_content %}
+<!-- 顶部状态卡片 -->
+<div class="monitor-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 2rem;">
+    <div class="monitor-card" style="text-align: center;">
+        <div class="monitor-card-header">
+            <h3 class="monitor-card-title">
+                <svg class="monitor-card-icon" viewBox="0 0 24 24">
+                    <path d="M12 2L2 7V10C2 16 6 20.9 12 22C18 20.9 22 16 22 10V7L12 2Z"/>
+                </svg>
+                系统状态
+            </h3>
+        </div>
+        <div style="padding: 1rem 0;">
+            <div id="system-status-icon" style="font-size: 3rem; margin-bottom: 0.5rem;">⚡</div>
+            <div id="system-status-text" style="font-size: 1.2rem; font-weight: 600; color: var(--success-color);">运行正常</div>
+            <div id="system-uptime" style="color: var(--text-secondary); margin-top: 0.5rem;">运行时间: --</div>
+        </div>
+    </div>
+
+    <div class="monitor-card" style="text-align: center;">
+        <div class="monitor-card-header">
+            <h3 class="monitor-card-title">
+                <svg class="monitor-card-icon" viewBox="0 0 24 24">
+                    <path d="M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM19 19H5V5H19V19Z"/>
+                </svg>
+                数据库
+            </h3>
+        </div>
+        <div style="padding: 1rem 0;">
+            <div id="database-status-icon" style="font-size: 3rem; margin-bottom: 0.5rem;">💾</div>
+            <div id="database-status-text" style="font-size: 1.2rem; font-weight: 600; color: var(--success-color);">连接正常</div>
+            <div id="database-records" style="color: var(--text-secondary); margin-top: 0.5rem;">总记录: --</div>
+        </div>
+    </div>
+
+    <div class="monitor-card" style="text-align: center;">
+        <div class="monitor-card-header">
+            <h3 class="monitor-card-title">
+                <svg class="monitor-card-icon" viewBox="0 0 24 24">
+                    <path d="M17 7H22V17H17V19A1 1 0 0 1 16 20H4A1 1 0 0 1 3 19V5A1 1 0 0 1 4 4H16A1 1 0 0 1 17 5V7ZM5 6V18H15V6H5Z"/>
+                </svg>
+                CPU
+            </h3>
+        </div>
+        <div style="padding: 1rem 0;">
+            <div id="cpu-usage-display" style="font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem;">--%</div>
+            <div id="cpu-status-text" style="color: var(--success-color);">使用率正常</div>
+        </div>
+    </div>
+
+    <div class="monitor-card" style="text-align: center;">
+        <div class="monitor-card-header">
+            <h3 class="monitor-card-title">
+                <svg class="monitor-card-icon" viewBox="0 0 24 24">
+                    <path d="M6 2V20H18V2H6ZM16 18H8V4H16V18Z"/>
+                </svg>
+                内存
+            </h3>
+        </div>
+        <div style="padding: 1rem 0;">
+            <div id="memory-usage-display" style="font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem;">--%</div>
+            <div id="memory-status-text" style="color: var(--success-color);">使用率正常</div>
+        </div>
+    </div>
+
+    <div class="monitor-card" style="text-align: center;">
+        <div class="monitor-card-header">
+            <h3 class="monitor-card-title">
+                <svg class="monitor-card-icon" viewBox="0 0 24 24">
+                    <path d="M6 2C4.89 2 4 2.89 4 4V20A2 2 0 0 0 6 22H18A2 2 0 0 0 20 20V8L14 2H6Z"/>
+                </svg>
+                磁盘
+            </h3>
+        </div>
+        <div style="padding: 1rem 0;">
+            <div id="disk-usage-display" style="font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem;">--%</div>
+            <div id="disk-status-text" style="color: var(--success-color);">使用率正常</div>
+        </div>
+    </div>
+</div>
+
+<!-- 主要监控图表 -->
+<div class="monitor-grid">
+    <!-- 系统性能总览 -->
+    <div class="monitor-card" style="grid-column: span 2;">
+        <div class="monitor-card-header">
+            <h3 class="monitor-card-title">
+                <svg class="monitor-card-icon" viewBox="0 0 24 24">
+                    <path d="M22 6.92L20.59 5.51L16.5 9.6L13 6.1L2.39 16.71L3.81 18.12L13 8.93L16.5 12.43L22 6.92Z"/>
+                </svg>
+                系统性能实时监控
+            </h3>
+            <div>
+                <button class="refresh-btn" onclick="refreshDashboard()" style="margin-right: 0.5rem;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 4V2A10 10 0 0 0 2 12H4A8 8 0 0 1 12 4Z"/>
+                    </svg>
+                    刷新
+                </button>
+                <button class="refresh-btn" id="auto-refresh-toggle" onclick="toggleAutoRefresh()">
+                    <span id="auto-refresh-icon">⏸️</span>
+                    <span id="auto-refresh-text">暂停</span>
+                </button>
+            </div>
+        </div>
+        <div class="chart-container" style="height: 350px;">
+            <div id="performance-overview"></div>
+        </div>
+    </div>
+
+    <!-- 数据库表统计 -->
+    <div class="monitor-card">
+        <div class="monitor-card-header">
+            <h3 class="monitor-card-title">
+                <svg class="monitor-card-icon" viewBox="0 0 24 24">
+                    <path d="M3 3H21V21H3V3ZM5 5V19H19V5H5Z"/>
+                </svg>
+                数据库表统计
+            </h3>
+        </div>
+        <div class="chart-container">
+            <div id="database-tables-chart"></div>
+        </div>
+    </div>
+</div>
+
+<!-- 详细信息表格 -->
+<div class="monitor-grid">
+    <!-- 系统详细信息 -->
+    <div class="monitor-card">
+        <div class="monitor-card-header">
+            <h3 class="monitor-card-title">
+                <svg class="monitor-card-icon" viewBox="0 0 24 24">
+                    <path d="M4 6H20V18H4V6ZM6 8V16H18V8H6Z"/>
+                </svg>
+                系统详细信息
+            </h3>
+        </div>
+        <div style="overflow-y: auto; max-height: 300px;">
+            <table class="data-table">
+                <tbody id="system-details">
+                    <tr><td>系统运行时间</td><td id="detail-uptime">--</td></tr>
+                    <tr><td>CPU使用率</td><td id="detail-cpu">--</td></tr>
+                    <tr><td>内存使用率</td><td id="detail-memory">--</td></tr>
+                    <tr><td>已用内存</td><td id="detail-memory-used">--</td></tr>
+                    <tr><td>可用内存</td><td id="detail-memory-available">--</td></tr>
+                    <tr><td>磁盘使用率</td><td id="detail-disk">--</td></tr>
+                    <tr><td>数据库状态</td><td id="detail-db-status">--</td></tr>
+                    <tr><td>最后更新</td><td id="detail-last-update">--</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 快速操作面板 -->
+    <div class="monitor-card">
+        <div class="monitor-card-header">
+            <h3 class="monitor-card-title">
+                <svg class="monitor-card-icon" viewBox="0 0 24 24">
+                    <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 1L9 7V9C9 10.1 9.9 11 11 11V15L13 13.5V11C14.1 11 15 10.1 15 9V7L21 9Z"/>
+                </svg>
+                快速操作
+            </h3>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.75rem; padding: 1rem 0;">
+            <a href="/tools/monitor/database" class="refresh-btn" style="text-decoration: none; text-align: center;">
+                📊 数据库详情
+            </a>
+            <a href="/tools/monitor/performance" class="refresh-btn" style="text-decoration: none; text-align: center;">
+                ⚡ 性能监控
+            </a>
+            <a href="/tools/monitor/logs" class="refresh-btn" style="text-decoration: none; text-align: center;">
+                📝 查看日志
+            </a>
+            <button class="refresh-btn" onclick="downloadReport()" style="background: var(--success-color);">
+                📥 下载报告
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 状态总结卡片 -->
+<div class="monitor-card">
+    <div class="monitor-card-header">
+        <h3 class="monitor-card-title">
+            <svg class="monitor-card-icon" viewBox="0 0 24 24">
+                <path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z"/>
+            </svg>
+            系统健康评分
+        </h3>
+        <span id="health-score-badge" class="status-badge status-success">优秀</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 2rem; padding: 1rem 0;">
+        <div class="chart-container" style="height: 150px; width: 150px;">
+            <div id="health-score-gauge"></div>
+        </div>
+        <div style="flex: 1;">
+            <div id="health-summary" style="color: var(--text-secondary); line-height: 1.6;">
+                正在计算系统健康评分...
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block monitor_js %}
+<script>
+let dashboardData = {
+    system: null,
+    database: null,
+    performance: null
+};
+let charts = {};
+let autoRefreshEnabled = true;
+let refreshInterval = null;
+
+async function loadAllMonitoringData() {
+    try {
+        // 并行加载所有监控数据
+        const [systemResponse, databaseResponse, performanceResponse] = await Promise.all([
+            fetch('/tools/monitor/status/overview'),
+            fetch('/tools/monitor/health/database'),
+            fetch('/tools/monitor/performance/metrics')
+        ]);
+
+        const systemData = await systemResponse.json();
+        const databaseData = await databaseResponse.json();
+        const performanceData = await performanceResponse.json();
+
+        dashboardData.system = systemData;
+        dashboardData.database = databaseData;
+        dashboardData.performance = performanceData;
+
+        updateDashboard();
+
+    } catch (error) {
+        console.error('加载监控数据失败:', error);
+        showErrorStatus();
+    }
+}
+
+function updateDashboard() {
+    updateStatusCards();
+    updatePerformanceChart();
+    updateDatabaseChart();
+    updateSystemDetails();
+    updateHealthScore();
+}
+
+function updateStatusCards() {
+    const { system, database, performance } = dashboardData;
+
+    // 系统状态
+    if (system) {
+        const statusIcon = document.getElementById('system-status-icon');
+        const statusText = document.getElementById('system-status-text');
+        const uptime = document.getElementById('system-uptime');
+
+        if (system.database_health === '正常') {
+            statusIcon.textContent = '✅';
+            statusText.textContent = '运行正常';
+            statusText.style.color = 'var(--success-color)';
+        } else {
+            statusIcon.textContent = '⚠️';
+            statusText.textContent = '异常';
+            statusText.style.color = 'var(--danger-color)';
+        }
+
+        uptime.textContent = `运行时间: ${formatUptime(system.uptime_seconds)}`;
+    }
+
+    // 数据库状态
+    if (database) {
+        const dbIcon = document.getElementById('database-status-icon');
+        const dbText = document.getElementById('database-status-text');
+        const dbRecords = document.getElementById('database-records');
+
+        if (database.connection_status === '正常') {
+            dbIcon.textContent = '✅';
+            dbText.textContent = '连接正常';
+            dbText.style.color = 'var(--success-color)';
+        } else {
+            dbIcon.textContent = '❌';
+            dbText.textContent = '连接异常';
+            dbText.style.color = 'var(--danger-color)';
+        }
+
+        dbRecords.textContent = `总记录: ${database.total_records.toLocaleString('zh-CN')}`;
+    }
+
+    // CPU状态
+    if (performance) {
+        const cpuDisplay = document.getElementById('cpu-usage-display');
+        const cpuText = document.getElementById('cpu-status-text');
+
+        cpuDisplay.textContent = `${performance.cpu_percent}%`;
+        
+        if (performance.cpu_percent < 70) {
+            cpuText.textContent = '使用率正常';
+            cpuText.style.color = 'var(--success-color)';
+            cpuDisplay.style.color = 'var(--success-color)';
+        } else if (performance.cpu_percent < 90) {
+            cpuText.textContent = '使用率偏高';
+            cpuText.style.color = 'var(--warning-color)';
+            cpuDisplay.style.color = 'var(--warning-color)';
+        } else {
+            cpuText.textContent = '使用率危险';
+            cpuText.style.color = 'var(--danger-color)';
+            cpuDisplay.style.color = 'var(--danger-color)';
+        }
+
+        // 内存状态
+        const memoryDisplay = document.getElementById('memory-usage-display');
+        const memoryText = document.getElementById('memory-status-text');
+
+        memoryDisplay.textContent = `${performance.memory_percent}%`;
+        
+        if (performance.memory_percent < 75) {
+            memoryText.textContent = '使用率正常';
+            memoryText.style.color = 'var(--success-color)';
+            memoryDisplay.style.color = 'var(--success-color)';
+        } else if (performance.memory_percent < 85) {
+            memoryText.textContent = '使用率偏高';
+            memoryText.style.color = 'var(--warning-color)';
+            memoryDisplay.style.color = 'var(--warning-color)';
+        } else {
+            memoryText.textContent = '使用率危险';
+            memoryText.style.color = 'var(--danger-color)';
+            memoryDisplay.style.color = 'var(--danger-color)';
+        }
+
+        // 磁盘状态
+        const diskDisplay = document.getElementById('disk-usage-display');
+        const diskText = document.getElementById('disk-status-text');
+
+        diskDisplay.textContent = `${performance.disk_usage_percent}%`;
+        
+        if (performance.disk_usage_percent < 80) {
+            diskText.textContent = '使用率正常';
+            diskText.style.color = 'var(--success-color)';
+            diskDisplay.style.color = 'var(--success-color)';
+        } else if (performance.disk_usage_percent < 90) {
+            diskText.textContent = '使用率偏高';
+            diskText.style.color = 'var(--warning-color)';
+            diskDisplay.style.color = 'var(--warning-color)';
+        } else {
+            diskText.textContent = '使用率危险';
+            diskText.style.color = 'var(--danger-color)';
+            diskDisplay.style.color = 'var(--danger-color)';
+        }
+    }
+}
+
+function updatePerformanceChart() {
+    if (!dashboardData.performance) return;
+
+    const performance = dashboardData.performance;
+    
+    if (charts.performance) {
+        charts.performance.dispose();
+    }
+
+    charts.performance = echarts.init(document.getElementById('performance-overview'));
+
+    const option = {
+        tooltip: {
+            trigger: 'axis',
+            axisPointer: { type: 'shadow' }
+        },
+        legend: {
+            data: ['使用率', '安全阈值']
+        },
+        grid: {
+            left: '3%',
+            right: '4%',
+            bottom: '3%',
+            containLabel: true
+        },
+        xAxis: [
+            {
+                type: 'category',
+                data: ['CPU', '内存', '磁盘']
+            }
+        ],
+        yAxis: [
+            {
+                type: 'value',
+                max: 100,
+                axisLabel: {
+                    formatter: '{value}%'
+                }
+            }
+        ],
+        series: [
+            {
+                name: '使用率',
+                type: 'bar',
+                data: [
+                    {
+                        value: performance.cpu_percent,
+                        itemStyle: {
+                            color: performance.cpu_percent > 70 ? '#ef4444' : performance.cpu_percent > 50 ? '#f59e0b' : '#10b981'
+                        }
+                    },
+                    {
+                        value: performance.memory_percent,
+                        itemStyle: {
+                            color: performance.memory_percent > 75 ? '#ef4444' : performance.memory_percent > 50 ? '#f59e0b' : '#10b981'
+                        }
+                    },
+                    {
+                        value: performance.disk_usage_percent,
+                        itemStyle: {
+                            color: performance.disk_usage_percent > 80 ? '#ef4444' : performance.disk_usage_percent > 60 ? '#f59e0b' : '#10b981'
+                        }
+                    }
+                ]
+            },
+            {
+                name: '安全阈值',
+                type: 'line',
+                data: [70, 75, 80],
+                lineStyle: { color: '#f59e0b', type: 'dashed' },
+                symbol: 'none'
+            }
+        ]
+    };
+
+    charts.performance.setOption(option);
+}
+
+function updateDatabaseChart() {
+    if (!dashboardData.database) return;
+
+    const database = dashboardData.database;
+    
+    if (charts.database) {
+        charts.database.dispose();
+    }
+
+    charts.database = echarts.init(document.getElementById('database-tables-chart'));
+
+    const tableData = Object.entries(database.tables).map(([name, count]) => ({
+        name: name === 'pue_data' ? 'PUE数据' :
+              name === 'fault_record' ? '故障记录' :
+              name === 'huijugugan' ? '汇聚骨干' :
+              name === 'zbk' ? '指标库' :
+              name === 'pue_comment' ? 'PUE评论' :
+              name === 'pue_drill_down_data' ? 'PUE钻取' : name,
+        value: count
+    })).sort((a, b) => b.value - a.value);
+
+    const option = {
+        tooltip: {
+            trigger: 'item',
+            formatter: '{b}: {c} ({d}%)'
+        },
+        series: [
+            {
+                type: 'pie',
+                radius: ['50%', '70%'],
+                avoidLabelOverlap: false,
+                label: {
+                    show: false
+                },
+                emphasis: {
+                    label: {
+                        show: true,
+                        fontSize: '12',
+                        fontWeight: 'bold'
+                    }
+                },
+                labelLine: {
+                    show: false
+                },
+                data: tableData
+            }
+        ]
+    };
+
+    charts.database.setOption(option);
+}
+
+function updateSystemDetails() {
+    const { system, performance } = dashboardData;
+
+    if (system) {
+        document.getElementById('detail-uptime').textContent = formatUptime(system.uptime_seconds);
+        document.getElementById('detail-db-status').textContent = system.database_health;
+    }
+
+    if (performance) {
+        document.getElementById('detail-cpu').textContent = `${performance.cpu_percent}%`;
+        document.getElementById('detail-memory').textContent = `${performance.memory_percent}%`;
+        document.getElementById('detail-memory-used').textContent = formatBytes(performance.memory_used_mb * 1024 * 1024);
+        document.getElementById('detail-memory-available').textContent = formatBytes(performance.memory_available_mb * 1024 * 1024);
+        document.getElementById('detail-disk').textContent = `${performance.disk_usage_percent}%`;
+        document.getElementById('detail-last-update').textContent = new Date(performance.timestamp).toLocaleString('zh-CN');
+    }
+}
+
+function updateHealthScore() {
+    const { system, database, performance } = dashboardData;
+    let score = 100;
+    let issues = [];
+
+    // 计算健康评分
+    if (system && system.database_health !== '正常') {
+        score -= 30;
+        issues.push('数据库连接异常');
+    }
+
+    if (performance) {
+        if (performance.cpu_percent > 90) {
+            score -= 25;
+            issues.push('CPU使用率过高');
+        } else if (performance.cpu_percent > 70) {
+            score -= 10;
+            issues.push('CPU使用率偏高');
+        }
+
+        if (performance.memory_percent > 85) {
+            score -= 20;
+            issues.push('内存使用率过高');
+        } else if (performance.memory_percent > 75) {
+            score -= 8;
+            issues.push('内存使用率偏高');
+        }
+
+        if (performance.disk_usage_percent > 90) {
+            score -= 15;
+            issues.push('磁盘使用率过高');
+        } else if (performance.disk_usage_percent > 80) {
+            score -= 5;
+            issues.push('磁盘使用率偏高');
+        }
+    }
+
+    score = Math.max(0, score);
+
+    // 更新评分显示
+    const badge = document.getElementById('health-score-badge');
+    let status = '优秀';
+    let badgeClass = 'status-success';
+    
+    if (score < 60) {
+        status = '危险';
+        badgeClass = 'status-danger';
+    } else if (score < 80) {
+        status = '警告';
+        badgeClass = 'status-warning';
+    }
+
+    badge.textContent = status;
+    badge.className = `status-badge ${badgeClass}`;
+
+    // 更新健康评分仪表盘
+    updateHealthScoreGauge(score);
+
+    // 更新健康总结
+    const summary = document.getElementById('health-summary');
+    if (issues.length === 0) {
+        summary.innerHTML = `
+            <div style="color: var(--success-color); font-weight: 600;">🎉 系统运行状态良好！</div>
+            <div style="margin-top: 0.5rem;">所有关键指标均在正常范围内，系统性能稳定。</div>
+        `;
+    } else {
+        summary.innerHTML = `
+            <div style="color: var(--warning-color); font-weight: 600;">⚠️ 发现 ${issues.length} 个需要关注的问题：</div>
+            <ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
+                ${issues.map(issue => `<li>${issue}</li>`).join('')}
+            </ul>
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">建议及时处理以保证系统稳定运行。</div>
+        `;
+    }
+}
+
+function updateHealthScoreGauge(score) {
+    if (charts.healthScore) {
+        charts.healthScore.dispose();
+    }
+
+    charts.healthScore = echarts.init(document.getElementById('health-score-gauge'));
+
+    let color = '#10b981'; // 绿色
+    if (score < 60) color = '#ef4444'; // 红色
+    else if (score < 80) color = '#f59e0b'; // 黄色
+
+    const option = {
+        series: [{
+            type: 'gauge',
+            progress: {
+                show: true,
+                width: 12,
+                itemStyle: { color: color }
+            },
+            axisLine: {
+                lineStyle: {
+                    width: 12,
+                    color: [[1, '#e5e7eb']]
+                }
+            },
+            axisTick: { show: false },
+            splitLine: {
+                length: 8,
+                lineStyle: { width: 2, color: '#999' }
+            },
+            axisLabel: {
+                distance: 15,
+                color: '#666',
+                fontSize: 10
+            },
+            anchor: { show: false },
+            title: { show: false },
+            detail: {
+                valueAnimation: true,
+                formatter: '{value}',
+                color: color,
+                fontSize: 24,
+                fontWeight: 'bold',
+                offsetCenter: [0, '70%']
+            },
+            data: [{ value: Math.round(score), name: '健康评分' }]
+        }]
+    };
+
+    charts.healthScore.setOption(option);
+}
+
+function refreshDashboard() {
+    loadAllMonitoringData();
+}
+
+function toggleAutoRefresh() {
+    const icon = document.getElementById('auto-refresh-icon');
+    const text = document.getElementById('auto-refresh-text');
+    
+    autoRefreshEnabled = !autoRefreshEnabled;
+    
+    if (autoRefreshEnabled) {
+        icon.textContent = '⏸️';
+        text.textContent = '暂停';
+        startAutoRefresh();
+    } else {
+        icon.textContent = '▶️';
+        text.textContent = '启动';
+        stopAutoRefresh();
+    }
+}
+
+function startAutoRefresh() {
+    if (refreshInterval) clearInterval(refreshInterval);
+    refreshInterval = setInterval(loadAllMonitoringData, 10000); // 每10秒刷新
+}
+
+function stopAutoRefresh() {
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+        refreshInterval = null;
+    }
+}
+
+function downloadReport() {
+    const report = {
+        timestamp: new Date().toISOString(),
+        system: dashboardData.system,
+        database: dashboardData.database,
+        performance: dashboardData.performance
+    };
+    
+    const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `system_report_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function showErrorStatus() {
+    document.getElementById('system-status-icon').textContent = '❌';
+    document.getElementById('system-status-text').textContent = '加载失败';
+    document.getElementById('system-status-text').style.color = 'var(--danger-color)';
+}
+
+// 页面加载时初始化
+document.addEventListener('DOMContentLoaded', function() {
+    loadAllMonitoringData();
+    startAutoRefresh();
+    
+    // 响应式图表
+    window.addEventListener('resize', function() {
+        Object.values(charts).forEach(chart => {
+            if (chart && typeof chart.resize === 'function') {
+                chart.resize();
+            }
+        });
+    });
+});
+
+// 页面离开时清理
+window.addEventListener('beforeunload', function() {
+    stopAutoRefresh();
+    Object.values(charts).forEach(chart => {
+        if (chart && typeof chart.dispose === 'function') {
+            chart.dispose();
+        }
+    });
+});
+</script>
+{% endblock %}

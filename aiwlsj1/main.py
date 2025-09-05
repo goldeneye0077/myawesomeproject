@@ -29,6 +29,15 @@ from fault_analysis_fastapi import router as fault_router
 setup_logging()
 logger = logging.getLogger(__name__)
 
+# 导入新工具模块路由 (安全集成)
+try:
+    from tools.system_monitor import router as system_monitor_router
+    TOOLS_AVAILABLE = True
+    logger.info("工具模块加载成功")
+except ImportError as e:
+    TOOLS_AVAILABLE = False
+    logger.warning(f"工具模块不可用: {e}")
+
 # 创建FastAPI应用
 app = FastAPI(
     title=settings.APP_TITLE,
@@ -92,6 +101,11 @@ app.include_router(pue_router, prefix="", tags=["PUE指标"])
 app.include_router(huiju_router, tags=["汇聚骨干指标"])
 app.include_router(bi_api_router, prefix="", tags=["API接口"])
 app.include_router(fault_router, tags=["故障分析"])
+
+# 安全注册工具模块路由 (可选功能)
+if TOOLS_AVAILABLE:
+    app.include_router(system_monitor_router, prefix="/tools/monitor", tags=["系统监控工具"])
+    logger.info("系统监控工具已集成 - 重新加载完成")
 
 @app.on_event("startup")
 async def on_startup():

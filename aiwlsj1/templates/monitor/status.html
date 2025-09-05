@@ -1,0 +1,445 @@
+{% extends "monitor/base_monitor.html" %}
+
+{% block monitor_title %}系统状态概览{% endblock %}
+{% block monitor_subtitle %}系统运行状态和关键指标快速概览{% endblock %}
+
+{% block monitor_content %}
+<div class="monitor-grid">
+    <!-- 系统运行时间 -->
+    <div class="monitor-card" style="text-align: center;">
+        <div class="monitor-card-header">
+            <h3 class="monitor-card-title">
+                <svg class="monitor-card-icon" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20Z"/>
+                </svg>
+                系统运行时间
+            </h3>
+        </div>
+        <div style="padding: 1.5rem 0;">
+            <div id="uptime-display" style="font-size: 3rem; font-weight: 700; color: var(--primary-color); margin-bottom: 1rem;">--</div>
+            <div id="uptime-text" style="color: var(--text-secondary);">系统运行正常</div>
+        </div>
+    </div>
+
+    <!-- 数据库状态 -->
+    <div class="monitor-card" style="text-align: center;">
+        <div class="monitor-card-header">
+            <h3 class="monitor-card-title">
+                <svg class="monitor-card-icon" viewBox="0 0 24 24">
+                    <path d="M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM19 19H5V5H19V19Z"/>
+                </svg>
+                数据库状态
+            </h3>
+        </div>
+        <div style="padding: 1.5rem 0;">
+            <div id="db-status-icon" style="font-size: 4rem; margin-bottom: 1rem;">💾</div>
+            <div id="db-status-text" style="font-size: 1.3rem; font-weight: 600; margin-bottom: 0.5rem;">连接正常</div>
+            <div id="db-health-text" style="color: var(--text-secondary);">数据库运行正常</div>
+        </div>
+    </div>
+
+    <!-- 性能概览 -->
+    <div class="monitor-card" style="grid-column: span 2;">
+        <div class="monitor-card-header">
+            <h3 class="monitor-card-title">
+                <svg class="monitor-card-icon" viewBox="0 0 24 24">
+                    <path d="M22 6.92L20.59 5.51L16.5 9.6L13 6.1L2.39 16.71L3.81 18.12L13 8.93L16.5 12.43L22 6.92Z"/>
+                </svg>
+                性能概览
+            </h3>
+            <button class="refresh-btn" onclick="refreshStatus()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 4V2A10 10 0 0 0 2 12H4A8 8 0 0 1 12 4Z"/>
+                </svg>
+                刷新
+            </button>
+        </div>
+        <div class="chart-container">
+            <div id="performance-gauges" style="height: 300px;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- 系统详细信息 -->
+<div class="monitor-card">
+    <div class="monitor-card-header">
+        <h3 class="monitor-card-title">
+            <svg class="monitor-card-icon" viewBox="0 0 24 24">
+                <path d="M4 6H20V18H4V6ZM6 8V16H18V8H6ZM8 10H16V12H8V10ZM8 14H13V15H8V14Z"/>
+            </svg>
+            详细信息
+        </h3>
+        <div>
+            <a href="/tools/monitor/dashboard" class="refresh-btn" style="text-decoration: none; margin-right: 0.5rem;">
+                📊 完整仪表盘
+            </a>
+            <button class="refresh-btn" onclick="exportStatus()">
+                📤 导出状态
+            </button>
+        </div>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; padding: 1rem;">
+        <div>
+            <h4 style="margin-bottom: 1rem; color: var(--text-primary);">系统信息</h4>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <div class="monitor-metric">
+                    <span class="monitor-metric-label">运行时间</span>
+                    <span id="detail-uptime" class="monitor-metric-value">--</span>
+                </div>
+                <div class="monitor-metric">
+                    <span class="monitor-metric-label">数据库健康</span>
+                    <span id="detail-db-health" class="monitor-metric-value">--</span>
+                </div>
+                <div class="monitor-metric">
+                    <span class="monitor-metric-label">最后检查</span>
+                    <span id="detail-last-check" class="monitor-metric-value">--</span>
+                </div>
+            </div>
+        </div>
+        <div>
+            <h4 style="margin-bottom: 1rem; color: var(--text-primary);">性能指标</h4>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <div class="monitor-metric">
+                    <span class="monitor-metric-label">CPU使用率</span>
+                    <span id="detail-cpu" class="monitor-metric-value">--</span>
+                </div>
+                <div class="monitor-metric">
+                    <span class="monitor-metric-label">内存使用率</span>
+                    <span id="detail-memory" class="monitor-metric-value">--</span>
+                </div>
+                <div class="monitor-metric">
+                    <span class="monitor-metric-label">磁盘使用率</span>
+                    <span id="detail-disk" class="monitor-metric-value">--</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block monitor_js %}
+<script>
+let statusData = null;
+let gaugesChart = null;
+
+async function loadSystemStatus() {
+    try {
+        const response = await fetch('/tools/monitor/status/overview');
+        const data = await response.json();
+        statusData = data;
+        
+        updateStatusDisplay(data);
+        updatePerformanceGauges(data.performance);
+        updateSystemDetails(data);
+        
+    } catch (error) {
+        console.error('加载系统状态失败:', error);
+        showErrorState();
+    }
+}
+
+function updateStatusDisplay(data) {
+    // 更新运行时间显示
+    const uptimeDisplay = document.getElementById('uptime-display');
+    const uptimeText = document.getElementById('uptime-text');
+    
+    const formattedUptime = formatUptime(data.uptime_seconds);
+    uptimeDisplay.textContent = formattedUptime;
+    
+    if (data.uptime_seconds > 0) {
+        uptimeText.textContent = '系统运行正常';
+        uptimeText.style.color = 'var(--success-color)';
+    } else {
+        uptimeText.textContent = '系统状态异常';
+        uptimeText.style.color = 'var(--danger-color)';
+    }
+    
+    // 更新数据库状态
+    const dbIcon = document.getElementById('db-status-icon');
+    const dbStatusText = document.getElementById('db-status-text');
+    const dbHealthText = document.getElementById('db-health-text');
+    
+    if (data.database_health === '正常') {
+        dbIcon.textContent = '✅';
+        dbStatusText.textContent = '连接正常';
+        dbStatusText.style.color = 'var(--success-color)';
+        dbHealthText.textContent = '数据库运行正常';
+    } else {
+        dbIcon.textContent = '❌';
+        dbStatusText.textContent = '连接异常';
+        dbStatusText.style.color = 'var(--danger-color)';
+        dbHealthText.textContent = '数据库连接出现问题';
+    }
+}
+
+function updatePerformanceGauges(performance) {
+    if (gaugesChart) {
+        gaugesChart.dispose();
+    }
+    
+    gaugesChart = echarts.init(document.getElementById('performance-gauges'));
+    
+    const option = {
+        series: [
+            {
+                name: 'CPU',
+                type: 'gauge',
+                center: ['20%', '50%'],
+                radius: '60%',
+                min: 0,
+                max: 100,
+                progress: {
+                    show: true,
+                    width: 8
+                },
+                axisLine: {
+                    lineStyle: {
+                        width: 8
+                    }
+                },
+                axisTick: {
+                    show: false
+                },
+                splitLine: {
+                    length: 8,
+                    lineStyle: {
+                        width: 2,
+                        color: '#999'
+                    }
+                },
+                axisLabel: {
+                    distance: 16,
+                    color: '#999',
+                    fontSize: 10
+                },
+                anchor: {
+                    show: false
+                },
+                title: {
+                    show: true,
+                    offsetCenter: [0, '-10%'],
+                    fontSize: 14,
+                    color: '#333'
+                },
+                detail: {
+                    valueAnimation: true,
+                    formatter: '{value}%',
+                    fontSize: 16,
+                    fontWeight: 'bold',
+                    offsetCenter: [0, '70%']
+                },
+                data: [
+                    {
+                        value: performance.cpu_percent,
+                        name: 'CPU使用率',
+                        title: {
+                            color: performance.cpu_percent > 70 ? '#ef4444' : '#10b981'
+                        },
+                        detail: {
+                            color: performance.cpu_percent > 70 ? '#ef4444' : '#10b981'
+                        }
+                    }
+                ]
+            },
+            {
+                name: '内存',
+                type: 'gauge',
+                center: ['50%', '50%'],
+                radius: '60%',
+                min: 0,
+                max: 100,
+                progress: {
+                    show: true,
+                    width: 8
+                },
+                axisLine: {
+                    lineStyle: {
+                        width: 8
+                    }
+                },
+                axisTick: {
+                    show: false
+                },
+                splitLine: {
+                    length: 8,
+                    lineStyle: {
+                        width: 2,
+                        color: '#999'
+                    }
+                },
+                axisLabel: {
+                    distance: 16,
+                    color: '#999',
+                    fontSize: 10
+                },
+                anchor: {
+                    show: false
+                },
+                title: {
+                    show: true,
+                    offsetCenter: [0, '-10%'],
+                    fontSize: 14,
+                    color: '#333'
+                },
+                detail: {
+                    valueAnimation: true,
+                    formatter: '{value}%',
+                    fontSize: 16,
+                    fontWeight: 'bold',
+                    offsetCenter: [0, '70%']
+                },
+                data: [
+                    {
+                        value: performance.memory_percent,
+                        name: '内存使用率',
+                        title: {
+                            color: performance.memory_percent > 75 ? '#ef4444' : '#10b981'
+                        },
+                        detail: {
+                            color: performance.memory_percent > 75 ? '#ef4444' : '#10b981'
+                        }
+                    }
+                ]
+            },
+            {
+                name: '磁盘',
+                type: 'gauge',
+                center: ['80%', '50%'],
+                radius: '60%',
+                min: 0,
+                max: 100,
+                progress: {
+                    show: true,
+                    width: 8
+                },
+                axisLine: {
+                    lineStyle: {
+                        width: 8
+                    }
+                },
+                axisTick: {
+                    show: false
+                },
+                splitLine: {
+                    length: 8,
+                    lineStyle: {
+                        width: 2,
+                        color: '#999'
+                    }
+                },
+                axisLabel: {
+                    distance: 16,
+                    color: '#999',
+                    fontSize: 10
+                },
+                anchor: {
+                    show: false
+                },
+                title: {
+                    show: true,
+                    offsetCenter: [0, '-10%'],
+                    fontSize: 14,
+                    color: '#333'
+                },
+                detail: {
+                    valueAnimation: true,
+                    formatter: '{value}%',
+                    fontSize: 16,
+                    fontWeight: 'bold',
+                    offsetCenter: [0, '70%']
+                },
+                data: [
+                    {
+                        value: performance.disk_usage_percent,
+                        name: '磁盘使用率',
+                        title: {
+                            color: performance.disk_usage_percent > 80 ? '#ef4444' : '#10b981'
+                        },
+                        detail: {
+                            color: performance.disk_usage_percent > 80 ? '#ef4444' : '#10b981'
+                        }
+                    }
+                ]
+            }
+        ]
+    };
+    
+    gaugesChart.setOption(option);
+}
+
+function updateSystemDetails(data) {
+    document.getElementById('detail-uptime').textContent = formatUptime(data.uptime_seconds);
+    document.getElementById('detail-db-health').textContent = data.database_health;
+    document.getElementById('detail-last-check').textContent = 
+        new Date(data.last_check).toLocaleString('zh-CN');
+    
+    document.getElementById('detail-cpu').textContent = data.performance.cpu_percent + '%';
+    document.getElementById('detail-memory').textContent = data.performance.memory_percent + '%';
+    document.getElementById('detail-disk').textContent = data.performance.disk_usage_percent + '%';
+}
+
+function showErrorState() {
+    document.getElementById('uptime-display').textContent = '错误';
+    document.getElementById('uptime-text').textContent = '无法获取系统状态';
+    document.getElementById('uptime-text').style.color = 'var(--danger-color)';
+    
+    document.getElementById('db-status-icon').textContent = '❌';
+    document.getElementById('db-status-text').textContent = '状态未知';
+    document.getElementById('db-status-text').style.color = 'var(--danger-color)';
+    document.getElementById('db-health-text').textContent = '无法连接到监控服务';
+}
+
+function refreshStatus() {
+    loadSystemStatus();
+}
+
+function exportStatus() {
+    if (!statusData) {
+        alert('暂无状态数据可导出');
+        return;
+    }
+    
+    const statusReport = {
+        timestamp: new Date().toISOString(),
+        system_status: statusData,
+        export_time: new Date().toLocaleString('zh-CN')
+    };
+    
+    const blob = new Blob([JSON.stringify(statusReport, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `system_status_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// 页面加载时初始化
+document.addEventListener('DOMContentLoaded', function() {
+    loadSystemStatus();
+    
+    // 每15秒自动刷新
+    setInterval(() => {
+        if (document.querySelector('.monitor-container')) {
+            loadSystemStatus();
+        }
+    }, 15000);
+    
+    // 响应式图表
+    window.addEventListener('resize', function() {
+        if (gaugesChart) {
+            gaugesChart.resize();
+        }
+    });
+});
+
+// 页面离开时清理
+window.addEventListener('beforeunload', function() {
+    if (gaugesChart) {
+        gaugesChart.dispose();
+    }
+});
+</script>
+{% endblock %}
