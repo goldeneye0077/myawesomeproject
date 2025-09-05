@@ -50,6 +50,14 @@ async def fault_prediction_page(request: Request):
         {'request': request, 'title': '故障预测分析'}
     )
 
+@router.get('/indicators', response_class=HTMLResponse)
+async def indicators_management_page(request: Request):
+    """指标管理与绩效评估页面"""
+    return templates.TemplateResponse(
+        'indicators_management.html',
+        {'request': request, 'title': '指标管理与绩效评估'}
+    )
+
 @router.get('/api/overview')
 async def fault_overview(db: AsyncSession = Depends(get_db)):
     """获取故障概览数据"""
@@ -4605,6 +4613,10 @@ async def get_indicators_management(
             start_date = end_date - timedelta(days=30)
         elif time_period == 'last_90_days':
             start_date = end_date - timedelta(days=90)
+        elif time_period == 'last_365_days':
+            start_date = end_date - timedelta(days=365)
+        elif time_period == 'all_data':
+            start_date = datetime(2020, 1, 1)  # 足够早的日期来包含所有数据
         else:
             start_date = end_date - timedelta(days=30)
         
@@ -4615,6 +4627,9 @@ async def get_indicators_management(
         )
         result = await db.execute(query)
         fault_records = result.scalars().all()
+        
+        # 检查数据可用性
+        data_available = len(fault_records) > 0
         
         # 关键绩效指标 (KPIs)
         kpis = await _calculate_fault_kpis(fault_records, start_date, end_date)
@@ -4633,6 +4648,8 @@ async def get_indicators_management(
         
         return {
             'time_period': time_period,
+            'data_available': data_available,
+            'total_records': len(fault_records),
             'date_range': {
                 'start_date': start_date.strftime('%Y-%m-%d'),
                 'end_date': end_date.strftime('%Y-%m-%d')
@@ -4642,12 +4659,32 @@ async def get_indicators_management(
             'achievement_rates': achievement_rates,
             'risk_alerts': risk_alerts,
             'improvement_suggestions': improvement_suggestions,
-            'last_updated': datetime.now().isoformat()
+            'last_updated': datetime.now().isoformat(),
+            # 数据状态信息
+            'data_status': {
+                'message': '数据正常' if data_available else f'指定时间范围({start_date.strftime("%Y-%m-%d")} 至 {end_date.strftime("%Y-%m-%d")})内无故障数据',
+                'suggestion': '系统运行良好，无故障记录' if data_available else '请尝试扩大时间范围或导入更多数据',
+                'action_required': not data_available
+            }
         }
         
     except Exception as e:
         logger.error(f"获取指标管理数据失败: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"获取指标管理数据失败: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                'error': True,
+                'error_type': 'server_error',
+                'message': '指标管理数据获取失败',
+                'detail': str(e),
+                'suggestions': [
+                    '请检查数据库连接',
+                    '确认FaultRecord表存在',
+                    '联系系统管理员'
+                ],
+                'timestamp': datetime.now().isoformat()
+            }
+        )
 
 @router.get('/api/performance/evaluation', response_model=Dict[str, Any])
 async def get_performance_evaluation(
@@ -4736,7 +4773,21 @@ async def get_performance_evaluation(
         
     except Exception as e:
         logger.error(f"绩效评估失败: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"绩效评估失败: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                'error': True,
+                'error_type': 'evaluation_error',
+                'message': '绩效评估处理失败',
+                'detail': str(e),
+                'suggestions': [
+                    '检查评估周期参数',
+                    '确认数据完整性',
+                    '重试或联系技术支持'
+                ],
+                'timestamp': datetime.now().isoformat()
+            }
+        )
 
 @router.get('/api/indicators/dashboard', response_model=Dict[str, Any])
 async def get_indicators_dashboard(

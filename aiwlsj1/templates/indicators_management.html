@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>指标管理与绩效评估 - 故障分析系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .card-modern {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .card-modern:hover {
+            transform: translateY(-5px);
+        }
+        .metric-card {
+            background: linear-gradient(45deg, #f8f9fa, #e9ecef);
+            border-left: 5px solid #007bff;
+        }
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .metric-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        .status-excellent { color: #28a745; }
+        .status-good { color: #ffc107; }
+        .status-warning { color: #fd7e14; }
+        .status-alert { color: #dc3545; }
+        .chart-container {
+            height: 400px;
+            margin: 20px 0;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+        .nav-tabs .nav-link.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">故障分析系统</a>
+            <div class="navbar-nav">
+                <a class="nav-link" href="/fault">故障分析</a>
+                <a class="nav-link" href="/fault/prediction">故障预测</a>
+                <a class="nav-link active" href="/fault/indicators">指标管理</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- 页面标题 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card-modern card gradient-bg p-4">
+                    <h1 class="mb-0">📊 指标管理与绩效评估</h1>
+                    <p class="mb-0 mt-2">全面的KPI监控、绩效评估和趋势分析</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 功能导航标签 -->
+        <ul class="nav nav-tabs mb-4" id="mainTabs">
+            <li class="nav-item">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#indicators-tab">📈 指标概览</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#performance-tab">🎯 绩效评估</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#dashboard-tab">📊 实时仪表盘</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#targets-tab">⚙️ 目标管理</button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <!-- 指标概览 Tab -->
+            <div class="tab-pane fade show active" id="indicators-tab">
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <select class="form-select" id="timePeriod">
+                            <option value="last_7_days">最近7天</option>
+                            <option value="last_30_days" selected>最近30天</option>
+                            <option value="last_90_days">最近90天</option>
+                            <option value="last_365_days">最近1年</option>
+                            <option value="all_data">所有历史数据</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-primary" onclick="loadIndicators()">🔄 刷新数据</button>
+                    </div>
+                </div>
+
+                <!-- 数据概况 -->
+                <div class="row mb-3" id="dataOverview" style="display: none;">
+                    <div class="col-12">
+                        <div class="alert alert-info d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>📋 数据概况:</strong> 
+                                <span id="dataStats">正在加载...</span>
+                            </div>
+                            <small class="text-muted" id="lastUpdated">最后更新: --</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KPI指标卡片 -->
+                <div class="row mb-4" id="kpiCards">
+                    <div class="loading">
+                        <div class="spinner-border text-primary"></div>
+                        <p>加载指标数据中...</p>
+                    </div>
+                </div>
+
+                <!-- 趋势分析图表 -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card card-modern">
+                            <div class="card-header">
+                                <h5>📈 故障量趋势</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="faultTrendChart" class="chart-container"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card card-modern">
+                            <div class="card-header">
+                                <h5>⚠️ 严重程度分布</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="severityChart" class="chart-container"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 风险指标告警 -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card card-modern">
+                            <div class="card-header">
+                                <h5>🚨 风险指标告警</h5>
+                            </div>
+                            <div class="card-body" id="riskAlerts">
+                                <div class="loading">
+                                    <div class="spinner-border text-warning"></div>
+                                    <p>分析风险指标中...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 绩效评估 Tab -->
+            <div class="tab-pane fade" id="performance-tab">
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <select class="form-select" id="evaluationPeriod">
+                            <option value="weekly">周度评估</option>
+                            <option value="monthly" selected>月度评估</option>
+                            <option value="quarterly">季度评估</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-success" onclick="loadPerformanceEvaluation()">📊 生成评估报告</button>
+                    </div>
+                </div>
+
+                <!-- 绩效评估结果 -->
+                <div id="performanceResults">
+                    <div class="loading">
+                        <div class="spinner-border text-success"></div>
+                        <p>生成绩效评估报告中...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 实时仪表盘 Tab -->
+            <div class="tab-pane fade" id="dashboard-tab">
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="card card-modern metric-card">
+                            <div class="card-body text-center">
+                                <div class="metric-value" id="realtimeFaults">-</div>
+                                <div class="metric-label">当前故障数</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card card-modern metric-card">
+                            <div class="card-body text-center">
+                                <div class="metric-value" id="realtimeSeverity">-</div>
+                                <div class="metric-label">高严重程度故障</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card card-modern metric-card">
+                            <div class="card-body text-center">
+                                <div class="metric-value" id="realtimeProactive">-</div>
+                                <div class="metric-label">主动发现率</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 实时图表 -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card card-modern">
+                            <div class="card-header">
+                                <h5>📊 实时监控仪表盘</h5>
+                                <span class="badge bg-success">实时更新</span>
+                            </div>
+                            <div class="card-body">
+                                <div id="realtimeDashboard" class="chart-container"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 目标管理 Tab -->
+            <div class="tab-pane fade" id="targets-tab">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="card card-modern">
+                            <div class="card-header">
+                                <h5>🎯 绩效目标设置</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="targetsForm">
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">月度故障数量目标</label>
+                                            <input type="number" class="form-control" id="faultVolumeTarget" value="100">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">高严重程度故障比例目标(%)</label>
+                                            <input type="number" class="form-control" id="severityRateTarget" value="15" step="0.1">
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">平均解决时间目标(小时)</label>
+                                            <input type="number" class="form-control" id="resolutionTimeTarget" value="4" step="0.1">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">主动发现率目标(%)</label>
+                                            <input type="number" class="form-control" id="proactiveRateTarget" value="70">
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-primary" onclick="saveTargets()">💾 保存目标</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card card-modern">
+                            <div class="card-header">
+                                <h5>📋 目标追踪计划</h5>
+                            </div>
+                            <div class="card-body" id="trackingPlan">
+                                <p class="text-muted">设置目标后将自动生成追踪计划</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 全局变量
+        let indicatorsData = null;
+        let performanceData = null;
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadIndicators();
+            loadDashboard();
+            
+            // 设置自动刷新
+            setInterval(loadDashboard, 300000); // 5分钟刷新一次
+        });
+
+        // 加载指标管理数据
+        async function loadIndicators() {
+            try {
+                const timePeriod = document.getElementById('timePeriod').value;
+                const response = await fetch(`/fault/api/indicators/management?time_period=${timePeriod}`);
+                const data = await response.json();
+                
+                indicatorsData = data;
+                
+                // 显示数据概况
+                showDataOverview(data);
+                
+                // 检查数据可用性
+                if (!data.data_available) {
+                    showNoDataMessage(data.data_status);
+                    return;
+                }
+                
+                renderKPICards(data.kpis);
+                renderTrendAnalysis(data.trend_analysis);
+                renderRiskAlerts(data.risk_alerts);
+                
+            } catch (error) {
+                console.error('加载指标数据失败:', error);
+                showLoadingError('指标数据加载失败', error.message);
+            }
+        }
+
+        // 渲染KPI卡片
+        function renderKPICards(kpis) {
+            const container = document.getElementById('kpiCards');
+            let html = '';
+            
+            for (const [key, kpi] of Object.entries(kpis)) {
+                const statusClass = getStatusClass(kpi.status);
+                const statusIcon = getStatusIcon(kpi.status);
+                
+                html += `
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="card card-modern metric-card">
+                            <div class="card-body text-center">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <span class="badge bg-light text-dark">${getKPICategory(key)}</span>
+                                    <span>${statusIcon}</span>
+                                </div>
+                                <div class="metric-value ${statusClass}">
+                                    ${kpi.value}
+                                </div>
+                                <div class="metric-label">${getKPILabel(key)}</div>
+                                <div class="mt-2">
+                                    <small class="text-muted">目标: ${kpi.target}${kpi.unit}</small>
+                                    <div class="progress mt-1" style="height: 4px;">
+                                        <div class="progress-bar ${getProgressBarClass(kpi.status)}" 
+                                             style="width: ${getProgressPercentage(kpi)}%">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html;
+        }
+
+        // 加载绩效评估
+        async function loadPerformanceEvaluation() {
+            try {
+                const period = document.getElementById('evaluationPeriod').value;
+                const response = await fetch(`/fault/api/performance/evaluation?evaluation_period=${period}`);
+                const data = await response.json();
+                
+                performanceData = data;
+                renderPerformanceResults(data);
+                
+            } catch (error) {
+                console.error('加载绩效评估失败:', error);
+                showLoadingError('绩效评估加载失败', error.message, 'performanceResults');
+            }
+        }
+
+        // 渲染绩效评估结果
+        function renderPerformanceResults(data) {
+            const container = document.getElementById('performanceResults');
+            const summary = data.evaluation_summary;
+            
+            let html = `
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card card-modern">
+                            <div class="card-header">
+                                <h5>📈 评估总结</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-info">
+                                    <h6>整体评估</h6>
+                                    <p>${summary.overall_assessment}</p>
+                                </div>
+            `;
+            
+            // 关键发现
+            if (summary.key_findings && summary.key_findings.length > 0) {
+                html += `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>🔍 关键发现</h6>
+                            <ul class="list-group list-group-flush">
+                `;
+                summary.key_findings.forEach(finding => {
+                    html += `<li class="list-group-item">${finding}</li>`;
+                });
+                html += `</ul></div>`;
+            }
+            
+            // 绩效亮点
+            if (summary.performance_highlights && summary.performance_highlights.length > 0) {
+                html += `
+                    <div class="col-md-6">
+                        <h6>✨ 绩效亮点</h6>
+                        <ul class="list-group list-group-flush">
+                `;
+                summary.performance_highlights.forEach(highlight => {
+                    html += `<li class="list-group-item text-success">${highlight}</li>`;
+                });
+                html += `</ul></div></div>`;
+            }
+            
+            html += `</div></div></div></div>`;
+            
+            container.innerHTML = html;
+        }
+
+        // 加载实时仪表盘
+        async function loadDashboard() {
+            try {
+                const response = await fetch('/fault/api/indicators/dashboard');
+                const data = await response.json();
+                
+                // 更新实时指标
+                if (data.realtime_data) {
+                    document.getElementById('realtimeFaults').textContent = data.realtime_data.current_fault_count || '-';
+                    document.getElementById('realtimeSeverity').textContent = data.realtime_data.high_severity_count || '-';
+                    document.getElementById('realtimeProactive').textContent = 
+                        (data.realtime_data.proactive_discovery_rate || 0).toFixed(1) + '%';
+                }
+                
+            } catch (error) {
+                console.error('加载仪表盘数据失败:', error);
+            }
+        }
+
+        // 保存绩效目标
+        async function saveTargets() {
+            try {
+                const targets = {
+                    fault_volume_target: parseInt(document.getElementById('faultVolumeTarget').value),
+                    high_severity_rate_target: parseFloat(document.getElementById('severityRateTarget').value),
+                    avg_resolution_time_target: parseFloat(document.getElementById('resolutionTimeTarget').value),
+                    proactive_discovery_rate_target: parseInt(document.getElementById('proactiveRateTarget').value)
+                };
+                
+                const response = await fetch('/fault/api/indicators/targets', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(targets)
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    showSuccess('目标设置成功！');
+                    renderTrackingPlan(result.tracking_plan);
+                } else {
+                    showError('目标设置失败');
+                }
+                
+            } catch (error) {
+                console.error('保存目标失败:', error);
+                showError('保存目标失败');
+            }
+        }
+
+        // 渲染追踪计划
+        function renderTrackingPlan(plan) {
+            const container = document.getElementById('trackingPlan');
+            let html = `
+                <h6>📅 评审计划</h6>
+                <p><strong>评审频率:</strong> ${plan.review_frequency}</p>
+                <h6>🎯 里程碑</h6>
+                <ul class="list-group list-group-flush">
+            `;
+            
+            if (plan.milestone_dates) {
+                plan.milestone_dates.forEach(milestone => {
+                    html += `<li class="list-group-item d-flex justify-content-between">
+                        <span>${milestone.milestone}</span>
+                        <small class="text-muted">${milestone.date}</small>
+                    </li>`;
+                });
+            }
+            
+            html += `</ul>`;
+            container.innerHTML = html;
+        }
+
+        // 渲染趋势分析图表
+        function renderTrendAnalysis(trendData) {
+            // 这里可以添加ECharts图表渲染逻辑
+            console.log('趋势数据:', trendData);
+        }
+
+        // 渲染风险告警
+        function renderRiskAlerts(riskData) {
+            const container = document.getElementById('riskAlerts');
+            let html = '';
+            
+            if (riskData.high_risk_indicators && riskData.high_risk_indicators.length > 0) {
+                html += '<h6 class="text-danger">🔴 高风险指标</h6>';
+                riskData.high_risk_indicators.forEach(risk => {
+                    html += `
+                        <div class="alert alert-danger">
+                            <strong>${risk.indicator}</strong>: ${risk.current_value}
+                            <br><small>${risk.recommendation}</small>
+                        </div>
+                    `;
+                });
+            }
+            
+            if (riskData.warning_indicators && riskData.warning_indicators.length > 0) {
+                html += '<h6 class="text-warning mt-3">🟡 预警指标</h6>';
+                riskData.warning_indicators.forEach(risk => {
+                    html += `
+                        <div class="alert alert-warning">
+                            <strong>${risk.indicator}</strong>: ${risk.current_value}
+                            <br><small>${risk.recommendation}</small>
+                        </div>
+                    `;
+                });
+            }
+            
+            if (!html) {
+                html = '<div class="alert alert-success">✅ 所有指标正常，无风险告警</div>';
+            }
+            
+            container.innerHTML = html;
+        }
+
+        // 工具函数
+        function getStatusClass(status) {
+            const statusMap = {
+                'excellent': 'status-excellent',
+                'good': 'status-good', 
+                'normal': 'status-good',
+                'warning': 'status-warning',
+                'alert': 'status-alert',
+                'needs_improvement': 'status-warning'
+            };
+            return statusMap[status] || 'status-good';
+        }
+
+        function getStatusIcon(status) {
+            const iconMap = {
+                'excellent': '🎉',
+                'good': '✅',
+                'normal': '✅',
+                'warning': '⚠️',
+                'alert': '🚨',
+                'needs_improvement': '📈'
+            };
+            return iconMap[status] || '✅';
+        }
+
+        function getKPILabel(key) {
+            const labelMap = {
+                'fault_volume': '故障总量',
+                'high_severity_rate': '高严重程度比例',
+                'avg_resolution_time': '平均解决时间',
+                'proactive_discovery_rate': '主动发现率',
+                'repeat_fault_rate': '重复故障率'
+            };
+            return labelMap[key] || key;
+        }
+
+        function getKPICategory(key) {
+            const categoryMap = {
+                'fault_volume': '数量',
+                'high_severity_rate': '质量',
+                'avg_resolution_time': '效率',
+                'proactive_discovery_rate': '预防',
+                'repeat_fault_rate': '质量'
+            };
+            return categoryMap[key] || '指标';
+        }
+
+        function getProgressBarClass(status) {
+            const classMap = {
+                'excellent': 'bg-success',
+                'good': 'bg-success',
+                'normal': 'bg-primary',
+                'warning': 'bg-warning',
+                'alert': 'bg-danger',
+                'needs_improvement': 'bg-warning'
+            };
+            return classMap[status] || 'bg-primary';
+        }
+
+        function getProgressPercentage(kpi) {
+            // 根据KPI类型计算进度百分比
+            if (kpi.status === 'excellent' || kpi.status === 'good') {
+                return 100;
+            } else if (kpi.status === 'normal') {
+                return 75;
+            } else if (kpi.status === 'warning' || kpi.status === 'needs_improvement') {
+                return 50;
+            } else if (kpi.status === 'alert') {
+                return 25;
+            }
+            return 60; // 默认值
+        }
+
+        function showSuccess(message) {
+            // 简单的成功提示
+            alert('✅ ' + message);
+        }
+
+        function showError(message) {
+            // 简单的错误提示
+            alert('❌ ' + message);
+        }
+
+        function showLoadingError(title, errorMessage, targetContainer = null) {
+            // 显示详细的加载错误信息
+            const errorHtml = `
+                <div class="col-12">
+                    <div class="card card-modern border-danger">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="mb-0">❌ ${title}</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-danger">
+                                <h6>错误详情：</h6>
+                                <pre class="mb-3">${errorMessage || '未知错误'}</pre>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6>可能原因：</h6>
+                                        <ul class="list-unstyled">
+                                            <li>• 网络连接问题</li>
+                                            <li>• 服务器临时不可用</li>
+                                            <li>• API接口异常</li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6>解决方案：</h6>
+                                        <ul class="list-unstyled">
+                                            <li>• 检查网络连接</li>
+                                            <li>• 刷新页面重试</li>
+                                            <li>• 联系技术支持</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="mt-3">
+                                    <button class="btn btn-primary btn-sm" onclick="location.reload()">
+                                        🔄 刷新页面
+                                    </button>
+                                    <button class="btn btn-secondary btn-sm" onclick="loadIndicators()">
+                                        🔁 重新加载数据
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // 根据目标容器显示错误
+            if (targetContainer) {
+                const container = document.getElementById(targetContainer);
+                if (container) {
+                    container.innerHTML = errorHtml;
+                }
+            } else {
+                // 默认显示在KPI卡片容器中
+                const kpiContainer = document.getElementById('kpiCards');
+                if (kpiContainer) {
+                    kpiContainer.innerHTML = errorHtml;
+                }
+            }
+        }
+
+        function showNoDataMessage(dataStatus) {
+            // 清空所有数据容器并显示无数据提示
+            const kpiContainer = document.getElementById('kpiCards');
+            const riskContainer = document.getElementById('riskAlerts');
+            
+            const noDataHtml = `
+                <div class="col-12">
+                    <div class="card card-modern">
+                        <div class="card-body text-center p-5">
+                            <div style="font-size: 4rem; color: #6c757d; margin-bottom: 2rem;">📊</div>
+                            <h4 class="text-muted mb-3">${dataStatus.message}</h4>
+                            <p class="text-muted mb-4">${dataStatus.suggestion}</p>
+                            ${dataStatus.action_required ? `
+                                <div class="alert alert-info">
+                                    <strong>💡 建议操作：</strong><br>
+                                    • 尝试选择更大的时间范围（如90天）<br>
+                                    • 检查是否有历史数据可供分析<br>
+                                    • 联系管理员导入更多故障数据
+                                </div>
+                                <button class="btn btn-primary" onclick="showHistoricalData()">
+                                    🔍 查看历史数据
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            kpiContainer.innerHTML = noDataHtml;
+            riskContainer.innerHTML = `
+                <div class="alert alert-info">
+                    <h6>📋 数据状态</h6>
+                    <p>当前时间范围内无故障数据，无法生成风险分析报告。</p>
+                </div>
+            `;
+        }
+
+        function showHistoricalData() {
+            // 自动设置为所有历史数据并重新加载
+            document.getElementById('timePeriod').value = 'all_data';
+            
+            // 显示加载状态
+            document.getElementById('kpiCards').innerHTML = `
+                <div class="col-12 text-center">
+                    <div class="spinner-border text-primary"></div>
+                    <p class="mt-2">正在加载所有历史数据...</p>
+                </div>
+            `;
+            
+            loadIndicators();
+        }
+
+        function showDataOverview(data) {
+            // 显示数据概况信息
+            const overviewElement = document.getElementById('dataOverview');
+            const statsElement = document.getElementById('dataStats');
+            const updatedElement = document.getElementById('lastUpdated');
+            
+            if (data.data_available) {
+                const timePeriodText = getTimePeriodText(data.time_period);
+                statsElement.innerHTML = `
+                    ${timePeriodText}内共有 <strong>${data.total_records}</strong> 条故障记录
+                    (${data.date_range.start_date} 至 ${data.date_range.end_date})
+                `;
+            } else {
+                statsElement.innerHTML = `
+                    ${getTimePeriodText(data.time_period)}内 <strong>无故障数据</strong>
+                    (${data.date_range.start_date} 至 ${data.date_range.end_date})
+                `;
+            }
+            
+            updatedElement.textContent = `最后更新: ${new Date(data.last_updated).toLocaleString()}`;
+            overviewElement.style.display = 'block';
+        }
+
+        function getTimePeriodText(period) {
+            const periodMap = {
+                'last_7_days': '最近7天',
+                'last_30_days': '最近30天', 
+                'last_90_days': '最近90天',
+                'last_365_days': '最近1年',
+                'all_data': '所有历史数据'
+            };
+            return periodMap[period] || '指定时间范围';
+        }
+    </script>
+</body>
+</html>
