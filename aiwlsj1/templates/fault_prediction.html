@@ -1,0 +1,925 @@
+{% extends "base.html" %}
+{% block title %}故障预测分析{% endblock %}
+{% block extra_head %}
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.0/echarts.min.js"></script>
+    <style>
+        .prediction-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            color: white;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            transition: transform 0.3s ease;
+        }
+        
+        .prediction-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .prediction-metric {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .prediction-value {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .prediction-label {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .chart-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .chart-container {
+            height: 400px;
+            margin: 20px 0;
+        }
+        
+        .risk-indicator {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+        
+        .risk-low {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .risk-medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .risk-high {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .recommendations-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .recommendations-list li {
+            background: #f8f9fa;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #007bff;
+            transition: all 0.2s ease;
+        }
+        
+        .recommendations-list li:hover {
+            background: #e9ecef;
+            border-left-color: #0056b3;
+        }
+        
+        .factors-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .factor-item {
+            background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .factor-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .factor-impact {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .factor-duration {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+        
+        .control-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .nav-tabs .nav-link {
+            border: none;
+            color: #6c757d;
+            font-weight: 500;
+            padding: 12px 25px;
+            margin-right: 10px;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-tabs .nav-link.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .tab-content {
+            padding-top: 25px;
+        }
+        
+        .loading-spinner {
+            text-align: center;
+            padding: 50px;
+        }
+        
+        .loading-spinner .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            color: #667eea;
+        }
+    </style>
+{% endblock %}
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1 class="h3 mb-0">🔮 故障预测分析</h1>
+                    <div>
+                        <button class="btn btn-outline-primary" onclick="refreshAllData()">
+                            <i class="fas fa-sync-alt"></i> 刷新数据
+                        </button>
+                        <button class="btn btn-primary" onclick="exportPredictionReport()">
+                            <i class="fas fa-download"></i> 导出报告
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 导航标签页 -->
+                <ul class="nav nav-tabs" id="predictionTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="forecast-tab" data-bs-toggle="tab" 
+                                data-bs-target="#forecast-panel" type="button" role="tab">
+                            📈 故障预测
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="mttr-tab" data-bs-toggle="tab" 
+                                data-bs-target="#mttr-panel" type="button" role="tab">
+                            ⏱️ MTTR预测
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="anomaly-tab" data-bs-toggle="tab" 
+                                data-bs-target="#anomaly-panel" type="button" role="tab">
+                            🚨 异常检测
+                        </button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content" id="predictionTabContent">
+                    <!-- 故障预测面板 -->
+                    <div class="tab-pane fade show active" id="forecast-panel" role="tabpanel">
+                        <div class="control-panel">
+                            <div class="row align-items-center">
+                                <div class="col-md-6">
+                                    <label for="forecast-days" class="form-label">预测天数:</label>
+                                    <select id="forecast-days" class="form-select" onchange="loadForecastData()">
+                                        <option value="7">7天</option>
+                                        <option value="15">15天</option>
+                                        <option value="30" selected>30天</option>
+                                        <option value="60">60天</option>
+                                        <option value="90">90天</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 text-end">
+                                    <small class="text-muted">基于过去6个月的历史数据进行预测</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row" id="forecast-content">
+                            <div class="col-12">
+                                <div class="loading-spinner">
+                                    <div class="spinner-border" role="status"></div>
+                                    <p class="mt-3">正在加载预测数据...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- MTTR预测面板 -->
+                    <div class="tab-pane fade" id="mttr-panel" role="tabpanel">
+                        <div class="control-panel">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label for="mttr-fault-type" class="form-label">故障类型:</label>
+                                    <select id="mttr-fault-type" class="form-select" onchange="loadMTTRData()">
+                                        <option value="">全部类型</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="mttr-cause-category" class="form-label">原因分类:</label>
+                                    <select id="mttr-cause-category" class="form-select" onchange="loadMTTRData()">
+                                        <option value="">全部原因</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 d-flex align-items-end">
+                                    <button class="btn btn-primary w-100" onclick="loadMTTRData()">
+                                        <i class="fas fa-search"></i> 分析预测
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row" id="mttr-content">
+                            <div class="col-12">
+                                <div class="loading-spinner">
+                                    <div class="spinner-border" role="status"></div>
+                                    <p class="mt-3">正在加载MTTR预测...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 异常检测面板 -->
+                    <div class="tab-pane fade" id="anomaly-panel" role="tabpanel">
+                        <div class="control-panel">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label for="anomaly-days" class="form-label">分析周期:</label>
+                                    <select id="anomaly-days" class="form-select" onchange="loadAnomalyData()">
+                                        <option value="7">7天</option>
+                                        <option value="15">15天</option>
+                                        <option value="30" selected>30天</option>
+                                        <option value="60">60天</option>
+                                        <option value="90">90天</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="anomaly-threshold" class="form-label">异常阈值:</label>
+                                    <select id="anomaly-threshold" class="form-select" onchange="loadAnomalyData()">
+                                        <option value="1.5">宽松 (1.5σ)</option>
+                                        <option value="2.0" selected>标准 (2.0σ)</option>
+                                        <option value="2.5">严格 (2.5σ)</option>
+                                        <option value="3.0">极严格 (3.0σ)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 d-flex align-items-end">
+                                    <button class="btn btn-warning w-100" onclick="loadAnomalyData()">
+                                        <i class="fas fa-search"></i> 检测异常
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row" id="anomaly-content">
+                            <div class="col-12">
+                                <div class="loading-spinner">
+                                    <div class="spinner-border" role="status"></div>
+                                    <p class="mt-3">正在进行异常检测...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        let forecastData = null;
+        let mttrData = null;
+        let anomalyData = null;
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadForecastData();
+            loadFilterOptions();
+            
+            // 标签页切换事件
+            document.querySelectorAll('#predictionTabs button[data-bs-toggle="tab"]').forEach(tab => {
+                tab.addEventListener('shown.bs.tab', function(event) {
+                    const targetPanel = event.target.getAttribute('data-bs-target');
+                    if (targetPanel === '#mttr-panel' && !mttrData) {
+                        loadMTTRData();
+                    } else if (targetPanel === '#anomaly-panel' && !anomalyData) {
+                        loadAnomalyData();
+                    }
+                    
+                    // 图表自适应
+                    setTimeout(() => {
+                        document.querySelectorAll('.chart-container').forEach(el => {
+                            const inst = echarts.getInstanceByDom(el);
+                            if (inst) inst.resize();
+                        });
+                    }, 100);
+                });
+            });
+        });
+        
+        // 加载故障预测数据
+        async function loadForecastData() {
+            const days = document.getElementById('forecast-days').value;
+            const content = document.getElementById('forecast-content');
+            
+            try {
+                showLoading(content);
+                const response = await fetch(`/fault/api/prediction/fault_forecast?forecast_days=${days}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    forecastData = data.data;
+                    renderForecastResults(data.data);
+                } else {
+                    showError(content, data.message || '加载预测数据失败');
+                }
+            } catch (error) {
+                console.error('加载预测数据失败:', error);
+                showError(content, '网络连接错误');
+            }
+        }
+        
+        // 渲染故障预测结果
+        function renderForecastResults(data) {
+            const content = document.getElementById('forecast-content');
+            const riskClass = `risk-${data.risk_level}`;
+            const riskLabel = {
+                'low': '低风险',
+                'medium': '中等风险',
+                'high': '高风险'
+            }[data.risk_level] || '未知';
+            
+            content.innerHTML = `
+                <div class="col-md-3">
+                    <div class="prediction-card">
+                        <div class="prediction-metric">
+                            <div class="prediction-value">${data.predicted_total_faults}</div>
+                            <div class="prediction-label">预测故障总数</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="prediction-card">
+                        <div class="prediction-metric">
+                            <div class="prediction-value">${data.predicted_daily_average}</div>
+                            <div class="prediction-label">日均故障数</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="prediction-card">
+                        <div class="prediction-metric">
+                            <div class="prediction-value">${(data.confidence * 100).toFixed(1)}%</div>
+                            <div class="prediction-label">预测置信度</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="prediction-card">
+                        <div class="prediction-metric">
+                            <div class="prediction-value">
+                                <span class="risk-indicator ${riskClass}">${riskLabel}</span>
+                            </div>
+                            <div class="prediction-label">风险等级</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="chart-card">
+                        <h5><i class="fas fa-chart-line"></i> 预测趋势分析</h5>
+                        <div id="forecast-trend-chart" class="chart-container"></div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="chart-card">
+                        <h5><i class="fas fa-lightbulb"></i> 智能建议</h5>
+                        <ul class="recommendations-list">
+                            ${data.recommendations.map(rec => `<li><i class="fas fa-check-circle text-success"></i> ${rec}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="chart-card">
+                        <h5><i class="fas fa-exclamation-triangle"></i> 主要影响因素</h5>
+                        <div class="factors-list">
+                            ${data.contributing_factors.map(factor => `
+                                <div class="factor-item">
+                                    <div class="factor-name">${factor.factor}</div>
+                                    <div class="factor-impact">${factor.impact_score}</div>
+                                    <div class="factor-duration">平均时长: ${factor.avg_duration_hours}小时</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // 渲染趋势图表
+            setTimeout(() => renderForecastChart(data), 100);
+        }
+        
+        // 渲染预测趋势图表
+        function renderForecastChart(data) {
+            const chartEl = document.getElementById('forecast-trend-chart');
+            if (!chartEl) return;
+            
+            const chart = echarts.init(chartEl);
+            const days = parseInt(document.getElementById('forecast-days').value);
+            
+            // 生成预测数据点
+            const dates = [];
+            const predictedValues = [];
+            const historicalAvg = [];
+            const confidenceUpper = [];
+            const confidenceLower = [];
+            
+            const startDate = new Date();
+            for (let i = 0; i < days; i++) {
+                const date = new Date(startDate);
+                date.setDate(date.getDate() + i);
+                dates.push(date.toLocaleDateString('zh-CN'));
+                
+                predictedValues.push(data.predicted_daily_average);
+                historicalAvg.push(data.historical_daily_average);
+                confidenceUpper.push(data.predicted_daily_average * (1 + (1 - data.confidence)));
+                confidenceLower.push(Math.max(0, data.predicted_daily_average * (1 - (1 - data.confidence))));
+            }
+            
+            const option = {
+                title: {
+                    text: `未来${days}天故障预测趋势`
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'cross'
+                    }
+                },
+                legend: {
+                    data: ['预测值', '历史平均', '置信区间']
+                },
+                xAxis: {
+                    type: 'category',
+                    data: dates,
+                    axisLabel: {
+                        interval: Math.ceil(days / 10)
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '故障数量'
+                },
+                series: [
+                    {
+                        name: '置信区间',
+                        type: 'line',
+                        data: confidenceUpper,
+                        lineStyle: { opacity: 0 },
+                        stack: 'confidence',
+                        symbol: 'none',
+                        areaStyle: {
+                            color: 'rgba(102, 126, 234, 0.2)'
+                        }
+                    },
+                    {
+                        name: '置信区间下限',
+                        type: 'line',
+                        data: confidenceLower,
+                        lineStyle: { opacity: 0 },
+                        stack: 'confidence',
+                        symbol: 'none',
+                        areaStyle: {
+                            color: 'rgba(255, 255, 255, 1)'
+                        }
+                    },
+                    {
+                        name: '预测值',
+                        type: 'line',
+                        data: predictedValues,
+                        itemStyle: { color: '#667eea' },
+                        lineStyle: { width: 3 },
+                        markPoint: {
+                            data: [
+                                { type: 'max', name: '最大值' },
+                                { type: 'min', name: '最小值' }
+                            ]
+                        }
+                    },
+                    {
+                        name: '历史平均',
+                        type: 'line',
+                        data: historicalAvg,
+                        itemStyle: { color: '#ffa726' },
+                        lineStyle: { 
+                            type: 'dashed',
+                            width: 2
+                        }
+                    }
+                ]
+            };
+            
+            chart.setOption(option);
+        }
+        
+        // 加载MTTR预测数据
+        async function loadMTTRData() {
+            const faultType = document.getElementById('mttr-fault-type').value;
+            const causeCategory = document.getElementById('mttr-cause-category').value;
+            const content = document.getElementById('mttr-content');
+            
+            try {
+                showLoading(content);
+                const params = new URLSearchParams();
+                if (faultType) params.append('fault_type', faultType);
+                if (causeCategory) params.append('cause_category', causeCategory);
+                
+                const response = await fetch(`/fault/api/prediction/mttr_forecast?${params}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    mttrData = data.data;
+                    renderMTTRResults(data.data);
+                } else {
+                    showError(content, data.message || '加载MTTR预测失败');
+                }
+            } catch (error) {
+                console.error('加载MTTR预测失败:', error);
+                showError(content, '网络连接错误');
+            }
+        }
+        
+        // 渲染MTTR预测结果
+        function renderMTTRResults(data) {
+            const content = document.getElementById('mttr-content');
+            const performanceColors = {
+                'excellent': 'success',
+                'good': 'primary',
+                'average': 'warning',
+                'needs_improvement': 'danger'
+            };
+            const performanceLabels = {
+                'excellent': '优秀',
+                'good': '良好', 
+                'average': '一般',
+                'needs_improvement': '需要改进'
+            };
+            
+            const performanceClass = performanceColors[data.benchmark_analysis.performance_level] || 'secondary';
+            const performanceLabel = performanceLabels[data.benchmark_analysis.performance_level] || '未知';
+            
+            content.innerHTML = `
+                <div class="col-md-4">
+                    <div class="prediction-card">
+                        <div class="prediction-metric">
+                            <div class="prediction-value">${data.predicted_mttr_hours}</div>
+                            <div class="prediction-label">预测MTTR (小时)</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="prediction-card">
+                        <div class="prediction-metric">
+                            <div class="prediction-value">${data.median_mttr_hours}</div>
+                            <div class="prediction-label">中位数MTTR (小时)</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="prediction-card">
+                        <div class="prediction-metric">
+                            <div class="prediction-value">
+                                <span class="badge bg-${performanceClass}">${performanceLabel}</span>
+                            </div>
+                            <div class="prediction-label">性能水平</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="chart-card">
+                        <h5><i class="fas fa-chart-bar"></i> MTTR统计分析</h5>
+                        <div id="mttr-stats-chart" class="chart-container"></div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="chart-card">
+                        <h5><i class="fas fa-lightbulb"></i> 改进建议</h5>
+                        <ul class="recommendations-list">
+                            ${data.improvement_suggestions.map(suggestion => `
+                                <li><i class="fas fa-arrow-up text-info"></i> ${suggestion}</li>
+                            `).join('')}
+                        </ul>
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <strong>基准分析:</strong><br>
+                                当前处于第 ${data.benchmark_analysis.percentile_position}% 分位<br>
+                                改进潜力: ${data.benchmark_analysis.improvement_potential} 小时
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // 渲染MTTR统计图表
+            setTimeout(() => renderMTTRChart(data), 100);
+        }
+        
+        // 渲染MTTR统计图表
+        function renderMTTRChart(data) {
+            const chartEl = document.getElementById('mttr-stats-chart');
+            if (!chartEl) return;
+            
+            const chart = echarts.init(chartEl);
+            const stats = data.statistics;
+            
+            const option = {
+                title: {
+                    text: 'MTTR分布统计'
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'shadow'
+                    }
+                },
+                xAxis: {
+                    type: 'category',
+                    data: ['最小值', 'P25', '中位数', '平均值', 'P75', 'P90', '最大值']
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '时长(小时)'
+                },
+                series: [{
+                    name: 'MTTR',
+                    type: 'bar',
+                    data: [
+                        stats.min,
+                        stats.percentiles.p25,
+                        data.median_mttr_hours,
+                        data.predicted_mttr_hours,
+                        stats.percentiles.p75,
+                        stats.percentiles.p90,
+                        stats.max
+                    ],
+                    itemStyle: {
+                        color: function(params) {
+                            const colors = ['#67C23A', '#E6A23C', '#F56C6C', '#409EFF', '#E6A23C', '#F56C6C', '#F56C6C'];
+                            return colors[params.dataIndex];
+                        }
+                    },
+                    markLine: {
+                        data: [
+                            { name: '平均值', yAxis: data.predicted_mttr_hours }
+                        ]
+                    }
+                }]
+            };
+            
+            chart.setOption(option);
+        }
+        
+        // 加载异常检测数据
+        async function loadAnomalyData() {
+            const days = document.getElementById('anomaly-days').value;
+            const threshold = document.getElementById('anomaly-threshold').value;
+            const content = document.getElementById('anomaly-content');
+            
+            try {
+                showLoading(content);
+                const response = await fetch(`/fault/api/prediction/anomaly_detection?analysis_days=${days}&anomaly_threshold=${threshold}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    anomalyData = data.data;
+                    renderAnomalyResults(data.data);
+                } else {
+                    showError(content, data.message || '异常检测失败');
+                }
+            } catch (error) {
+                console.error('异常检测失败:', error);
+                showError(content, '网络连接错误');
+            }
+        }
+        
+        // 渲染异常检测结果
+        function renderAnomalyResults(data) {
+            const content = document.getElementById('anomaly-content');
+            const anomalyStatus = data.is_anomaly_detected ? 
+                '<span class="badge bg-warning">检测到异常</span>' : 
+                '<span class="badge bg-success">正常状态</span>';
+            
+            content.innerHTML = `
+                <div class="col-md-3">
+                    <div class="prediction-card">
+                        <div class="prediction-metric">
+                            <div class="prediction-value">${anomalyStatus}</div>
+                            <div class="prediction-label">异常状态</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="prediction-card">
+                        <div class="prediction-metric">
+                            <div class="prediction-value">${data.overall_anomaly_score}</div>
+                            <div class="prediction-label">异常评分</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="prediction-card">
+                        <div class="prediction-metric">
+                            <div class="prediction-value">${data.detected_anomalies.length}</div>
+                            <div class="prediction-label">异常事件数</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="prediction-card">
+                        <div class="prediction-metric">
+                            <div class="prediction-value">${data.summary_statistics.total_analysis_days}</div>
+                            <div class="prediction-label">分析天数</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="chart-card">
+                        <h5><i class="fas fa-exclamation-triangle"></i> 异常事件详情</h5>
+                        ${data.detected_anomalies.length > 0 ? `
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>日期</th>
+                                            <th>异常类型</th>
+                                            <th>异常值</th>
+                                            <th>异常评分</th>
+                                            <th>描述</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${data.detected_anomalies.map(anomaly => `
+                                            <tr>
+                                                <td>${anomaly.date}</td>
+                                                <td>
+                                                    <span class="badge bg-${anomaly.type === 'fault_count' ? 'primary' : 'warning'}">
+                                                        ${anomaly.type === 'fault_count' ? '故障数量' : '处理时长'}
+                                                    </span>
+                                                </td>
+                                                <td>${anomaly.value}</td>
+                                                <td>${anomaly.anomaly_score}</td>
+                                                <td>${anomaly.description}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ` : '<p class="text-center text-muted">未检测到异常事件</p>'}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="chart-card">
+                        <h5><i class="fas fa-lightbulb"></i> 处理建议</h5>
+                        <ul class="recommendations-list">
+                            ${data.recommendations.map(rec => `
+                                <li><i class="fas fa-info-circle text-info"></i> ${rec}</li>
+                            `).join('')}
+                        </ul>
+                        <div class="mt-3">
+                            <h6>统计摘要:</h6>
+                            <small class="text-muted">
+                                日均故障: ${data.summary_statistics.avg_daily_faults}<br>
+                                平均时长: ${data.summary_statistics.avg_duration_hours}小时<br>
+                                主动发现率: ${data.summary_statistics.proactive_discovery_rate}%
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 加载筛选选项
+        async function loadFilterOptions() {
+            try {
+                const response = await fetch('/fault/api/category_analysis');
+                const data = await response.json();
+                
+                if (data.success) {
+                    // 填充故障类型选项
+                    const typeSelect = document.getElementById('mttr-fault-type');
+                    data.data.fault_type.forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = item.name;
+                        option.textContent = item.name;
+                        typeSelect.appendChild(option);
+                    });
+                    
+                    // 填充原因分类选项
+                    const categorySelect = document.getElementById('mttr-cause-category');
+                    data.data.cause_category.forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = item.name;
+                        option.textContent = item.name;
+                        categorySelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('加载筛选选项失败:', error);
+            }
+        }
+        
+        // 显示加载状态
+        function showLoading(container) {
+            container.innerHTML = `
+                <div class="col-12">
+                    <div class="loading-spinner">
+                        <div class="spinner-border" role="status"></div>
+                        <p class="mt-3">正在加载数据...</p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 显示错误信息
+        function showError(container, message) {
+            container.innerHTML = `
+                <div class="col-12">
+                    <div class="alert alert-danger text-center">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>加载失败:</strong> ${message}
+                        <button class="btn btn-sm btn-outline-danger ms-3" onclick="location.reload()">
+                            重新加载
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 刷新所有数据
+        function refreshAllData() {
+            const activeTab = document.querySelector('#predictionTabs .nav-link.active');
+            const activePanel = activeTab.getAttribute('data-bs-target');
+            
+            if (activePanel === '#forecast-panel') {
+                loadForecastData();
+            } else if (activePanel === '#mttr-panel') {
+                loadMTTRData();
+            } else if (activePanel === '#anomaly-panel') {
+                loadAnomalyData();
+            }
+        }
+        
+        // 导出预测报告
+        function exportPredictionReport() {
+            const report = {
+                timestamp: new Date().toISOString(),
+                forecast_data: forecastData,
+                mttr_data: mttrData,
+                anomaly_data: anomalyData,
+                export_time: new Date().toLocaleString('zh-CN')
+            };
+            
+            const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `fault_prediction_report_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        // 窗口大小调整时重新调整图表
+        window.addEventListener('resize', function() {
+            document.querySelectorAll('.chart-container').forEach(el => {
+                const inst = echarts.getInstanceByDom(el);
+                if (inst) inst.resize();
+            });
+        });
+    </script>
+{% endblock %}
