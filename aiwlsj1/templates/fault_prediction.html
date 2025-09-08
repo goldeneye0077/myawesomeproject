@@ -3,18 +3,18 @@
 {% block extra_head %}
     <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.0/echarts.min.js"></script>
     <style>
-        .prediction-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 25px;
-            color: white;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-            transition: transform 0.3s ease;
+        .fault-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: transform 0.2s;
         }
         
-        .prediction-card:hover {
-            transform: translateY(-5px);
+        .fault-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
         }
         
         .prediction-metric {
@@ -22,23 +22,24 @@
             padding: 20px;
         }
         
-        .prediction-value {
-            font-size: 3rem;
-            font-weight: 700;
-            margin-bottom: 10px;
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #3b82f6;
         }
         
-        .prediction-label {
-            font-size: 1.1rem;
-            opacity: 0.9;
+        .metric-label {
+            font-size: 0.9rem;
+            color: #6b7280;
+            margin-top: 5px;
         }
         
         .chart-card {
             background: white;
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 25px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         
         .chart-container {
@@ -98,50 +99,54 @@
         }
         
         .factor-item {
-            background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 12px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            color: #334155;
+            padding: 15px;
+            border-radius: 8px;
             text-align: center;
         }
         
         .factor-name {
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: 600;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
+            color: #1e293b;
         }
         
         .factor-impact {
-            font-size: 2rem;
+            font-size: 1.8rem;
             font-weight: 700;
             margin-bottom: 5px;
+            color: #3b82f6;
         }
         
         .factor-duration {
-            opacity: 0.9;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            color: #64748b;
         }
         
         .control-panel {
             background: white;
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 25px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         
         .nav-tabs .nav-link {
             border: none;
             color: #6c757d;
             font-weight: 500;
-            padding: 12px 25px;
-            margin-right: 10px;
-            border-radius: 25px;
-            transition: all 0.3s ease;
+            padding: 10px 20px;
+            margin-right: 8px;
+            border-radius: 20px;
+            transition: all 0.2s ease;
+            background: #f8f9fa;
         }
         
         .nav-tabs .nav-link.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #3b82f6;
             color: white;
         }
         
@@ -367,45 +372,52 @@
         // 渲染故障预测结果
         function renderForecastResults(data) {
             const content = document.getElementById('forecast-content');
-            const riskClass = `risk-${data.risk_level}`;
+            
+            // 数据验证
+            if (!data || !data.predicted_total_faults) {
+                showEmptyState(content, '预测数据不足', '历史数据过少，无法生成可靠的预测结果');
+                return;
+            }
+            
+            const riskClass = `risk-${data.risk_level || 'medium'}`;
             const riskLabel = {
                 'low': '低风险',
                 'medium': '中等风险',
                 'high': '高风险'
-            }[data.risk_level] || '未知';
+            }[data.risk_level] || '中等风险';
             
             content.innerHTML = `
                 <div class="col-md-3">
-                    <div class="prediction-card">
+                    <div class="fault-card">
                         <div class="prediction-metric">
-                            <div class="prediction-value">${data.predicted_total_faults}</div>
-                            <div class="prediction-label">预测故障总数</div>
+                            <div class="metric-value">${data.predicted_total_faults}</div>
+                            <div class="metric-label">预测故障总数</div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="prediction-card">
+                    <div class="fault-card">
                         <div class="prediction-metric">
-                            <div class="prediction-value">${data.predicted_daily_average}</div>
-                            <div class="prediction-label">日均故障数</div>
+                            <div class="metric-value">${data.predicted_daily_average}</div>
+                            <div class="metric-label">日均故障数</div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="prediction-card">
+                    <div class="fault-card">
                         <div class="prediction-metric">
-                            <div class="prediction-value">${(data.confidence * 100).toFixed(1)}%</div>
-                            <div class="prediction-label">预测置信度</div>
+                            <div class="metric-value">${(data.confidence * 100).toFixed(1)}%</div>
+                            <div class="metric-label">预测置信度</div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="prediction-card">
+                    <div class="fault-card">
                         <div class="prediction-metric">
-                            <div class="prediction-value">
+                            <div class="metric-value">
                                 <span class="risk-indicator ${riskClass}">${riskLabel}</span>
                             </div>
-                            <div class="prediction-label">风险等级</div>
+                            <div class="metric-label">风险等级</div>
                         </div>
                     </div>
                 </div>
@@ -419,7 +431,7 @@
                     <div class="chart-card">
                         <h5><i class="fas fa-lightbulb"></i> 智能建议</h5>
                         <ul class="recommendations-list">
-                            ${data.recommendations.map(rec => `<li><i class="fas fa-check-circle text-success"></i> ${rec}</li>`).join('')}
+                            ${(data.recommendations || []).map(rec => `<li><i class="fas fa-check-circle text-success"></i> ${rec}</li>`).join('') || '<li class="text-muted">暂无建议</li>'}
                         </ul>
                     </div>
                 </div>
@@ -427,13 +439,13 @@
                     <div class="chart-card">
                         <h5><i class="fas fa-exclamation-triangle"></i> 主要影响因素</h5>
                         <div class="factors-list">
-                            ${data.contributing_factors.map(factor => `
+                            ${(data.contributing_factors || []).map(factor => `
                                 <div class="factor-item">
-                                    <div class="factor-name">${factor.factor}</div>
-                                    <div class="factor-impact">${factor.impact_score}</div>
-                                    <div class="factor-duration">平均时长: ${factor.avg_duration_hours}小时</div>
+                                    <div class="factor-name">${factor.factor || '未知因素'}</div>
+                                    <div class="factor-impact">${factor.impact_score || 0}</div>
+                                    <div class="factor-duration">平均时长: ${factor.avg_duration_hours || 0}小时</div>
                                 </div>
-                            `).join('')}
+                            `).join('') || '<div class="text-center text-muted">暂无影响因素数据</div>'}
                         </div>
                     </div>
                 </div>
@@ -448,8 +460,14 @@
             const chartEl = document.getElementById('forecast-trend-chart');
             if (!chartEl) return;
             
+            // 数据验证
+            if (!data || !data.predicted_daily_average) {
+                chartEl.innerHTML = '<div class="text-center text-muted p-5">图表数据不足</div>';
+                return;
+            }
+            
             const chart = echarts.init(chartEl);
-            const days = parseInt(document.getElementById('forecast-days').value);
+            const days = parseInt(document.getElementById('forecast-days').value) || 30;
             
             // 生成预测数据点
             const dates = [];
@@ -594,28 +612,28 @@
             
             content.innerHTML = `
                 <div class="col-md-4">
-                    <div class="prediction-card">
+                    <div class="fault-card">
                         <div class="prediction-metric">
-                            <div class="prediction-value">${data.predicted_mttr_hours}</div>
-                            <div class="prediction-label">预测MTTR (小时)</div>
+                            <div class="metric-value">${data.predicted_mttr_hours}</div>
+                            <div class="metric-label">预测MTTR (小时)</div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="prediction-card">
+                    <div class="fault-card">
                         <div class="prediction-metric">
-                            <div class="prediction-value">${data.median_mttr_hours}</div>
-                            <div class="prediction-label">中位数MTTR (小时)</div>
+                            <div class="metric-value">${data.median_mttr_hours}</div>
+                            <div class="metric-label">中位数MTTR (小时)</div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="prediction-card">
+                    <div class="fault-card">
                         <div class="prediction-metric">
-                            <div class="prediction-value">
+                            <div class="metric-value">
                                 <span class="badge bg-${performanceClass}">${performanceLabel}</span>
                             </div>
-                            <div class="prediction-label">性能水平</div>
+                            <div class="metric-label">性能水平</div>
                         </div>
                     </div>
                 </div>
@@ -735,34 +753,34 @@
             
             content.innerHTML = `
                 <div class="col-md-3">
-                    <div class="prediction-card">
+                    <div class="fault-card">
                         <div class="prediction-metric">
-                            <div class="prediction-value">${anomalyStatus}</div>
-                            <div class="prediction-label">异常状态</div>
+                            <div class="metric-value">${anomalyStatus}</div>
+                            <div class="metric-label">异常状态</div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="prediction-card">
+                    <div class="fault-card">
                         <div class="prediction-metric">
-                            <div class="prediction-value">${data.overall_anomaly_score}</div>
-                            <div class="prediction-label">异常评分</div>
+                            <div class="metric-value">${data.overall_anomaly_score}</div>
+                            <div class="metric-label">异常评分</div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="prediction-card">
+                    <div class="fault-card">
                         <div class="prediction-metric">
-                            <div class="prediction-value">${data.detected_anomalies.length}</div>
-                            <div class="prediction-label">异常事件数</div>
+                            <div class="metric-value">${data.detected_anomalies.length}</div>
+                            <div class="metric-label">异常事件数</div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="prediction-card">
+                    <div class="fault-card">
                         <div class="prediction-metric">
-                            <div class="prediction-value">${data.summary_statistics.total_analysis_days}</div>
-                            <div class="prediction-label">分析天数</div>
+                            <div class="metric-value">${data.summary_statistics.total_analysis_days}</div>
+                            <div class="metric-label">分析天数</div>
                         </div>
                     </div>
                 </div>
@@ -874,6 +892,27 @@
                         <button class="btn btn-sm btn-outline-danger ms-3" onclick="location.reload()">
                             重新加载
                         </button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 显示空数据状态
+        function showEmptyState(container, message = '暂无数据', suggestion = '请检查数据源或调整筛选条件') {
+            container.innerHTML = `
+                <div class="col-12">
+                    <div class="alert alert-info text-center">
+                        <i class="fas fa-info-circle"></i>
+                        <h5 class="mt-2">${message}</h5>
+                        <p class="text-muted mb-3">${suggestion}</p>
+                        <div>
+                            <button class="btn btn-sm btn-primary me-2" onclick="loadForecastData()">
+                                <i class="fas fa-sync-alt"></i> 重新加载
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="location.href='/fault/data'">
+                                <i class="fas fa-database"></i> 数据管理
+                            </button>
+                        </div>
                     </div>
                 </div>
             `;

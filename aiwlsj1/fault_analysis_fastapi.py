@@ -28,6 +28,23 @@ router = APIRouter(prefix="/fault", tags=["故障分析"])
 # 配置模板
 templates = Jinja2Templates(directory="templates")
 
+def convert_numpy_types(obj):
+    """递归转换numpy类型为Python原生类型"""
+    if isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.floating):
+        return float(obj)
+    elif isinstance(obj, np.bool_):
+        return bool(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, dict):
+        return {key: convert_numpy_types(value) for key, value in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        return [convert_numpy_types(item) for item in obj]
+    else:
+        return obj
+
 # 配置日志
 logger = logging.getLogger(__name__)
 
@@ -4748,7 +4765,7 @@ async def get_performance_evaluation(
         # 改进行动计划
         action_plans = await _generate_action_plans(performance_changes, goal_achievement)
         
-        return {
+        evaluation_result = {
             'evaluation_period': evaluation_period,
             'date_range': {
                 'current_period': {
@@ -4770,6 +4787,8 @@ async def get_performance_evaluation(
             'evaluation_summary': await _generate_evaluation_summary(current_performance, performance_changes, goal_achievement),
             'generated_at': datetime.now().isoformat()
         }
+        
+        return convert_numpy_types(evaluation_result)
         
     except Exception as e:
         logger.error(f"绩效评估失败: {str(e)}")
@@ -4819,7 +4838,7 @@ async def get_indicators_dashboard(
         # 行动项跟踪
         action_tracking = await _get_action_item_tracking(db)
         
-        return {
+        dashboard_result = {
             'dashboard_type': dashboard_type,
             'refresh_interval': refresh_interval,
             'realtime_data': realtime_data,
@@ -4835,6 +4854,8 @@ async def get_indicators_dashboard(
             },
             'last_updated': datetime.now().isoformat()
         }
+        
+        return convert_numpy_types(dashboard_result)
         
     except Exception as e:
         logger.error(f"获取仪表盘数据失败: {str(e)}")

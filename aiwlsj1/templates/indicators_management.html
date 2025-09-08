@@ -224,6 +224,20 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- 数据状态信息 -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="text-center">
+                            <small class="text-muted last-updated">最后更新: 加载中...</small>
+                            <span class="ms-3">
+                                <button class="btn btn-sm btn-outline-primary" onclick="loadDashboard()">
+                                    <i class="fas fa-sync-alt"></i> 刷新数据
+                                </button>
+                            </span>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- 实时图表 -->
                 <div class="row">
@@ -302,6 +316,37 @@
             loadIndicators();
             loadDashboard();
             
+            // 添加标签页切换事件监听
+            const tabButtons = document.querySelectorAll('#mainTabs .nav-link');
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    const targetTab = e.target.getAttribute('data-bs-target');
+                    
+                    // 当切换到绩效评估标签时，如果还没有数据，则自动加载
+                    if (targetTab === '#performance-tab' && !performanceData) {
+                        // 给一个短暂的延迟，等DOM更新完成
+                        setTimeout(() => {
+                            loadPerformanceEvaluation();
+                        }, 100);
+                    }
+                });
+            });
+            
+            // 修改绩效评估的默认显示状态
+            const performanceResults = document.getElementById('performanceResults');
+            performanceResults.innerHTML = `
+                <div class="text-center p-4">
+                    <div class="mb-3">
+                        <i class="fas fa-chart-line" style="font-size: 3rem; color: #6c757d;"></i>
+                    </div>
+                    <h5 class="text-muted">绩效评估报告</h5>
+                    <p class="text-muted">点击上方"📊 生成评估报告"按钮开始生成绩效评估报告</p>
+                    <button class="btn btn-primary" onclick="loadPerformanceEvaluation()">
+                        <i class="fas fa-play"></i> 立即生成报告
+                    </button>
+                </div>
+            `;
+            
             // 设置自动刷新
             setInterval(loadDashboard, 300000); // 5分钟刷新一次
         });
@@ -376,8 +421,27 @@
         async function loadPerformanceEvaluation() {
             try {
                 const period = document.getElementById('evaluationPeriod').value;
+                
+                // 显示加载状态
+                const container = document.getElementById('performanceResults');
+                container.innerHTML = `
+                    <div class="loading">
+                        <div class="spinner-border text-success"></div>
+                        <p>生成绩效评估报告中...</p>
+                    </div>
+                `;
+                
                 const response = await fetch(`/fault/api/performance/evaluation?evaluation_period=${period}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.message || data.detail || '评估数据获取失败');
+                }
                 
                 performanceData = data;
                 renderPerformanceResults(data);
@@ -443,18 +507,46 @@
         async function loadDashboard() {
             try {
                 const response = await fetch('/fault/api/indicators/dashboard');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.message || data.detail || '仪表盘数据获取失败');
+                }
                 
                 // 更新实时指标
                 if (data.realtime_data) {
-                    document.getElementById('realtimeFaults').textContent = data.realtime_data.current_fault_count || '-';
-                    document.getElementById('realtimeSeverity').textContent = data.realtime_data.high_severity_count || '-';
+                    // 使用 !== undefined 来区分0值和undefined
+                    document.getElementById('realtimeFaults').textContent = 
+                        data.realtime_data.current_fault_count !== undefined ? data.realtime_data.current_fault_count : '-';
+                    document.getElementById('realtimeSeverity').textContent = 
+                        data.realtime_data.high_severity_count !== undefined ? data.realtime_data.high_severity_count : '-';
                     document.getElementById('realtimeProactive').textContent = 
-                        (data.realtime_data.proactive_discovery_rate || 0).toFixed(1) + '%';
+                        (data.realtime_data.proactive_discovery_rate !== undefined ? data.realtime_data.proactive_discovery_rate : 0).toFixed(1) + '%';
+                }
+                
+                // 可以添加更多数据的处理，比如趋势图表等
+                if (data.key_trends && data.key_trends.trend_analysis) {
+                    console.log('趋势数据:', data.key_trends.trend_analysis);
+                }
+                
+                // 更新最后更新时间
+                if (data.last_updated) {
+                    const lastUpdated = new Date(data.last_updated).toLocaleString('zh-CN');
+                    const timeElements = document.querySelectorAll('.last-updated');
+                    timeElements.forEach(el => el.textContent = `最后更新: ${lastUpdated}`);
                 }
                 
             } catch (error) {
                 console.error('加载仪表盘数据失败:', error);
+                // 显示错误状态到实时指标卡片
+                document.getElementById('realtimeFaults').textContent = '加载失败';
+                document.getElementById('realtimeSeverity').textContent = '加载失败';
+                document.getElementById('realtimeProactive').textContent = '加载失败';
             }
         }
 
