@@ -2,6 +2,26 @@
 
 {% block title %}PUE数据管理 - 网络视界指标后台管理{% endblock %}
 
+{% block page_title %}PUE数据管理{% endblock %}
+
+{% block breadcrumb %}
+    <li><span class="text-gray-300">/</span></li>
+    <li><span class="text-gray-500">契约化指标分析</span></li>
+    <li><span class="text-gray-300">/</span></li>
+    <li><span class="text-gray-500">PUE指标</span></li>
+    <li><span class="text-gray-300">/</span></li>
+    <li><span class="text-primary-600">PUE指标数据管理</span></li>
+{% endblock %}
+
+{% block page_actions %}
+    <a href="/add_pue" class="btn-primary">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+        </svg>
+        添加PUE数据
+    </a>
+{% endblock %}
+
 {% block content %}
 <!-- PUE数据列表卡片 -->
 <div class="card">

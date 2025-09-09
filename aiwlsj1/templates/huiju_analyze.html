@@ -1,5 +1,18 @@
 {% extends "base.html" %}
-{% block title %}汇聚骨干指标数据分析{% endblock %}
+
+{% block title %}汇聚骨干指标数据分析 - 网络视界指标后台管理{% endblock %}
+
+{% block page_title %}汇聚骨干指标数据分析{% endblock %}
+
+{% block breadcrumb %}
+    <li><span class="text-gray-300">/</span></li>
+    <li><span class="text-gray-500">契约化指标分析</span></li>
+    <li><span class="text-gray-300">/</span></li>
+    <li><span class="text-gray-500">汇聚骨干指标</span></li>
+    <li><span class="text-gray-300">/</span></li>
+    <li><span class="text-primary-600">汇聚骨干指标数据分析</span></li>
+{% endblock %}
+
 {% block content %}
 {% set city_order = ['深圳', '广州', '东莞', '佛山'] %}
 <div class="main-flex-row" style="display: flex; gap: 24px; align-items: flex-start; min-width:0; width:100%; box-sizing:border-box; position:relative; z-index:1;">

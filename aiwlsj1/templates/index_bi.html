@@ -1,6 +1,15 @@
 {% extends "base.html" %}
 
-{% block title %}网络视界指标后台管理 - BI大屏{% endblock %}
+{% block title %}契约化指标大屏预览 - 网络视界指标后台管理{% endblock %}
+
+{% block page_title %}契约化指标大屏预览{% endblock %}
+
+{% block breadcrumb %}
+    <li><span class="text-gray-300">/</span></li>
+    <li><span class="text-gray-500">大屏管理</span></li>
+    <li><span class="text-gray-300">/</span></li>
+    <li><span class="text-primary-600">契约化指标大屏预览</span></li>
+{% endblock %}
 
 {% block extra_head %}
 <link rel="stylesheet" href="{{ url_for('static', path='/css/index.css') }}" />
