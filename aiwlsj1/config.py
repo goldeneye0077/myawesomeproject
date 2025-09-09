@@ -49,10 +49,6 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
     CACHE_EXPIRE_TIME: int = 3600
     
-    class Config:
-        env_file = ".env"
-        extra = "ignore"
-    
     # 文件上传配置
     MAX_FILE_SIZE: int = 10485760  # 10MB
     ALLOWED_FILE_EXTENSIONS: List[str] = [".xlsx", ".xls", ".csv"]
@@ -64,6 +60,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
+        extra = "ignore"
 
 # 创建全局设置实例
 settings = Settings()

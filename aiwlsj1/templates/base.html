@@ -4,157 +4,293 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}网络视界指标后台管理{% endblock %}</title>
-    <!-- Bootstrap 5 CSS (use BootCDN for better availability in CN) -->
-    <link href="https://cdn.bootcdn.net/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='/css/bootstrap_sidebar_custom.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='/css/modern_theme.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='/css/color_harmony.css') }}">
-    <script src="{{ url_for('static', path='/js/sidebar.js') }}"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        },
+                        gray: {
+                            50: '#f9fafb',
+                            100: '#f3f4f6',
+                            900: '#111827',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Alpine.js for interactivity -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Compiled Tailwind styles (fixes @apply issues) -->
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/tailwind-compiled.css') }}">
+    
+    <!-- Custom styles (fallback) -->
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/tailwind-custom.css') }}">
+    
+    <!-- Note: Consider removing CDN in production and use local Tailwind build -->
+    
     {% block extra_head %}{% endblock %}
 </head>
-<body>
-    <!-- 顶部横幅 -->
-    <div class="header">
-        <div class="header-logo-bg">
-            <img src="{{ url_for('static', path='/images/移动logo.png') }}" alt="移动logo" class="logo-image">
-        </div>
-        <div class="header-content">
-            <h1><a href="/">网络视界指标后台管理</a></h1>
-        </div>
-    </div>
-    <div class="header-divider"></div>
 
-    <!-- 主体内容区：左右两栏flex布局 -->
-    <div class="d-flex" style="height:100vh;">
-        <!-- 左侧导航栏（Bootstrap Sidebar）-->
-        <nav class="sidebar d-flex flex-column flex-shrink-0 p-3 bg-light border-end" style="width: 260px;">
-            <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-dark text-decoration-none">
-                <span class="fs-4">导航菜单</span>
-            </a>
-            <hr>
-            <ul class="nav nav-pills flex-column mb-auto">
-                <!-- 折叠菜单示例 -->
-                <li>
-                    <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapseContract" role="button" aria-expanded="false" aria-controls="collapseContract">
-                        契约化指标大屏管理
-                        <span class="bi bi-chevron-down small"></span>
-                    </a>
-                    <div class="collapse" id="collapseContract">
-                        <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small ms-3">
-                            <li><a href="/center_top_top" class="nav-link {% if request.url.path == '/center_top_top' %}active{% endif %}">故障割接管理</a></li>
-                            <li><a href="/center_top_bottom" class="nav-link {% if request.url.path == '/center_top_bottom' %}active{% endif %}">地图管理</a></li>
-                            <li><a href="/left_top" class="nav-link {% if request.url.path == '/left_top' %}active{% endif %}">汇聚骨干管理</a></li>
-                            <li><a href="/left_middle" class="nav-link {% if request.url.path == '/left_middle' %}active{% endif %}">机楼PUE管理</a></li>
-                            <li><a href="/right_top" class="nav-link {% if request.url.path == '/right_top' %}active{% endif %}">资源数据准确率管理</a></li>
-                            <li><a href="/right_middle" class="nav-link {% if request.url.path == '/right_middle' %}active{% endif %}">机楼耗电量管理</a></li>
-                            <li><a href="/bottom" class="nav-link {% if request.url.path == '/bottom' %}active{% endif %}">关键数据准确性管理</a></li>
-                        </ul>
+<body class="bg-gray-50 min-h-screen" x-data="{ sidebarOpen: true }">
+    <div class="flex h-screen bg-gray-50">
+        <!-- 侧边栏 -->
+        <div class="flex-shrink-0 w-64 bg-white shadow-lg overflow-hidden" x-show="sidebarOpen" x-transition:enter="transition-transform ease-out duration-300" x-transition:enter-start="-translate-x-full" x-transition:enter-end="translate-x-0" x-transition:leave="transition-transform ease-in duration-300" x-transition:leave-start="translate-x-0" x-transition:leave-end="-translate-x-full">
+            <!-- Logo 区域 -->
+            <div class="flex items-center justify-center h-16 px-4 bg-gradient-to-r from-blue-600 to-blue-700 shadow-sm">
+                <img src="{{ url_for('static', path='/images/移动logo.png') }}" alt="移动logo" class="h-12 w-auto mr-3">
+                <h1 class="text-lg font-semibold text-white">网络视界指标管理</h1>
+            </div>
+
+            <!-- 导航菜单 -->
+            <nav class="mt-5 flex-1 px-2 pb-4 space-y-1 custom-scrollbar overflow-y-auto" style="height: calc(100vh - 4rem);">
+                <!-- 契约化指标大屏管理 -->
+                <div x-data="{ open: false }" class="space-y-1">
+                    <button @click="open = !open" 
+                            class="group flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors duration-200">
+                        <span class="flex items-center">
+                            <svg class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                            契约化指标大屏管理
+                        </span>
+                        <svg class="ml-3 h-5 w-5 transform transition-transform duration-200" :class="{'rotate-180': open}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-1" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-1" class="space-y-1">
+                        <a href="/center_top_top" class="sidebar-submenu-item {% if request.url.path == '/center_top_top' %}active{% endif %}">故障割接管理</a>
+                        <a href="/center_top_bottom" class="sidebar-submenu-item {% if request.url.path == '/center_top_bottom' %}active{% endif %}">地图管理</a>
+                        <a href="/left_top" class="sidebar-submenu-item {% if request.url.path == '/left_top' %}active{% endif %}">汇聚骨干管理</a>
+                        <a href="/left_middle" class="sidebar-submenu-item {% if request.url.path == '/left_middle' %}active{% endif %}">机楼PUE管理</a>
+                        <a href="/right_top" class="sidebar-submenu-item {% if request.url.path == '/right_top' %}active{% endif %}">资源数据准确率管理</a>
+                        <a href="/right_middle" class="sidebar-submenu-item {% if request.url.path == '/right_middle' %}active{% endif %}">机楼耗电量管理</a>
+                        <a href="/bottom" class="sidebar-submenu-item {% if request.url.path == '/bottom' %}active{% endif %}">关键数据准确性管理</a>
                     </div>
-                </li>
-                <li>
-                    <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapseKPI" role="button" aria-expanded="false" aria-controls="collapseKPI">
-                        KPI指标大屏管理
-                        <span class="bi bi-chevron-down small"></span>
-                    </a>
-                    <div class="collapse" id="collapseKPI">
-                        <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small ms-3">
-                            <li><a href="/kpi_indicators" class="nav-link {% if request.url.path == '/kpi_indicators' %}active{% endif %}">KPI数据管理</a></li>
-                            <li><a href="/left_middle_kpi" class="nav-link {% if request.url.path == '/left_middle_kpi' %}active{% endif %}">机楼PUE KPI管理</a></li>
-                            <li><a href="/center_middle_kpi" class="nav-link {% if request.url.path == '/center_middle_kpi' %}active{% endif %}">宽带装机交付KPI管理</a></li>
-                            <li><a href="/right_middle_kpi" class="nav-link {% if request.url.path == '/right_middle_kpi' %}active{% endif %}">研发完成率KPI管理</a></li>
-                            <li><a href="/left_bottom_kpi" class="nav-link {% if request.url.path == '/left_bottom_kpi' %}active{% endif %}">指标达成KPI管理</a></li>
-                            <li><a href="/right_bottom_kpi" class="nav-link {% if request.url.path == '/right_bottom_kpi' %}active{% endif %}">宽带率KPI管理</a></li>
-                            <li><a href="/top_kpi" class="nav-link {% if request.url.path == '/top_kpi' %}active{% endif %}">KPI头部管理</a></li>
-                        </ul>
+                </div>
+
+                <!-- KPI指标大屏管理 -->
+                <div x-data="{ open: false }" class="space-y-1">
+                    <button @click="open = !open" 
+                            class="group flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors duration-200">
+                        <span class="flex items-center">
+                            <svg class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                            KPI指标大屏管理
+                        </span>
+                        <svg class="ml-3 h-5 w-5 transform transition-transform duration-200" :class="{'rotate-180': open}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-1" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-1" class="space-y-1">
+                        <a href="/kpi_indicators" class="sidebar-submenu-item {% if request.url.path == '/kpi_indicators' %}active{% endif %}">KPI数据管理</a>
+                        <a href="/left_middle_kpi" class="sidebar-submenu-item {% if request.url.path == '/left_middle_kpi' %}active{% endif %}">机楼PUE KPI管理</a>
+                        <a href="/center_middle_kpi" class="sidebar-submenu-item {% if request.url.path == '/center_middle_kpi' %}active{% endif %}">宽带装机交付KPI管理</a>
+                        <a href="/right_middle_kpi" class="sidebar-submenu-item {% if request.url.path == '/right_middle_kpi' %}active{% endif %}">研发完成率KPI管理</a>
+                        <a href="/left_bottom_kpi" class="sidebar-submenu-item {% if request.url.path == '/left_bottom_kpi' %}active{% endif %}">指标达成KPI管理</a>
+                        <a href="/right_bottom_kpi" class="sidebar-submenu-item {% if request.url.path == '/right_bottom_kpi' %}active{% endif %}">宽带率KPI管理</a>
+                        <a href="/top_kpi" class="sidebar-submenu-item {% if request.url.path == '/top_kpi' %}active{% endif %}">KPI头部管理</a>
                     </div>
-                </li>
-                <li class="border-top my-2"></li>
-                <li>
-                    <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapseContractAnalysis" role="button" aria-expanded="false" aria-controls="collapseContractAnalysis">
-                        契约化指标分析
-                        <span class="bi bi-chevron-down small"></span>
-                    </a>
-                    <div class="collapse" id="collapseContractAnalysis">
-                        <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small ms-3">
-                            <li>
-                                <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapsePUE" role="button" aria-expanded="false" aria-controls="collapsePUE">
+                </div>
+
+                <!-- 分隔线 -->
+                <div class="border-t border-gray-200 my-4"></div>
+
+                <!-- 契约化指标分析 -->
+                <div x-data="{ open: false }" class="space-y-1">
+                    <button @click="open = !open" 
+                            class="group flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors duration-200">
+                        <span class="flex items-center">
+                            <svg class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            契约化指标分析
+                        </span>
+                        <svg class="ml-3 h-5 w-5 transform transition-transform duration-200" :class="{'rotate-180': open}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-1" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-1" class="space-y-1">
+                        <!-- PUE指标 -->
+                        <div x-data="{ open: false }" class="space-y-1">
+                            <button @click="open = !open" class="sidebar-submenu-item flex w-full items-center justify-between">
+                                <span class="flex items-center">
+                                    <svg class="mr-2 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                    </svg>
                                     PUE指标
-                                    <span class="bi bi-chevron-down small"></span>
-                                </a>
-                                <div class="collapse" id="collapsePUE">
-                                    <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 ms-3">
-                                        <li><a href="/pue_data" class="nav-link {% if request.url.path == '/pue_data' %}active{% endif %}">PUE指标数据管理</a></li>
-<li><a href="/pue_drill_down_manage" class="nav-link {% if request.url.path == '/pue_drill_down_manage' %}active{% endif %}">PUE下钻数据管理</a></li>
-                                        <li><a href="/pue_analyze" class="nav-link {% if request.url.path == '/pue_analyze' %}active{% endif %}">PUE指标数据分析</a></li>
-                                    </ul>
-                                </div>
-                            </li>
-                            <li>
-                                <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapseHuiju" role="button" aria-expanded="false" aria-controls="collapseHuiju">
+                                </span>
+                                <svg class="ml-2 h-4 w-4 transform transition-transform duration-200" :class="{'rotate-180': open}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-1" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-1" class="space-y-1">
+                                <a href="/pue_data" class="sidebar-submenu-item-nested {% if request.url.path == '/pue_data' %}active{% endif %}">PUE指标数据管理</a>
+                                <a href="/pue_drill_down_manage" class="sidebar-submenu-item-nested {% if request.url.path == '/pue_drill_down_manage' %}active{% endif %}">PUE下钻数据管理</a>
+                                <a href="/pue_analyze" class="sidebar-submenu-item-nested {% if request.url.path == '/pue_analyze' %}active{% endif %}">PUE指标数据分析</a>
+                            </div>
+                        </div>
+
+                        <!-- 汇聚骨干指标 -->
+                        <div x-data="{ open: false }" class="space-y-1">
+                            <button @click="open = !open" class="sidebar-submenu-item flex w-full items-center justify-between">
+                                <span class="flex items-center">
+                                    <svg class="mr-2 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                    </svg>
                                     汇聚骨干指标
-                                    <span class="bi bi-chevron-down small"></span>
-                                </a>
-                                <div class="collapse" id="collapseHuiju">
-                                    <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 ms-3">
-                                        <li><a href="/huiju/data" class="nav-link {% if request.url.path == '/huiju_data' %}active{% endif %}">汇聚骨干指标数据管理</a></li>
-                                        <li><a href="/huiju/analyze" class="nav-link {% if request.url.path == '/huiju_analyze' %}active{% endif %}">汇聚骨干指标数据分析</a></li>
-                                    </ul>
-                                </div>
-                            </li>
-                            <li>
-                                <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapseFault" role="button" aria-expanded="false" aria-controls="collapseFault">
+                                </span>
+                                <svg class="ml-2 h-4 w-4 transform transition-transform duration-200" :class="{'rotate-180': open}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-1" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-1" class="space-y-1">
+                                <a href="/huiju/data" class="sidebar-submenu-item-nested {% if request.url.path == '/huiju_data' %}active{% endif %}">汇聚骨干指标数据管理</a>
+                                <a href="/huiju/analyze" class="sidebar-submenu-item-nested {% if request.url.path == '/huiju_analyze' %}active{% endif %}">汇聚骨干指标数据分析</a>
+                            </div>
+                        </div>
+
+                        <!-- 故障指标分析 -->
+                        <div x-data="{ open: false }" class="space-y-1">
+                            <button @click="open = !open" class="sidebar-submenu-item flex w-full items-center justify-between">
+                                <span class="flex items-center">
+                                    <svg class="mr-2 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                    </svg>
                                     故障指标分析
-                                    <span class="bi bi-chevron-down small"></span>
-                                </a>
-                                <div class="collapse" id="collapseFault">
-                                    <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 ms-3">
-                                        <li><a href="/fault/data" class="nav-link {% if request.url.path == '/fault/data' %}active{% endif %}">故障指标数据管理</a></li>
-                                        <li><a href="/fault/dashboard" class="nav-link {% if request.url.path == '/fault/dashboard' %}active{% endif %}">故障指标数据分析</a></li>
-                                        <li><a href="/fault/prediction" class="nav-link {% if request.url.path == '/fault/prediction' %}active{% endif %}">故障预测分析</a></li>
-                                        <li><a href="/fault/indicators" class="nav-link {% if request.url.path == '/fault/indicators' %}active{% endif %}">指标管理与绩效评估</a></li>
-                                    </ul>
-                                </div>
-                            </li>
-                        </ul>
+                                </span>
+                                <svg class="ml-2 h-4 w-4 transform transition-transform duration-200" :class="{'rotate-180': open}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-1" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-1" class="space-y-1">
+                                <a href="/fault/data" class="sidebar-submenu-item-nested {% if request.url.path == '/fault/data' %}active{% endif %}">故障指标数据管理</a>
+                                <a href="/fault/dashboard" class="sidebar-submenu-item-nested {% if request.url.path == '/fault/dashboard' %}active{% endif %}">故障指标数据分析</a>
+                                <a href="/fault/prediction" class="sidebar-submenu-item-nested {% if request.url.path == '/fault/prediction' %}active{% endif %}">故障预测分析</a>
+                                <a href="/fault/indicators" class="sidebar-submenu-item-nested {% if request.url.path == '/fault/indicators' %}active{% endif %}">指标管理与绩效评估</a>
+                            </div>
+                        </div>
                     </div>
-                </li>
-                <li class="border-top my-2"></li>
-                <li>
-                    <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapseMonitor" role="button" aria-expanded="false" aria-controls="collapseMonitor">
-                        系统监控工具
-                        <span class="bi bi-chevron-down small"></span>
-                    </a>
-                    <div class="collapse" id="collapseMonitor">
-                        <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small ms-3">
-                            <li><a href="/tools/monitor/dashboard" class="nav-link {% if request.url.path == '/tools/monitor/dashboard' %}active{% endif %}">监控仪表盘</a></li>
-                            <li><a href="/tools/monitor/database" class="nav-link {% if request.url.path == '/tools/monitor/database' %}active{% endif %}">数据库健康</a></li>
-                            <li><a href="/tools/monitor/performance" class="nav-link {% if request.url.path == '/tools/monitor/performance' %}active{% endif %}">性能监控</a></li>
-                            <li><a href="/tools/monitor/status" class="nav-link {% if request.url.path == '/tools/monitor/status' %}active{% endif %}">系统状态</a></li>
-                            <li><a href="/tools/monitor/logs" class="nav-link {% if request.url.path == '/tools/monitor/logs' %}active{% endif %}">日志查看</a></li>
-                        </ul>
+                </div>
+
+                <!-- 分隔线 -->
+                <div class="border-t border-gray-200 my-4"></div>
+
+                <!-- 系统监控工具 -->
+                <div x-data="{ open: false }" class="space-y-1">
+                    <button @click="open = !open" 
+                            class="group flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors duration-200">
+                        <span class="flex items-center">
+                            <svg class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            系统监控工具
+                        </span>
+                        <svg class="ml-3 h-5 w-5 transform transition-transform duration-200" :class="{'rotate-180': open}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-1" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-1" class="space-y-1">
+                        <a href="/tools/monitor/dashboard" class="sidebar-submenu-item {% if request.url.path == '/tools/monitor/dashboard' %}active{% endif %}">监控仪表盘</a>
+                        <a href="/tools/monitor/database" class="sidebar-submenu-item {% if request.url.path == '/tools/monitor/database' %}active{% endif %}">数据库健康</a>
+                        <a href="/tools/monitor/performance" class="sidebar-submenu-item {% if request.url.path == '/tools/monitor/performance' %}active{% endif %}">性能监控</a>
+                        <a href="/tools/monitor/status" class="sidebar-submenu-item {% if request.url.path == '/tools/monitor/status' %}active{% endif %}">系统状态</a>
+                        <a href="/tools/monitor/logs" class="sidebar-submenu-item {% if request.url.path == '/tools/monitor/logs' %}active{% endif %}">日志查看</a>
                     </div>
-                </li>
-                <li class="border-top my-2"></li>
-                <li>
-                    <a href="/bi" class="nav-link" target="_blank">契约化指标大屏预览</a>
-                </li>
-                <li>
-                    <a href="/bi2" class="nav-link" target="_blank">KPI指标大屏预览</a>
-                </li>
-            </ul>
-        </nav>
-        <!-- 右侧内容区 -->
-        <div class="content flex-fill" style="padding-top:28px; overflow-y: auto; box-sizing: border-box; min-height:200vh;">
-            {% block content %}
-            <!-- 内容将由子模板提供 -->
-            {% endblock %}
+                </div>
+
+                <!-- 分隔线 -->
+                <div class="border-t border-gray-200 my-4"></div>
+
+                <!-- 大屏预览 -->
+                <div x-data="{ open: false }" class="space-y-1">
+                    <button @click="open = !open" 
+                            class="group flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors duration-200">
+                        <span class="flex items-center">
+                            <svg class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                            大屏管理
+                        </span>
+                        <svg class="ml-3 h-5 w-5 transform transition-transform duration-200" :class="{'rotate-180': open}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-1" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-1" class="space-y-1">
+                        <a href="/bi" target="_blank" class="sidebar-submenu-item group">
+                            契约化指标大屏预览
+                            <svg class="ml-auto h-4 w-4 text-gray-400 group-hover:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                        </a>
+                        <a href="/bi2" target="_blank" class="sidebar-submenu-item group">
+                            KPI指标大屏预览
+                            <svg class="ml-auto h-4 w-4 text-gray-400 group-hover:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <!-- 主内容区 -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- 顶部导航栏 -->
+            <header class="bg-white shadow-sm border-b border-gray-200">
+                <div class="px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <!-- 侧边栏切换按钮 -->
+                            <button @click="sidebarOpen = !sidebarOpen" class="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500 mr-4">
+                                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                                </svg>
+                            </button>
+                            
+                            <div>
+                                <h1 class="text-2xl font-semibold text-gray-900">{% block page_title %}网络视界指标管理系统{% endblock %}</h1>
+                                <nav class="flex mt-1" aria-label="Breadcrumb">
+                                    <ol class="flex items-center space-x-2 text-sm text-gray-500">
+                                        <li><a href="/" class="hover:text-gray-700 transition-colors duration-200">首页</a></li>
+                                        {% block breadcrumb %}{% endblock %}
+                                    </ol>
+                                </nav>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            {% block page_actions %}{% endblock %}
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- 主内容 -->
+            <main class="flex-1 overflow-y-auto bg-gray-50 p-6 custom-scrollbar">
+                <div class="max-w-7xl mx-auto">
+                    {% block content %}
+                    <!-- 内容将由子模板提供 -->
+                    {% endblock %}
+                </div>
+            </main>
         </div>
     </div>
-    <!-- Bootstrap 5 JS Bundle with Popper (use BootCDN) -->
-    <script src="https://cdn.bootcdn.net/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
-    <!-- 主题切换工具 -->
-    <script src="{{ url_for('static', path='/js/theme_switcher.js') }}"></script>
+
+    <!-- 自定义 JavaScript -->
+    <script src="{{ url_for('static', path='/js/tailwind-app.js') }}"></script>
     {% block extra_js %}{% endblock %}
     {% block scripts %}
     <!-- 页面特定脚本将由子模板提供 -->
