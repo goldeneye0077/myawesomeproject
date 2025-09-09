@@ -132,8 +132,15 @@ const tableDescriptions = {
 
 async function loadDatabaseHealth() {
     try {
+        console.log('开始加载数据库健康状态...');
         const response = await fetch('/tools/monitor/health/database');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
         const data = await response.json();
+        console.log('获取到数据:', data);
         databaseData = data;
         
         updateConnectionStatus(data.connection_status);
@@ -144,9 +151,17 @@ async function loadDatabaseHealth() {
         document.getElementById('last-check').textContent = 
             new Date(data.check_timestamp).toLocaleString('zh-CN');
             
+        console.log('数据库健康状态加载完成');
+            
     } catch (error) {
         console.error('加载数据库健康状态失败:', error);
         updateConnectionStatus('异常');
+        
+        // 显示错误信息
+        const chartContainer = document.getElementById('tables-chart');
+        if (chartContainer) {
+            chartContainer.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 300px; color: #ef4444;">数据加载失败: ' + error.message + '</div>';
+        }
     }
 }
 
@@ -168,63 +183,104 @@ function updateDatabaseOverview(data) {
 }
 
 function updateTablesChart(tables) {
-    if (tablesChart) {
-        tablesChart.dispose();
-    }
-    
-    const chartData = Object.entries(tables).map(([name, count]) => ({
-        name: tableDisplayNames[name] || name,
-        value: count
-    })).sort((a, b) => b.value - a.value);
-    
-    tablesChart = echarts.init(document.getElementById('tables-chart'));
-    
-    const option = {
-        tooltip: {
-            trigger: 'item',
-            formatter: '{a} <br/>{b}: {c} ({d}%)'
-        },
-        legend: {
-            type: 'scroll',
-            orient: 'vertical',
-            right: 10,
-            top: 20,
-            bottom: 20,
-            data: chartData.map(item => item.name)
-        },
-        series: [
-            {
-                name: '记录数',
-                type: 'pie',
-                radius: ['40%', '70%'],
-                center: ['40%', '50%'],
-                avoidLabelOverlap: false,
-                label: {
-                    show: false,
-                    position: 'center'
-                },
-                emphasis: {
-                    label: {
-                        show: true,
-                        fontSize: '16',
-                        fontWeight: 'bold'
-                    }
-                },
-                labelLine: {
-                    show: false
-                },
-                data: chartData,
-                itemStyle: {
-                    borderRadius: 8,
-                    borderColor: '#fff',
-                    borderWidth: 2
+    try {
+        console.log('更新图表数据:', tables);
+        
+        if (tablesChart) {
+            tablesChart.dispose();
+        }
+        
+        // 检查容器是否存在
+        const chartContainer = document.getElementById('tables-chart');
+        if (!chartContainer) {
+            console.error('图表容器不存在');
+            return;
+        }
+        
+        // 确保容器有尺寸
+        chartContainer.style.width = '100%';
+        chartContainer.style.height = '300px';
+        
+        const chartData = Object.entries(tables).map(([name, count]) => ({
+            name: tableDisplayNames[name] || name,
+            value: count
+        })).filter(item => item.value > 0).sort((a, b) => b.value - a.value);
+        
+        console.log('处理后的图表数据:', chartData);
+        
+        if (chartData.length === 0) {
+            chartContainer.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 300px; color: #64748b;">暂无数据</div>';
+            return;
+        }
+        
+        tablesChart = echarts.init(chartContainer);
+        
+        const option = {
+            tooltip: {
+                trigger: 'item',
+                formatter: '{a} <br/>{b}: {c} ({d}%)'
+            },
+            legend: {
+                type: 'scroll',
+                orient: 'vertical',
+                right: 10,
+                top: 20,
+                bottom: 20,
+                data: chartData.map(item => item.name),
+                textStyle: {
+                    fontSize: 12
                 }
+            },
+            series: [
+                {
+                    name: '记录数',
+                    type: 'pie',
+                    radius: ['40%', '70%'],
+                    center: ['40%', '50%'],
+                    avoidLabelOverlap: false,
+                    label: {
+                        show: false,
+                        position: 'center'
+                    },
+                    emphasis: {
+                        label: {
+                            show: true,
+                            fontSize: '16',
+                            fontWeight: 'bold'
+                        }
+                    },
+                    labelLine: {
+                        show: false
+                    },
+                    data: chartData,
+                    itemStyle: {
+                        borderRadius: 8,
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    }
+                }
+            ],
+            color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4']
+        };
+        
+        tablesChart.setOption(option);
+        
+        // 延迟调用resize确保图表正确显示
+        setTimeout(() => {
+            if (tablesChart) {
+                tablesChart.resize();
             }
-        ],
-        color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4']
-    };
-    
-    tablesChart.setOption(option);
+        }, 100);
+        
+        console.log('图表初始化完成');
+        
+    } catch (error) {
+        console.error('图表更新失败:', error);
+        const chartContainer = document.getElementById('tables-chart');
+        if (chartContainer) {
+            chartContainer.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 300px; color: #ef4444;">图表加载失败</div>';
+        }
+    }
 }
 
 function updateTablesDetail(tables) {
@@ -261,8 +317,8 @@ function refreshDatabaseHealth() {
 document.addEventListener('DOMContentLoaded', function() {
     loadDatabaseHealth();
     
-    // 每30秒自动刷新
-    setInterval(loadDatabaseHealth, 30000);
+    // 自动刷新已禁用，用户可手动点击刷新按钮
+    // setInterval(loadDatabaseHealth, 30000);
     
     // 响应式图表
     window.addEventListener('resize', function() {

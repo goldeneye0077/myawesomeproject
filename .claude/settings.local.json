@@ -55,7 +55,18 @@
       "mcp__serena__check_onboarding_performed",
       "mcp__serena__list_dir",
       "Bash(./venv/Scripts/python.exe main.py)",
-      "mcp__serena__activate_project"
+      "mcp__serena__activate_project",
+      "Bash(dir:*)",
+      "Read(//c/Users/007/.claude/**)",
+      "Bash(claude mcp:*)",
+      "Bash(npx @modelcontextprotocol/server-git:*)",
+      "Bash(npm search:*)",
+      "Bash(npm install:*)",
+      "Bash(npx alltick-stock-mcp-server:*)",
+      "mcp__serena__read_file",
+      "mcp__serena__read_memory",
+      "mcp__serena__search_for_pattern",
+      "mcp__serena__find_file"
     ],
     "deny": [],
     "ask": []
