@@ -20,7 +20,7 @@ from pydantic import BaseModel
 from db.session import get_db
 from db.models import (
     PUEData, FaultRecord, Huijugugan, Zbk, 
-    PUEComment, PUEDrillDownData
+    PUEComment, PUEDrillDownData, SystemFaultLog
 )
 
 # 导入模板支持
@@ -294,6 +294,225 @@ async def get_recent_logs(lines: int = 50):
     except Exception as e:
         logger.error(f"获取日志失败: {str(e)}")
         raise HTTPException(status_code=500, detail=f"获取日志失败: {str(e)}")
+
+# 系统故障记录相关API
+class SystemFaultLogResponse(BaseModel):
+    id: int
+    fault_type: str
+    severity: str
+    title: str
+    description: str
+    affected_module: str
+    status: str
+    user_impact: str
+    occurred_at: datetime
+    created_at: datetime
+
+class SystemFaultLogCreate(BaseModel):
+    fault_type: str  # database, api, system, application
+    severity: str  # critical, error, warning, info
+    title: str
+    description: str
+    error_message: str = None
+    stack_trace: str = None
+    affected_module: str = None
+    user_impact: str = "none"  # none, low, medium, high, critical
+    environment: str = "production"
+
+@router.get("/system-faults", response_model=List[SystemFaultLogResponse])
+async def get_system_faults(
+    limit: int = 50,
+    severity: str = None,
+    status: str = None,
+    fault_type: str = None,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    获取系统故障记录列表
+    - limit: 返回记录数量限制 (默认50)
+    - severity: 按严重级别过滤 (critical, error, warning, info)
+    - status: 按状态过滤 (open, resolved, closed)
+    - fault_type: 按故障类型过滤 (database, api, system, application)
+    """
+    try:
+        from db.models import SystemFaultLog
+        
+        query = select(SystemFaultLog).order_by(SystemFaultLog.occurred_at.desc())
+        
+        # 添加过滤条件
+        if severity:
+            query = query.where(SystemFaultLog.severity == severity)
+        if status:
+            query = query.where(SystemFaultLog.status == status)
+        if fault_type:
+            query = query.where(SystemFaultLog.fault_type == fault_type)
+        
+        # 限制返回数量
+        query = query.limit(limit)
+        
+        result = await db.execute(query)
+        faults = result.scalars().all()
+        
+        return faults
+        
+    except Exception as e:
+        logger.error(f"获取系统故障记录失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"获取系统故障记录失败: {str(e)}")
+
+@router.post("/system-faults", response_model=SystemFaultLogResponse)
+async def create_system_fault(
+    fault_data: SystemFaultLogCreate,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    创建新的系统故障记录
+    用于系统内部记录各种异常和错误
+    """
+    try:
+        from db.models import SystemFaultLog
+        import json
+        
+        # 收集服务器信息
+        server_info = {
+            "platform": platform.system(),
+            "python_version": platform.python_version(),
+            "hostname": platform.node()
+        }
+        
+        if HAS_PSUTIL:
+            server_info.update({
+                "cpu_count": psutil.cpu_count(),
+                "memory_total_gb": round(psutil.virtual_memory().total / (1024**3), 2),
+                "disk_usage_percent": round(psutil.disk_usage('.').used / psutil.disk_usage('.').total * 100, 2)
+            })
+        
+        new_fault = SystemFaultLog(
+            fault_type=fault_data.fault_type,
+            severity=fault_data.severity,
+            title=fault_data.title,
+            description=fault_data.description,
+            error_message=fault_data.error_message,
+            stack_trace=fault_data.stack_trace,
+            affected_module=fault_data.affected_module,
+            user_impact=fault_data.user_impact,
+            environment=fault_data.environment,
+            server_info=server_info,
+            status="open"
+        )
+        
+        db.add(new_fault)
+        await db.commit()
+        await db.refresh(new_fault)
+        
+        logger.info(f"创建系统故障记录: {fault_data.title}")
+        
+        return new_fault
+        
+    except Exception as e:
+        await db.rollback()
+        logger.error(f"创建系统故障记录失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"创建系统故障记录失败: {str(e)}")
+
+@router.get("/system-faults/stats")
+async def get_system_fault_stats(db: AsyncSession = Depends(get_db)):
+    """
+    获取系统故障统计信息
+    用于监控仪表盘显示
+    """
+    try:
+        from db.models import SystemFaultLog
+        
+        # 统计各种维度的故障数量
+        total_result = await db.execute(select(func.count(SystemFaultLog.id)))
+        total_faults = total_result.scalar()
+        
+        # 按严重级别统计
+        severity_result = await db.execute(
+            select(SystemFaultLog.severity, func.count(SystemFaultLog.id))
+            .group_by(SystemFaultLog.severity)
+        )
+        severity_stats = {row[0]: row[1] for row in severity_result.fetchall()}
+        
+        # 按故障类型统计
+        type_result = await db.execute(
+            select(SystemFaultLog.fault_type, func.count(SystemFaultLog.id))
+            .group_by(SystemFaultLog.fault_type)
+        )
+        type_stats = {row[0]: row[1] for row in type_result.fetchall()}
+        
+        # 按状态统计
+        status_result = await db.execute(
+            select(SystemFaultLog.status, func.count(SystemFaultLog.id))
+            .group_by(SystemFaultLog.status)
+        )
+        status_stats = {row[0]: row[1] for row in status_result.fetchall()}
+        
+        # 近7天故障趋势
+        seven_days_ago = datetime.utcnow() - timedelta(days=7)
+        recent_result = await db.execute(
+            select(func.count(SystemFaultLog.id))
+            .where(SystemFaultLog.occurred_at >= seven_days_ago)
+        )
+        recent_faults = recent_result.scalar()
+        
+        # 未解决的严重故障
+        critical_open_result = await db.execute(
+            select(func.count(SystemFaultLog.id))
+            .where(SystemFaultLog.severity == 'critical')
+            .where(SystemFaultLog.status == 'open')
+        )
+        critical_open = critical_open_result.scalar()
+        
+        return {
+            "total_faults": total_faults,
+            "severity_breakdown": severity_stats,
+            "type_breakdown": type_stats,
+            "status_breakdown": status_stats,
+            "recent_7_days": recent_faults,
+            "critical_open": critical_open,
+            "health_status": "healthy" if critical_open == 0 else "warning" if critical_open < 3 else "critical"
+        }
+        
+    except Exception as e:
+        logger.error(f"获取系统故障统计失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"获取系统故障统计失败: {str(e)}")
+
+@router.put("/system-faults/{fault_id}/resolve")
+async def resolve_system_fault(
+    fault_id: int,
+    resolution_notes: str,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    标记系统故障为已解决
+    """
+    try:
+        from db.models import SystemFaultLog
+        
+        result = await db.execute(
+            select(SystemFaultLog).where(SystemFaultLog.id == fault_id)
+        )
+        fault = result.scalar_one_or_none()
+        
+        if not fault:
+            raise HTTPException(status_code=404, detail="故障记录不存在")
+        
+        fault.status = "resolved"
+        fault.resolved_at = datetime.utcnow()
+        fault.resolution_notes = resolution_notes
+        
+        await db.commit()
+        
+        logger.info(f"故障记录 {fault_id} 已标记为解决")
+        
+        return {"message": "故障已标记为解决", "fault_id": fault_id}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        await db.rollback()
+        logger.error(f"解决系统故障失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"解决系统故障失败: {str(e)}")
 
 # ===============================
 # 页面渲染路由 (美化的监控界面) - 已更新

@@ -127,6 +127,33 @@
             <div id="database-tables-chart"></div>
         </div>
     </div>
+
+    <!-- 系统故障统计 -->
+    <div class="monitor-card">
+        <div class="monitor-card-header">
+            <h3 class="monitor-card-title">
+                <svg class="monitor-card-icon" viewBox="0 0 24 24">
+                    <path d="M12 9C13.1 9 14 8.1 14 7C14 5.9 13.1 5 12 5C10.9 5 10 5.9 10 7C10 8.1 10.9 9 12 9ZM12 11C10.9 11 10 11.9 10 13C10 14.1 10.9 15 12 15C13.1 15 14 14.1 14 13C14 11.9 13.1 11 12 11ZM12 17C10.9 17 10 17.9 10 19C10 20.1 10.9 21 12 21C13.1 21 14 20.1 14 19C14 17.9 13.1 17 12 17Z"/>
+                </svg>
+                系统故障统计
+            </h3>
+            <span id="system-fault-status" class="status-badge status-success">正常</span>
+        </div>
+        <div style="padding: 1rem 0;">
+            <div class="monitor-metric">
+                <span class="monitor-metric-label">总故障数</span>
+                <span id="total-faults" class="monitor-metric-value">--</span>
+            </div>
+            <div class="monitor-metric">
+                <span class="monitor-metric-label">未解决严重故障</span>
+                <span id="critical-open-faults" class="monitor-metric-value">--</span>
+            </div>
+            <div class="monitor-metric">
+                <span class="monitor-metric-label">近7天故障</span>
+                <span id="recent-faults" class="monitor-metric-value">--</span>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- 详细信息表格 -->
@@ -222,19 +249,22 @@ let refreshInterval = null;
 async function loadAllMonitoringData() {
     try {
         // 并行加载所有监控数据
-        const [systemResponse, databaseResponse, performanceResponse] = await Promise.all([
+        const [systemResponse, databaseResponse, performanceResponse, systemFaultsResponse] = await Promise.all([
             fetch('/tools/monitor/status/overview'),
             fetch('/tools/monitor/health/database'),
-            fetch('/tools/monitor/performance/metrics')
+            fetch('/tools/monitor/performance/metrics'),
+            fetch('/tools/monitor/system-faults/stats')
         ]);
 
         const systemData = await systemResponse.json();
         const databaseData = await databaseResponse.json();
         const performanceData = await performanceResponse.json();
+        const systemFaultsData = await systemFaultsResponse.json();
 
         dashboardData.system = systemData;
         dashboardData.database = databaseData;
         dashboardData.performance = performanceData;
+        dashboardData.systemFaults = systemFaultsData;
 
         updateDashboard();
 
@@ -248,6 +278,7 @@ function updateDashboard() {
     updateStatusCards();
     updatePerformanceChart();
     updateDatabaseChart();
+    updateSystemFaultStats();
     updateSystemDetails();
     updateHealthScore();
 }
@@ -484,6 +515,34 @@ function updateDatabaseChart() {
     };
 
     charts.database.setOption(option);
+}
+
+function updateSystemFaultStats() {
+    if (!dashboardData.systemFaults) return;
+
+    const faultStats = dashboardData.systemFaults;
+    
+    // 更新总故障数
+    document.getElementById('total-faults').textContent = faultStats.total_faults.toLocaleString('zh-CN');
+    
+    // 更新未解决严重故障
+    const criticalOpenElement = document.getElementById('critical-open-faults');
+    criticalOpenElement.textContent = faultStats.critical_open.toLocaleString('zh-CN');
+    
+    // 更新近7天故障
+    document.getElementById('recent-faults').textContent = faultStats.recent_7_days.toLocaleString('zh-CN');
+    
+    // 更新系统故障状态指示器
+    const faultStatusElement = document.getElementById('system-fault-status');
+    const healthStatus = faultStats.health_status;
+    
+    faultStatusElement.className = 'status-badge ' + 
+        (healthStatus === 'healthy' ? 'status-success' : 
+         healthStatus === 'warning' ? 'status-warning' : 'status-danger');
+    
+    faultStatusElement.textContent = 
+        healthStatus === 'healthy' ? '正常' : 
+        healthStatus === 'warning' ? '警告' : '严重';
 }
 
 function updateSystemDetails() {

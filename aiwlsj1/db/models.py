@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, Float, DateTime
+from sqlalchemy import Column, Integer, String, Text, Float, DateTime, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
 
@@ -250,4 +250,31 @@ class FaultRecord(Base):
     
     # 系统字段
     created_at = Column(DateTime, default=datetime.utcnow, comment="创建时间")
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment="更新时间")
+
+class SystemFaultLog(Base):
+    """系统故障日志模型 - 用于记录应用系统运行过程中的故障"""
+    __tablename__ = "system_fault_log"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    fault_type = Column(String(50), comment="故障类型: database, api, system, application")
+    severity = Column(String(20), comment="严重级别: critical, error, warning, info")
+    title = Column(String(255), comment="故障标题")
+    description = Column(Text, comment="故障详细描述")
+    error_message = Column(Text, comment="错误信息")
+    stack_trace = Column(Text, comment="堆栈追踪")
+    affected_module = Column(String(100), comment="影响的模块/组件")
+    status = Column(String(20), default="open", comment="状态: open, resolved, closed")
+    resolved_at = Column(DateTime, comment="解决时间")
+    resolution_notes = Column(Text, comment="解决方案说明")
+    user_impact = Column(String(20), comment="用户影响: none, low, medium, high, critical")
+    
+    # 环境信息
+    environment = Column(String(50), default="production", comment="环境: development, testing, production")
+    server_info = Column(JSON, comment="服务器信息(JSON格式)")
+    request_info = Column(JSON, comment="请求信息(JSON格式)")
+    
+    # 时间戳
+    occurred_at = Column(DateTime, default=datetime.utcnow, comment="故障发生时间")
+    created_at = Column(DateTime, default=datetime.utcnow, comment="记录创建时间")
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment="更新时间")
