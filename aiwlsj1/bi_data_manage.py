@@ -807,7 +807,7 @@ async def monitor_dashboard(request: Request, db: AsyncSession = Depends(get_db)
     """系统监控仪表板"""
     from common import bi_templates_env
     return bi_templates_env.TemplateResponse(
-        "monitor/simple_dashboard.html",
+        "monitor/dashboard.html",
         {"request": request, "title": "系统监控仪表盘"}
     )
 

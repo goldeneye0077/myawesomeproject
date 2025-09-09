@@ -80,7 +80,7 @@
         <div class="bg-white rounded-lg shadow-sm p-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <h3 class="text-sm font-medium text-gray-500">故障记录</h3>
+                    <h3 class="text-sm font-medium text-gray-500">系统故障记录</h3>
                     <div class="mt-2">
                         <div class="text-2xl font-bold text-gray-900" id="fault-count">--</div>
                         <div class="flex items-center mt-1">
@@ -97,7 +97,7 @@
                 </div>
             </div>
             <div class="mt-4">
-                <div class="text-xs text-gray-500">故障记录监控</div>
+                <div class="text-xs text-gray-500">系统故障监控</div>
             </div>
         </div>
 
@@ -204,7 +204,8 @@ function updateMonitorDisplay(data) {
     // 更新数据库状态
     document.getElementById('db-status').textContent = data.database.status === 'connected' ? '连接正常' : '连接异常';
     document.getElementById('pue-count').textContent = data.database.pue_records || 0;
-    document.getElementById('fault-count').textContent = data.database.fault_records || 0;
+    // 加载系统故障统计
+    loadSystemFaultStats();
     
     // 更新系统状态
     document.getElementById('system-status').textContent = '系统运行正常';
@@ -297,5 +298,20 @@ function showError(message) {
 window.addEventListener('beforeunload', function() {
     stopAutoRefresh();
 });
+// 加载系统故障统计数据
+async function loadSystemFaultStats() {
+    try {
+        const response = await fetch('/tools/monitor/system-faults/stats');
+        const faultStats = await response.json();
+        
+        // 更新故障计数显示
+        document.getElementById('fault-count').textContent = faultStats.total_faults || 0;
+        
+        console.log('系统故障统计加载成功:', faultStats);
+    } catch (error) {
+        console.error('加载系统故障统计失败:', error);
+        document.getElementById('fault-count').textContent = '--';
+    }
+}
 </script>
 {% endblock %}
