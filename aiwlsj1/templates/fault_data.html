@@ -71,7 +71,7 @@
                     <th title="故障的具体名称和描述">故障名称</th>
                     <th title="省级对故障类型的分类">省-故障类型</th>
                     <th title="故障原因的分类类型">原因分类</th>
-                    <th title="故障通报的级别和重要性">通报级别</th>
+                    <th style="min-width: 100px;" title="故障通报的级别和重要性">通报级别</th>
                     <th title="故障处理所耗费的时间（小时）">处理时长(小时)</th>
                     <th title="是否为主动发现的故障">主动发现</th>
                     <th style="min-width: 130px;" title="故障开始发生的具体时间">发生时间</th>
@@ -101,7 +101,7 @@
                     </td>
                     <td>{{ item.province_fault_type or '-' }}</td>
                     <td>{{ item.cause_category or '-' }}</td>
-                    <td>
+                    <td style="min-width: 100px;">
                         <span class="badge {% if item.notification_level and ('重大' in item.notification_level or '严重' in item.notification_level) %}badge-danger{% elif item.notification_level and '一般' in item.notification_level %}badge-warning{% else %}badge-info{% endif %}">
                             {{ item.notification_level or '-' }}
                         </span>
@@ -174,6 +174,7 @@
     border-radius: 4px;
     font-size: 0.8em;
     font-weight: 500;
+    white-space: nowrap;
 }
 .badge-danger { background-color: #dc3545; color: white; }
 .badge-warning { background-color: #ffc107; color: #212529; }
