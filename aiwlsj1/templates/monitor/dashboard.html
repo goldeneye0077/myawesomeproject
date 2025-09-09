@@ -478,7 +478,7 @@ function updateDatabaseChart() {
 
     const tableData = Object.entries(database.tables).map(([name, count]) => ({
         name: name === 'pue_data' ? 'PUE数据' :
-              name === 'fault_record' ? '故障记录' :
+              name === 'fault_record' ? '网络故障数据' :
               name === 'huijugugan' ? '汇聚骨干' :
               name === 'zbk' ? '指标库' :
               name === 'pue_comment' ? 'PUE评论' :
