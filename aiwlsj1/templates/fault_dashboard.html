@@ -5,349 +5,391 @@
 {% block page_title %}故障指标数据分析{% endblock %}
 
 {% block breadcrumb %}
-    <li><span class="text-gray-300">/</span></li>
-    <li><span class="text-gray-500">契约化指标分析</span></li>
-    <li><span class="text-gray-300">/</span></li>
-    <li><span class="text-gray-500">故障指标分析</span></li>
-    <li><span class="text-gray-300">/</span></li>
-    <li><span class="text-primary-600">故障指标数据分析</span></li>
+    <li><span class="text-gray-400 mx-2">/</span></li>
+    <li><span class="text-gray-600">契约化指标分析</span></li>
+    <li><span class="text-gray-400 mx-2">/</span></li>
+    <li><span class="text-gray-600">故障指标分析</span></li>
+    <li><span class="text-gray-400 mx-2">/</span></li>
+    <li><span class="text-blue-600">故障指标数据分析</span></li>
 {% endblock %}
 
 {% block extra_head %}
     <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.0/echarts.min.js"></script>
     <style>
-        .fault-card {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            padding: 20px;
-            margin-bottom: 20px;
-            transition: transform 0.2s;
-        }
-        
-        .fault-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        .chart-container {
+            height: 400px;
         }
         
         .metric-value {
             font-size: 2.5rem;
-            font-weight: bold;
+            font-weight: 700;
             color: #3b82f6;
         }
         
         .metric-label {
-            font-size: 0.9rem;
+            font-size: 0.875rem;
             color: #6b7280;
-            margin-top: 5px;
+            margin-top: 0.5rem;
         }
         
-        .chart-container {
-            height: 400px;
-            margin: 20px 0;
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
         }
         
-        .search-box {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        
-        .fault-table {
-            background: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        
-        .table th {
-            background: #f8fafc;
-            border: none;
-            font-weight: 600;
-            color: #374151;
-        }
-        
-        .table td {
-            border: none;
-            border-bottom: 1px solid #e5e7eb;
-            vertical-align: middle;
-        }
-        
-        .badge-success {
-            background: #10b981;
-        }
-        
-        .badge-warning {
-            background: #f59e0b;
-        }
-        
-        .badge-danger {
-            background: #ef4444;
-        }
-        
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #6b7280;
-        }
-        
-        .nav-tabs .nav-link {
-            border: none;
-            color: #6b7280;
-            font-weight: 500;
-        }
-        
-        .nav-tabs .nav-link.active {
-            background: #3b82f6;
-            color: white;
-            border-radius: 5px;
-        }
-        /* 显隐控制：仅显示本页激活的内容区（避免与Bootstrap模态框Tab冲突） */
-        .fd-tab { display: none !important; }
-        .fd-tab.active { display: block !important; }
     </style>
 {% endblock %}
 {% block content %}
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-12">
-                <nav class="nav nav-pills fault-nav mb-3">
-                    <a class="nav-link active" href="#overview" data-tab="overview">概览统计</a>
-                    <a class="nav-link" href="#trend" data-tab="trend">趋势分析</a>
-                    <a class="nav-link" href="#category" data-tab="category">分类分析</a>
-                    <a class="nav-link" href="#duration" data-tab="duration">时长分析</a>
-                    <a class="nav-link" href="#proactive" data-tab="proactive">主动发现</a>
-                    <a class="nav-link" href="#detail" data-tab="detail">详细列表</a>
-                </nav>
-                <!-- 概览统计 -->
-                <div id="overview-content" class="fd-tab active">
-                    <h2>故障概览统计</h2>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <div class="fault-card text-center">
-                                <div class="metric-value" id="total-faults">-</div>
-                                <div class="metric-label">总故障数</div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="fault-card text-center">
-                                <div class="metric-value" id="monthly-faults">-</div>
-                                <div class="metric-label">本月故障数</div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="fault-card text-center">
-                                <div class="metric-value" id="avg-duration">-</div>
-                                <div class="metric-label">平均处理时长(小时)</div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="fault-card text-center">
-                                <div class="metric-value" id="proactive-rate">-</div>
-                                <div class="metric-label">主动发现率(%)</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" 
+     x-data="{
+         activeTab: 'overview',
+         showDetailModal: false,
+         showDrilldownModal: false,
+         selectedFault: null,
+         drilldownMonth: ''
+     }">
+    
+    <!-- 导航标签 -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
+        <nav class="flex space-x-8 px-6" aria-label="Tabs">
+            <button @click="activeTab = 'overview'; loadOverviewData(); triggerChartResize()" 
+                    :class="activeTab === 'overview' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                    class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
+                概览统计
+            </button>
+            <button @click="activeTab = 'trend'; loadTrendData(); triggerChartResize()" 
+                    :class="activeTab === 'trend' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                    class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
+                趋势分析
+            </button>
+            <button @click="activeTab = 'category'; loadCategoryData(); triggerChartResize()" 
+                    :class="activeTab === 'category' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                    class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
+                分类分析
+            </button>
+            <button @click="activeTab = 'duration'; loadDurationData(); triggerChartResize()" 
+                    :class="activeTab === 'duration' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                    class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
+                时长分析
+            </button>
+            <button @click="activeTab = 'proactive'; loadProactiveData(); triggerChartResize()" 
+                    :class="activeTab === 'proactive' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                    class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
+                主动发现
+            </button>
+            <button @click="activeTab = 'detail'; loadDetailList(); triggerChartResize()" 
+                    :class="activeTab === 'detail' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                    class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
+                详细列表
+            </button>
+        </nav>
+    </div>
+    <!-- 概览统计 -->
+    <div x-show="activeTab === 'overview'" x-transition class="fade-in">
+        <div class="mb-6">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">故障概览统计</h2>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center hover:shadow-md transition-shadow duration-200">
+                <div class="metric-value" id="total-faults">-</div>
+                <div class="metric-label">总故障数</div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center hover:shadow-md transition-shadow duration-200">
+                <div class="metric-value" id="monthly-faults">-</div>
+                <div class="metric-label">本月故障数</div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center hover:shadow-md transition-shadow duration-200">
+                <div class="metric-value" id="avg-duration">-</div>
+                <div class="metric-label">平均处理时长(小时)</div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center hover:shadow-md transition-shadow duration-200">
+                <div class="metric-value" id="proactive-rate">-</div>
+                <div class="metric-label">主动发现率(%)</div>
+            </div>
+        </div>
+    </div>
                 
-                <!-- 趋势分析 -->
-                <div id="trend-content" class="fd-tab">
-                    <h2>故障趋势分析</h2>
-                    <div class="fault-card">
-                        <h5>月度故障数量趋势</h5>
-                        <div id="trend-chart" class="chart-container"></div>
-                    </div>
-                </div>
+    <!-- 趋势分析 -->
+    <div x-show="activeTab === 'trend'" x-transition class="fade-in">
+        <div class="mb-6">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">故障趋势分析</h2>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">月度故障数量趋势</h3>
+            <div id="trend-chart" class="chart-container"></div>
+        </div>
+    </div>
                 
-                <!-- 分类分析 -->
-                <div id="category-content" class="fd-tab">
-                    <h2>故障分类分析</h2>
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="fault-card">
-                                <h5>按原因分类</h5>
-                                <div id="cause-chart" class="chart-container"></div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="fault-card">
-                                <h5>按故障类型</h5>
-                                <div id="type-chart" class="chart-container"></div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="fault-card">
-                                <h5>按通报级别</h5>
-                                <div id="level-chart" class="chart-container"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <!-- 分类分析 -->
+    <div x-show="activeTab === 'category'" x-transition class="fade-in">
+        <div class="mb-6">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">故障分类分析</h2>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">按原因分类</h3>
+                <div id="cause-chart" class="chart-container"></div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">按故障类型</h3>
+                <div id="type-chart" class="chart-container"></div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">按通报级别</h3>
+                <div id="level-chart" class="chart-container"></div>
+            </div>
+        </div>
+    </div>
                 
-                <!-- 时长分析 -->
-                <div id="duration-content" class="fd-tab">
-                    <h2>故障处理时长分析</h2>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="fault-card">
-                                <h5>处理时长分布</h5>
-                                <div id="duration-dist-chart" class="chart-container"></div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="fault-card">
-                                <h5>平均处理时长趋势</h5>
-                                <div id="duration-trend-chart" class="chart-container"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <!-- 时长分析 -->
+    <div x-show="activeTab === 'duration'" x-transition class="fade-in">
+        <div class="mb-6">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">故障处理时长分析</h2>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">处理时长分布</h3>
+                <div id="duration-dist-chart" class="chart-container"></div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">平均处理时长趋势</h3>
+                <div id="duration-trend-chart" class="chart-container"></div>
+            </div>
+        </div>
+    </div>
                 
-                <!-- 主动发现分析 -->
-                <div id="proactive-content" class="fd-tab">
-                    <h2>主动发现分析</h2>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="fault-card">
-                                <h5>主动发现vs被动发现</h5>
-                                <div id="proactive-dist-chart" class="chart-container"></div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="fault-card">
-                                <h5>主动发现率趋势</h5>
-                                <div id="proactive-trend-chart" class="chart-container"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <!-- 主动发现分析 -->
+    <div x-show="activeTab === 'proactive'" x-transition class="fade-in">
+        <div class="mb-6">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">主动发现分析</h2>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">主动发现vs被动发现</h3>
+                <div id="proactive-dist-chart" class="chart-container"></div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">主动发现率趋势</h3>
+                <div id="proactive-trend-chart" class="chart-container"></div>
+            </div>
+        </div>
+    </div>
                 
-                <!-- 详细列表 -->
-                <div id="detail-content" class="fd-tab">
-                    <h2>故障详细列表</h2>
-                    
-                    <!-- 搜索框 -->
-                    <div class="search-box">
-                        <div class="row">
-                            <div class="col-md-4">
-                                <input type="text" class="form-control" id="search-keyword" placeholder="搜索故障名称、原因、处理方式...">
-                            </div>
-                            <div class="col-md-3">
-                                <select class="form-select" id="filter-type">
-                                    <option value="">全部故障类型</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <select class="form-select" id="filter-category">
-                                    <option value="">全部原因分类</option>
-                                </select>
-                            </div>
-                            <div class="col-md-2">
-                                <button class="btn btn-primary w-100" onclick="searchFaults()">搜索</button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- 故障列表表格 -->
-                    <div class="fault-table">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>序号</th>
-                                    <th>故障时间</th>
-                                    <th>故障名称</th>
-                                    <th>故障类型</th>
-                                    <th>原因分类</th>
-                                    <th>通报级别</th>
-                                    <th>处理时长</th>
-                                    <th>主动发现</th>
-                                    <th>操作</th>
-                                </tr>
-                            </thead>
-                            <tbody id="fault-table-body">
-                                <tr>
-                                    <td colspan="9" class="loading">加载中...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    
-                    <!-- 分页 -->
-                    <nav class="mt-3">
-                        <ul class="pagination justify-content-center" id="pagination">
-                        </ul>
-                    </nav>
+    <!-- 详细列表 -->
+    <div x-show="activeTab === 'detail'" x-transition class="fade-in">
+        <div class="mb-6">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">故障详细列表</h2>
+        </div>
+        
+        <!-- 搜索框 -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <input type="text" id="search-keyword" 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200" 
+                           placeholder="搜索故障名称、原因、处理方式...">
+                </div>
+                <div>
+                    <select id="filter-type" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200">
+                        <option value="">全部故障类型</option>
+                    </select>
+                </div>
+                <div>
+                    <select id="filter-category" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200">
+                        <option value="">全部原因分类</option>
+                    </select>
+                </div>
+                <div>
+                    <button onclick="searchFaults()" 
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
+                        搜索
+                    </button>
                 </div>
             </div>
+        </div>
+        
+        <!-- 故障列表 -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">序号</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">故障时间</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">故障名称</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">故障类型</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">原因分类</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">通报级别</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">处理时长</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">主动发现</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fault-table-body" class="bg-white divide-y divide-gray-200">
+                        <tr>
+                            <td colspan="9" class="px-6 py-12 text-center text-gray-500">
+                                <div class="flex flex-col items-center">
+                                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-4"></div>
+                                    <span>加载中...</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- 分页 -->
+        <div class="mt-6">
+            <nav class="flex justify-center" id="pagination">
+                <!-- 分页内容将通过 JavaScript 生成 -->
+            </nav>
         </div>
     </div>
     
     <!-- 故障详情模态框 -->
-    <div class="modal fade" id="faultDetailModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">故障详情</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body" id="fault-detail-content">
-                    <!-- 故障详情内容 -->
+    <div x-show="showDetailModal" 
+         x-transition.opacity.duration.300ms 
+         class="fixed inset-0 z-50 overflow-y-auto" 
+         style="display: none;">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <!-- 背景遮罩 -->
+            <div x-show="showDetailModal" 
+                 x-transition.opacity.duration.300ms
+                 @click="showDetailModal = false"
+                 class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+            
+            <!-- 模态框内容 -->
+            <div x-show="showDetailModal" 
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+                
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-medium text-gray-900">故障详情</h3>
+                        <button @click="showDetailModal = false" 
+                                class="rounded-md bg-white text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <span class="sr-only">关闭</span>
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div id="fault-detail-content">
+                        <!-- 故障详情内容 -->
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- 下钻分析模态框 -->
-    <div class="modal fade" id="drilldownModal" tabindex="-1">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">下钻分析 - <span id="drilldown-month">-</span></h5>
-                    <div class="d-flex align-items-center gap-2" style="margin-left:auto;">
-                        <label for="pareto-topn" class="form-label mb-0" style="font-size: 0.9rem;">Pareto Top-N:</label>
-                        <select id="pareto-topn" class="form-select form-select-sm" style="width: 100px;">
-                            <option value="5">5</option>
-                            <option value="10" selected>10</option>
-                            <option value="15">15</option>
-                            <option value="0">全部</option>
-                        </select>
+    <div x-show="showDrilldownModal" 
+         x-transition.opacity.duration.300ms 
+         class="fixed inset-0 z-50 overflow-y-auto" 
+         style="display: none;"
+         x-data="{ drilldownActiveTab: 'pareto' }">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <!-- 背景遮罩 -->
+            <div x-show="showDrilldownModal" 
+                 x-transition.opacity.duration.300ms
+                 @click="showDrilldownModal = false"
+                 class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+            
+            <!-- 模态框内容 -->
+            <div x-show="showDrilldownModal" 
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-6xl sm:w-full">
+                
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-medium text-gray-900">下钻分析 - <span id="drilldown-month" x-text="drilldownMonth">-</span></h3>
+                        <div class="flex items-center space-x-4">
+                            <div class="flex items-center space-x-2">
+                                <label for="pareto-topn" class="text-sm font-medium text-gray-700">Pareto Top-N:</label>
+                                <select id="pareto-topn" class="px-3 py-1 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="5">5</option>
+                                    <option value="10" selected>10</option>
+                                    <option value="15">15</option>
+                                    <option value="0">全部</option>
+                                </select>
+                            </div>
+                            <button @click="showDrilldownModal = false" 
+                                    class="rounded-md bg-white text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <span class="sr-only">关闭</span>
+                                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <ul class="nav nav-tabs" id="drillTabs" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-pareto" type="button" role="tab">帕累托分析</button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-boxplot" type="button" role="tab">处理时长箱线图</button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-control" type="button" role="tab">MTTR控制图</button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-heatmap" type="button" role="tab">故障时段热力图</button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-compare" type="button" role="tab">分组对比</button>
-                        </li>
-                    </ul>
-                    <div class="tab-content mt-3">
-                        <div class="tab-pane fade show active" id="tab-pareto" role="tabpanel">
+                    
+                    <!-- 标签页导航 -->
+                    <div class="border-b border-gray-200 mb-6">
+                        <nav class="-mb-px flex space-x-8">
+                            <button @click="drilldownActiveTab = 'pareto'"
+                                    :class="drilldownActiveTab === 'pareto' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                                    class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
+                                帕累托分析
+                            </button>
+                            <button @click="drilldownActiveTab = 'boxplot'"
+                                    :class="drilldownActiveTab === 'boxplot' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                                    class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
+                                处理时长箱线图
+                            </button>
+                            <button @click="drilldownActiveTab = 'control'"
+                                    :class="drilldownActiveTab === 'control' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                                    class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
+                                MTTR控制图
+                            </button>
+                            <button @click="drilldownActiveTab = 'heatmap'"
+                                    :class="drilldownActiveTab === 'heatmap' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                                    class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
+                                故障时段热力图
+                            </button>
+                            <button @click="drilldownActiveTab = 'compare'"
+                                    :class="drilldownActiveTab === 'compare' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                                    class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
+                                分组对比
+                            </button>
+                        </nav>
+                    </div>
+                    
+                    <!-- 标签页内容 -->
+                    <div class="space-y-4">
+                        <div x-show="drilldownActiveTab === 'pareto'" x-transition class="fade-in">
                             <div id="chart-pareto" class="chart-container"></div>
                         </div>
-                        <div class="tab-pane fade" id="tab-boxplot" role="tabpanel">
+                        <div x-show="drilldownActiveTab === 'boxplot'" x-transition class="fade-in">
                             <div id="chart-boxplot" class="chart-container"></div>
                         </div>
-                        <div class="tab-pane fade" id="tab-control" role="tabpanel">
+                        <div x-show="drilldownActiveTab === 'control'" x-transition class="fade-in">
                             <div id="chart-control" class="chart-container"></div>
                         </div>
-                        <div class="tab-pane fade" id="tab-heatmap" role="tabpanel">
+                        <div x-show="drilldownActiveTab === 'heatmap'" x-transition class="fade-in">
                             <div id="chart-heatmap" class="chart-container"></div>
                         </div>
-                        <div class="tab-pane fade" id="tab-compare" role="tabpanel">
+                        <div x-show="drilldownActiveTab === 'compare'" x-transition class="fade-in">
                             <div id="chart-compare" class="chart-container"></div>
                         </div>
                     </div>
@@ -355,6 +397,8 @@
             </div>
         </div>
     </div>
+    
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -366,76 +410,24 @@
         // 页面加载完成后初始化
         document.addEventListener('DOMContentLoaded', function() {
             console.log('[fault_dashboard] DOMContentLoaded');
-            // 初始化标签页切换
-            initTabSwitching();
             
             // 加载概览数据
             loadOverviewData();
             
             // 加载筛选选项
             loadFilterOptions();
-
-            // 初始化下钻Tab切换时的图表自适应
-            initDrilldownResizeHandlers();
-
-            // 不再预加载趋势数据，避免在隐藏状态下初始化导致宽度为0
-
-            // 绑定全局ECharts点击兜底
-            try { initGlobalChartClickFallback(); } catch (e) { console.error('初始化全局点击兜底失败', e); }
         });
         
-        // 初始化标签页切换
-        function initTabSwitching() {
-            const nav = document.querySelector('.fault-nav');
-            if (!nav) return;
-            nav.addEventListener('click', function(e){
-                const link = e.target.closest('.nav-link');
-                if (!link || !nav.contains(link)) return;
-                e.preventDefault();
-                const tab = link.dataset.tab;
-                if (!tab) return;
-                console.log('[tab click]', tab);
-
-                // 移除所有活动状态
-                document.querySelectorAll('.fault-nav .nav-link').forEach(l => l.classList.remove('active'));
-                document.querySelectorAll('.fd-tab').forEach(c => c.classList.remove('active'));
-
-                // 添加活动状态
-                link.classList.add('active');
-                const targetId = `#${tab}-content`;
-                const targetEl = document.querySelector(targetId);
-                if (targetEl) targetEl.classList.add('active');
-
-                // 根据标签页加载对应数据
-                loadTabData(tab);
-
-                // 切换到可见后，触发内部图表自适应
-                setTimeout(() => resizeChartsIn(targetEl), 0);
-            });
-        }
+        // 页面加载后延迟触发图表自适应
+        setTimeout(() => {
+            resizeAllCharts();
+        }, 500);
         
-        // 根据标签页加载数据
-        function loadTabData(tabId) {
-            switch(tabId) {
-                case 'overview':
-                    loadOverviewData();
-                    break;
-                case 'trend':
-                    loadTrendData();
-                    break;
-                case 'category':
-                    loadCategoryData();
-                    break;
-                case 'duration':
-                    loadDurationData();
-                    break;
-                case 'proactive':
-                    loadProactiveData();
-                    break;
-                case 'detail':
-                    loadDetailList();
-                    break;
-            }
+        // 标签切换后延迟触发图表自适应
+        function triggerChartResize() {
+            setTimeout(() => {
+                resizeAllCharts();
+            }, 100);
         }
 
         // 使容器内的所有 ECharts 实例自适应
@@ -449,15 +441,18 @@
             });
         }
 
-        // 窗口尺寸变化时全局自适应
-        window.addEventListener('resize', function(){
+        // 全局图表自适应
+        function resizeAllCharts() {
             document.querySelectorAll('.chart-container').forEach(el => {
                 try {
                     const inst = echarts.getInstanceByDom(el);
                     if (inst) inst.resize();
                 } catch(e) {}
             });
-        });
+        }
+
+        // 窗口尺寸变化时全局自适应
+        window.addEventListener('resize', resizeAllCharts);
         
         // 加载概览数据
         function loadOverviewData() {
@@ -482,8 +477,10 @@
                 .then(data => {
                     if (data.success) {
                         renderTrendChart(data.data);
-                        // 渲染趋势图后再尝试一次全局兜底绑定
-                        setTimeout(() => { try { initGlobalChartClickFallback(true); } catch(e){} }, 0);
+                        // 渲染趋势图后延迟绑定点击事件
+                        setTimeout(() => { 
+                            bindTrendChartClick(); 
+                        }, 100);
                     }
                 })
                 .catch(error => console.error('加载趋势数据失败:', error));
@@ -535,8 +532,8 @@
             });
         }
         
-        // 兜底：确保趋势图存在点击事件（防止某些情况下实例未绑定或被覆盖）
-        function initGlobalChartClickFallback(rebind = false) {
+        // 绑定趋势图点击事件
+        function bindTrendChartClick() {
             const el = document.getElementById('trend-chart');
             if (!el) return;
             let inst = null;
@@ -545,7 +542,7 @@
             } catch (e) { inst = null; }
             if (!inst) return;
             try {
-                if (rebind && inst.off) inst.off('click');
+                inst.off('click'); // 移除旧事件
                 inst.on('click', function(params){
                     if (!params || !params.name) return;
                     const monthStr = normalizeMonth(params.name);
@@ -930,8 +927,12 @@
                             </div>
                         `;
                         document.getElementById('fault-detail-content').innerHTML = detailContent;
-                        const modal = new bootstrap.Modal(document.getElementById('faultDetailModal'));
-                        modal.show();
+                        
+                        // 使用 Alpine.js 的响应式状态来显示模态框
+                        const dashboard = document.querySelector('[x-data]');
+                        if (dashboard && dashboard._x_dataStack && dashboard._x_dataStack[0]) {
+                            dashboard._x_dataStack[0].showDetailModal = true;
+                        }
                     } else {
                         alert('获取故障详情失败: ' + (data.message || '未知错误'));
                     }
@@ -951,35 +952,20 @@
 
         // 下钻：打开弹窗并加载数据
         function openDrilldown(monthStr) {
-            document.getElementById('drilldown-month').textContent = monthStr;
-            if (!window.bootstrap) {
-                alert('前端依赖未加载完成（Bootstrap）。');
-                return;
+            // 使用 Alpine.js 的响应式状态来显示模态框
+            const dashboard = document.querySelector('[x-data]');
+            if (dashboard && dashboard._x_dataStack && dashboard._x_dataStack[0]) {
+                dashboard._x_dataStack[0].drilldownMonth = monthStr;
+                dashboard._x_dataStack[0].showDrilldownModal = true;
             }
-            const modal = new bootstrap.Modal(document.getElementById('drilldownModal'));
-            modal.show();
 
-            // 模态框展示后触发一次所有图表resize，避免初始渲染在隐藏容器
-            document.getElementById('drilldownModal').addEventListener('shown.bs.modal', function once() {
-                document.getElementById('drilldownModal').removeEventListener('shown.bs.modal', once);
-                // 触发当前活动tab下图表resize
+            // 延迟触发图表resize，当模态框显示后
+            setTimeout(() => {
                 ['chart-pareto','chart-boxplot','chart-control','chart-heatmap','chart-compare'].forEach(id => {
                     const inst = echarts.getInstanceByDom(document.getElementById(id));
-                    if (inst) setTimeout(()=>inst.resize(), 0);
+                    if (inst) setTimeout(()=>inst.resize(), 50);
                 });
-            });
-
-            // 切换tab时resize
-            document.querySelectorAll('#drillTabs button[data-bs-toggle="tab"]').forEach(btn => {
-                btn.addEventListener('shown.bs.tab', function() {
-                    const target = document.querySelector(this.getAttribute('data-bs-target'));
-                    const el = target && target.querySelector('.chart-container');
-                    if (el) {
-                        const inst = echarts.getInstanceByDom(el);
-                        if (inst) setTimeout(()=>inst.resize(), 0);
-                    }
-                });
-            });
+            }, 300);
 
             fetch(`/fault/api/drilldown?month=${encodeURIComponent(monthStr)}`)
                 .then(r => r.json())
@@ -1109,21 +1095,16 @@
             });
         }
 
-        // 下钻：在Tab切换时调整对应图表尺寸
-        function initDrilldownResizeHandlers(){
-            const tabs = document.getElementById('drillTabs');
-            if (tabs) {
-                tabs.addEventListener('shown.bs.tab', function(e){
-                    const target = e.target && e.target.getAttribute('data-bs-target');
-                    if (!target) return;
-                    const container = document.querySelector(target + ' .chart-container');
-                    if (!container) return;
-                    try {
-                        const inst = echarts.getInstanceByDom(container);
-                        if (inst) inst.resize();
-                    } catch (err) {}
-                });
-            }
+        // 下钻图表自适应（由Alpine.js标签页切换触发）
+        function resizeDrilldownCharts() {
+            ['chart-pareto','chart-boxplot','chart-control','chart-heatmap','chart-compare'].forEach(id => {
+                const container = document.getElementById(id);
+                if (!container) return;
+                try {
+                    const inst = echarts.getInstanceByDom(container);
+                    if (inst) inst.resize();
+                } catch(e) {}
+            });
         }
 
         // 下钻：分组对比（通报级别计数与平均时长）

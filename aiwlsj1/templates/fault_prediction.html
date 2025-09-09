@@ -179,12 +179,12 @@
                             class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm">
                         📈 故障预测
                     </button>
-                    <button @click="activeTab = 'mttr'" 
+                    <button @click="activeTab = 'mttr'; loadMTTRDataIfNeeded()" 
                             :class="activeTab === 'mttr' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
                             class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm">
                         ⏱️ MTTR预测
                     </button>
-                    <button @click="activeTab = 'anomaly'" 
+                    <button @click="activeTab = 'anomaly'; loadAnomalyDataIfNeeded()" 
                             :class="activeTab === 'anomaly' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
                             class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm">
                         🚨 异常检测
@@ -320,6 +320,24 @@
             loadForecastData();
             loadFilterOptions();
         });
+        
+        // 智能加载MTTR数据（仅在需要时加载）
+        function loadMTTRDataIfNeeded() {
+            if (!mttrData) {
+                setTimeout(() => {
+                    loadMTTRData();
+                }, 100); // 小延迟确保标签页切换动画完成
+            }
+        }
+        
+        // 智能加载异常检测数据（仅在需要时加载）
+        function loadAnomalyDataIfNeeded() {
+            if (!anomalyData) {
+                setTimeout(() => {
+                    loadAnomalyData();
+                }, 100); // 小延迟确保标签页切换动画完成
+            }
+        }
         
         // 加载故障预测数据
         async function loadForecastData() {
@@ -754,7 +772,7 @@
                     </div>
                     <div class="fault-card">
                         <div class="prediction-metric">
-                            <div class="metric-value">${data.overall_anomaly_score}</div>
+                            <div class="metric-value">${parseFloat(data.overall_anomaly_score).toFixed(2)}</div>
                             <div class="metric-label">异常评分</div>
                         </div>
                     </div>
@@ -802,7 +820,7 @@
                                                         </span>
                                                     </td>
                                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${anomaly.value}</td>
-                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${anomaly.anomaly_score}</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${parseFloat(anomaly.anomaly_score).toFixed(2)}</td>
                                                     <td class="px-6 py-4 text-sm text-gray-900">${anomaly.description}</td>
                                                 </tr>
                                             `).join('')}
@@ -829,8 +847,8 @@
                                 <h6 class="text-sm font-medium text-gray-900 mb-2">统计摘要:</h6>
                                 <div class="text-sm text-gray-600 space-y-1">
                                     <div>日均故障: ${data.summary_statistics.avg_daily_faults}</div>
-                                    <div>平均时长: ${data.summary_statistics.avg_duration_hours}小时</div>
-                                    <div>主动发现率: ${data.summary_statistics.proactive_discovery_rate}%</div>
+                                    <div>平均时长: ${parseFloat(data.summary_statistics.avg_duration_hours).toFixed(2)}小时</div>
+                                    <div>主动发现率: ${parseFloat(data.summary_statistics.proactive_discovery_rate).toFixed(2)}%</div>
                                 </div>
                             </div>
                         </div>
@@ -892,7 +910,7 @@
                         <div class="text-red-800">
                             <strong>加载失败:</strong> ${message}
                         </div>
-                        <button class="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors" onclick="location.reload()">
+                        <button class="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors" onclick="loadAnomalyData()">
                             重新加载
                         </button>
                     </div>
