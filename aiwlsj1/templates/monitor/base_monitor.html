@@ -1,5 +1,15 @@
 {% extends "base.html" %}
 
+{% block title %}{{ monitor_page_title or '系统监控' }} - 网络视界指标后台管理{% endblock %}
+
+{% block page_title %}{{ monitor_page_title or '系统监控' }}{% endblock %}
+
+{% block breadcrumb %}
+<li><span class="text-gray-400 mx-2">/</span></li>
+<li><a href="/tools/monitor" class="hover:text-gray-700 transition-colors duration-200">系统监控工具</a></li>
+{% block monitor_breadcrumb %}{% endblock %}
+{% endblock %}
+
 {% block extra_head %}
 <!-- ECharts for Data Visualization -->
 <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
@@ -280,7 +290,7 @@
 <div class="monitor-container">
     {% block monitor_header %}
     <div class="monitor-header">
-        <h1>{% block monitor_title %}系统监控{% endblock %}</h1>
+        <h1>{{ monitor_page_title or '系统监控' }}</h1>
         <p>{% block monitor_subtitle %}实时监控系统状态和性能指标{% endblock %}</p>
     </div>
     {% endblock %}

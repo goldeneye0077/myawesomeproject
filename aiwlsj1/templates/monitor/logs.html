@@ -1,5 +1,10 @@
 {% extends "monitor/base_monitor.html" %}
 
+{% block monitor_breadcrumb %}
+<li><span class="text-gray-400 mx-2">/</span></li>
+<li class="text-gray-600">系统日志</li>
+{% endblock %}
+
 {% block monitor_title %}系统日志监控{% endblock %}
 {% block monitor_subtitle %}查看系统运行日志和错误信息{% endblock %}
 

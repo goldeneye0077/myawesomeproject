@@ -14,6 +14,7 @@ plotly
 pydantic[email]
 python-dotenv
 alembic
+psutil
 
 # 测试相关依赖
 pytest

@@ -1,9 +1,56 @@
 {% extends "monitor/base_monitor.html" %}
 
+{% block monitor_breadcrumb %}
+<li><span class="text-gray-400 mx-2">/</span></li>
+<li class="text-gray-600">仪表盘</li>
+{% endblock %}
+
 {% block monitor_title %}系统监控仪表盘{% endblock %}
 {% block monitor_subtitle %}系统状态综合概览 - 一站式监控所有关键指标{% endblock %}
 
 {% block monitor_content %}
+<style>
+/* 自定义按钮样式 - 更小更精致 */
+.monitor-card-header .refresh-btn {
+    padding: 0.4rem 0.8rem !important;
+    font-size: 0.8rem !important;
+    border-radius: 6px !important;
+    gap: 0.3rem !important;
+    min-height: auto !important;
+    line-height: 1.2 !important;
+}
+
+.monitor-card-header .refresh-btn svg {
+    width: 14px !important;
+    height: 14px !important;
+}
+
+.monitor-card-header .refresh-btn span {
+    font-size: 0.8rem !important;
+    line-height: 1 !important;
+}
+
+/* 按钮容器对齐 */
+.monitor-card-header > div {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+}
+
+.monitor-card-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    min-height: 2rem !important;
+}
+
+/* 表情符号大小调整 */
+.monitor-card-header .refresh-btn #auto-refresh-icon {
+    font-size: 0.9rem !important;
+    line-height: 1 !important;
+}
+</style>
+
 <!-- 顶部状态卡片 -->
 <div class="monitor-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 2rem;">
     <div class="monitor-card" style="text-align: center;">
@@ -109,7 +156,7 @@
             </div>
         </div>
         <div class="chart-container" style="height: 350px;">
-            <div id="performance-overview"></div>
+            <div id="performance-overview" style="height: 100%;"></div>
         </div>
     </div>
 
@@ -123,8 +170,8 @@
                 数据库表统计
             </h3>
         </div>
-        <div class="chart-container">
-            <div id="database-tables-chart"></div>
+        <div class="chart-container" style="height: 300px;">
+            <div id="database-tables-chart" style="height: 100%;"></div>
         </div>
     </div>
 
@@ -224,7 +271,7 @@
     </div>
     <div style="display: flex; align-items: center; gap: 2rem; padding: 1rem 0;">
         <div class="chart-container" style="height: 150px; width: 150px;">
-            <div id="health-score-gauge"></div>
+            <div id="health-score-gauge" style="height: 100%; width: 100%;"></div>
         </div>
         <div style="flex: 1;">
             <div id="health-summary" style="color: var(--text-secondary); line-height: 1.6;">
@@ -244,34 +291,108 @@ let dashboardData = {
 };
 let charts = {};
 let autoRefreshEnabled = true;
-let refreshInterval = null;
+// refreshInterval 已在 base_monitor.html 中声明
 
 async function loadAllMonitoringData() {
+    console.log('开始加载监控数据...');
     try {
         // 并行加载所有监控数据
+        console.log('发起API请求...');
         const [systemResponse, databaseResponse, performanceResponse, systemFaultsResponse] = await Promise.all([
             fetch('/tools/monitor/status/overview'),
             fetch('/tools/monitor/health/database'),
             fetch('/tools/monitor/performance/metrics'),
             fetch('/tools/monitor/system-faults/stats')
         ]);
+        
+        console.log('API响应状态:', {
+            system: systemResponse.status,
+            database: databaseResponse.status,
+            performance: performanceResponse.status,
+            systemFaults: systemFaultsResponse.status
+        });
 
         const systemData = await systemResponse.json();
         const databaseData = await databaseResponse.json();
         const performanceData = await performanceResponse.json();
         const systemFaultsData = await systemFaultsResponse.json();
 
+        console.log('接收到的数据:', {
+            systemData,
+            databaseData,
+            performanceData,
+            systemFaultsData
+        });
+
         dashboardData.system = systemData;
         dashboardData.database = databaseData;
         dashboardData.performance = performanceData;
         dashboardData.systemFaults = systemFaultsData;
 
+        console.log('dashboardData已更新:', dashboardData);
         updateDashboard();
 
     } catch (error) {
         console.error('加载监控数据失败:', error);
-        showErrorStatus();
+        console.error('错误详情:', {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+        });
+        
+        // 尝试单独处理每个API的错误
+        try {
+            console.log('尝试单独加载各个API...');
+            await loadDataIndividually();
+        } catch (fallbackError) {
+            console.error('单独加载也失败:', fallbackError);
+            showErrorStatus();
+        }
     }
+}
+
+// 单独加载每个API的函数
+async function loadDataIndividually() {
+    console.log('开始单独加载API数据...');
+    
+    // 系统状态
+    try {
+        const systemResponse = await fetch('/tools/monitor/status/overview');
+        if (systemResponse.ok) {
+            dashboardData.system = await systemResponse.json();
+            console.log('系统状态加载成功');
+        }
+    } catch (e) { console.error('系统状态加载失败:', e); }
+    
+    // 数据库状态
+    try {
+        const databaseResponse = await fetch('/tools/monitor/health/database');
+        if (databaseResponse.ok) {
+            dashboardData.database = await databaseResponse.json();
+            console.log('数据库状态加载成功');
+        }
+    } catch (e) { console.error('数据库状态加载失败:', e); }
+    
+    // 性能数据
+    try {
+        const performanceResponse = await fetch('/tools/monitor/performance/metrics');
+        if (performanceResponse.ok) {
+            dashboardData.performance = await performanceResponse.json();
+            console.log('性能数据加载成功');
+        }
+    } catch (e) { console.error('性能数据加载失败:', e); }
+    
+    // 系统故障
+    try {
+        const systemFaultsResponse = await fetch('/tools/monitor/system-faults/stats');
+        if (systemFaultsResponse.ok) {
+            dashboardData.systemFaults = await systemFaultsResponse.json();
+            console.log('系统故障数据加载成功');
+        }
+    } catch (e) { console.error('系统故障数据加载失败:', e); }
+    
+    console.log('单独加载完成，开始更新界面...');
+    updateDashboard();
 }
 
 function updateDashboard() {
@@ -284,119 +405,167 @@ function updateDashboard() {
 }
 
 function updateStatusCards() {
+    console.log('开始更新状态卡片...');
     const { system, database, performance } = dashboardData;
+    console.log('解构的数据:', { system, database, performance });
 
     // 系统状态
     if (system) {
+        console.log('更新系统状态...', system);
         const statusIcon = document.getElementById('system-status-icon');
         const statusText = document.getElementById('system-status-text');
         const uptime = document.getElementById('system-uptime');
-
-        if (system.database_health === '正常') {
-            statusIcon.textContent = '✅';
-            statusText.textContent = '运行正常';
-            statusText.style.color = 'var(--success-color)';
+        
+        console.log('系统状态DOM元素:', { statusIcon, statusText, uptime });
+        
+        if (statusIcon && statusText && uptime) {
+            if (system.database_health === '正常') {
+                statusIcon.textContent = '✅';
+                statusText.textContent = '运行正常';
+                statusText.style.color = 'var(--success-color)';
+            } else {
+                statusIcon.textContent = '⚠️';
+                statusText.textContent = '异常';
+                statusText.style.color = 'var(--danger-color)';
+            }
+            uptime.textContent = `运行时间: ${formatUptime(system.uptime_seconds)}`;
+            console.log('系统状态更新完成');
         } else {
-            statusIcon.textContent = '⚠️';
-            statusText.textContent = '异常';
-            statusText.style.color = 'var(--danger-color)';
+            console.error('系统状态DOM元素未找到:', { statusIcon, statusText, uptime });
         }
-
-        uptime.textContent = `运行时间: ${formatUptime(system.uptime_seconds)}`;
     }
 
     // 数据库状态
     if (database) {
+        console.log('更新数据库状态...', database);
         const dbIcon = document.getElementById('database-status-icon');
         const dbText = document.getElementById('database-status-text');
         const dbRecords = document.getElementById('database-records');
-
-        if (database.connection_status === '正常') {
-            dbIcon.textContent = '✅';
-            dbText.textContent = '连接正常';
-            dbText.style.color = 'var(--success-color)';
+        
+        console.log('数据库状态DOM元素:', { dbIcon, dbText, dbRecords });
+        
+        if (dbIcon && dbText && dbRecords) {
+            if (database.connection_status === '正常') {
+                dbIcon.textContent = '✅';
+                dbText.textContent = '连接正常';
+                dbText.style.color = 'var(--success-color)';
+            } else {
+                dbIcon.textContent = '❌';
+                dbText.textContent = '连接异常';
+                dbText.style.color = 'var(--danger-color)';
+            }
+            dbRecords.textContent = `总记录: ${database.total_records.toLocaleString('zh-CN')}`;
+            console.log('数据库状态更新完成');
         } else {
-            dbIcon.textContent = '❌';
-            dbText.textContent = '连接异常';
-            dbText.style.color = 'var(--danger-color)';
+            console.error('数据库状态DOM元素未找到:', { dbIcon, dbText, dbRecords });
         }
-
-        dbRecords.textContent = `总记录: ${database.total_records.toLocaleString('zh-CN')}`;
     }
 
     // CPU状态
     if (performance) {
+        console.log('更新性能数据...', performance);
         const cpuDisplay = document.getElementById('cpu-usage-display');
         const cpuText = document.getElementById('cpu-status-text');
-
-        cpuDisplay.textContent = `${performance.cpu_percent}%`;
         
-        if (performance.cpu_percent < 70) {
-            cpuText.textContent = '使用率正常';
-            cpuText.style.color = 'var(--success-color)';
-            cpuDisplay.style.color = 'var(--success-color)';
-        } else if (performance.cpu_percent < 90) {
-            cpuText.textContent = '使用率偏高';
-            cpuText.style.color = 'var(--warning-color)';
-            cpuDisplay.style.color = 'var(--warning-color)';
+        console.log('CPU DOM元素:', { cpuDisplay, cpuText });
+        
+        if (cpuDisplay && cpuText) {
+            cpuDisplay.textContent = `${performance.cpu_percent}%`;
+            
+            if (performance.cpu_percent < 70) {
+                cpuText.textContent = '使用率正常';
+                cpuText.style.color = 'var(--success-color)';
+                cpuDisplay.style.color = 'var(--success-color)';
+            } else if (performance.cpu_percent < 90) {
+                cpuText.textContent = '使用率偏高';
+                cpuText.style.color = 'var(--warning-color)';
+                cpuDisplay.style.color = 'var(--warning-color)';
+            } else {
+                cpuText.textContent = '使用率危险';
+                cpuText.style.color = 'var(--danger-color)';
+                cpuDisplay.style.color = 'var(--danger-color)';
+            }
+            console.log('CPU状态更新完成');
         } else {
-            cpuText.textContent = '使用率危险';
-            cpuText.style.color = 'var(--danger-color)';
-            cpuDisplay.style.color = 'var(--danger-color)';
+            console.error('CPU DOM元素未找到:', { cpuDisplay, cpuText });
         }
 
         // 内存状态
         const memoryDisplay = document.getElementById('memory-usage-display');
         const memoryText = document.getElementById('memory-status-text');
-
-        memoryDisplay.textContent = `${performance.memory_percent}%`;
         
-        if (performance.memory_percent < 75) {
-            memoryText.textContent = '使用率正常';
-            memoryText.style.color = 'var(--success-color)';
-            memoryDisplay.style.color = 'var(--success-color)';
-        } else if (performance.memory_percent < 85) {
-            memoryText.textContent = '使用率偏高';
-            memoryText.style.color = 'var(--warning-color)';
-            memoryDisplay.style.color = 'var(--warning-color)';
+        console.log('内存DOM元素:', { memoryDisplay, memoryText });
+        
+        if (memoryDisplay && memoryText) {
+            memoryDisplay.textContent = `${performance.memory_percent}%`;
+            
+            if (performance.memory_percent < 75) {
+                memoryText.textContent = '使用率正常';
+                memoryText.style.color = 'var(--success-color)';
+                memoryDisplay.style.color = 'var(--success-color)';
+            } else if (performance.memory_percent < 85) {
+                memoryText.textContent = '使用率偏高';
+                memoryText.style.color = 'var(--warning-color)';
+                memoryDisplay.style.color = 'var(--warning-color)';
+            } else {
+                memoryText.textContent = '使用率危险';
+                memoryText.style.color = 'var(--danger-color)';
+                memoryDisplay.style.color = 'var(--danger-color)';
+            }
+            console.log('内存状态更新完成');
         } else {
-            memoryText.textContent = '使用率危险';
-            memoryText.style.color = 'var(--danger-color)';
-            memoryDisplay.style.color = 'var(--danger-color)';
+            console.error('内存DOM元素未找到:', { memoryDisplay, memoryText });
         }
 
         // 磁盘状态
         const diskDisplay = document.getElementById('disk-usage-display');
         const diskText = document.getElementById('disk-status-text');
-
-        diskDisplay.textContent = `${performance.disk_usage_percent}%`;
         
-        if (performance.disk_usage_percent < 80) {
-            diskText.textContent = '使用率正常';
-            diskText.style.color = 'var(--success-color)';
-            diskDisplay.style.color = 'var(--success-color)';
-        } else if (performance.disk_usage_percent < 90) {
-            diskText.textContent = '使用率偏高';
-            diskText.style.color = 'var(--warning-color)';
-            diskDisplay.style.color = 'var(--warning-color)';
+        console.log('磁盘DOM元素:', { diskDisplay, diskText });
+        
+        if (diskDisplay && diskText) {
+            diskDisplay.textContent = `${performance.disk_usage_percent}%`;
+            
+            if (performance.disk_usage_percent < 80) {
+                diskText.textContent = '使用率正常';
+                diskText.style.color = 'var(--success-color)';
+                diskDisplay.style.color = 'var(--success-color)';
+            } else if (performance.disk_usage_percent < 90) {
+                diskText.textContent = '使用率偏高';
+                diskText.style.color = 'var(--warning-color)';
+                diskDisplay.style.color = 'var(--warning-color)';
+            } else {
+                diskText.textContent = '使用率危险';
+                diskText.style.color = 'var(--danger-color)';
+                diskDisplay.style.color = 'var(--danger-color)';
+            }
+            console.log('磁盘状态更新完成');
         } else {
-            diskText.textContent = '使用率危险';
-            diskText.style.color = 'var(--danger-color)';
-            diskDisplay.style.color = 'var(--danger-color)';
+            console.error('磁盘DOM元素未找到:', { diskDisplay, diskText });
         }
     }
 }
 
 function updatePerformanceChart() {
-    if (!dashboardData.performance) return;
+    console.log('updatePerformanceChart 调用, dashboardData.performance:', dashboardData.performance);
+    if (!dashboardData.performance) {
+        console.error('系统性能图表: 没有性能数据');
+        return;
+    }
 
     const performance = dashboardData.performance;
+    console.log('系统性能图表: 准备渲染图表', performance);
     
     if (charts.performance) {
         charts.performance.dispose();
     }
 
-    charts.performance = echarts.init(document.getElementById('performance-overview'));
+    const performanceElement = document.getElementById('performance-overview');
+    console.log('系统性能图表DOM元素:', performanceElement);
+    console.log('ECharts是否加载:', typeof echarts);
+    
+    charts.performance = echarts.init(performanceElement);
+    console.log('系统性能图表初始化:', charts.performance);
 
     const option = {
         tooltip: {
@@ -462,19 +631,38 @@ function updatePerformanceChart() {
         ]
     };
 
-    charts.performance.setOption(option);
+    console.log('系统性能图表配置选项:', option);
+    try {
+        charts.performance.setOption(option);
+        // 强制图表重新计算大小
+        setTimeout(() => {
+            charts.performance.resize();
+        }, 100);
+        console.log('系统性能图表渲染成功');
+    } catch (error) {
+        console.error('系统性能图表渲染失败:', error);
+    }
 }
 
 function updateDatabaseChart() {
-    if (!dashboardData.database) return;
+    console.log('updateDatabaseChart 调用, dashboardData.database:', dashboardData.database);
+    if (!dashboardData.database) {
+        console.error('数据库统计图表: 没有数据库数据');
+        return;
+    }
 
     const database = dashboardData.database;
+    console.log('数据库统计图表: 准备渲染图表', database);
     
     if (charts.database) {
         charts.database.dispose();
     }
 
-    charts.database = echarts.init(document.getElementById('database-tables-chart'));
+    const databaseElement = document.getElementById('database-tables-chart');
+    console.log('数据库统计图表DOM元素:', databaseElement);
+    
+    charts.database = echarts.init(databaseElement);
+    console.log('数据库统计图表初始化:', charts.database);
 
     const tableData = Object.entries(database.tables).map(([name, count]) => ({
         name: name === 'pue_data' ? 'PUE数据' :
@@ -514,7 +702,18 @@ function updateDatabaseChart() {
         ]
     };
 
-    charts.database.setOption(option);
+    console.log('数据库统计图表配置选项:', option);
+    console.log('数据库表数据:', tableData);
+    try {
+        charts.database.setOption(option);
+        // 强制图表重新计算大小
+        setTimeout(() => {
+            charts.database.resize();
+        }, 100);
+        console.log('数据库统计图表渲染成功');
+    } catch (error) {
+        console.error('数据库统计图表渲染失败:', error);
+    }
 }
 
 function updateSystemFaultStats() {
@@ -564,7 +763,9 @@ function updateSystemDetails() {
 }
 
 function updateHealthScore() {
+    console.log('updateHealthScore 调用, dashboardData:', dashboardData);
     const { system, database, performance } = dashboardData;
+    console.log('健康评分计算数据:', { system, database, performance });
     let score = 100;
     let issues = [];
 
@@ -640,11 +841,16 @@ function updateHealthScore() {
 }
 
 function updateHealthScoreGauge(score) {
+    console.log('updateHealthScoreGauge 调用, score:', score);
     if (charts.healthScore) {
         charts.healthScore.dispose();
     }
 
-    charts.healthScore = echarts.init(document.getElementById('health-score-gauge'));
+    const gaugeElement = document.getElementById('health-score-gauge');
+    console.log('健康评分仪表盘DOM元素:', gaugeElement);
+    
+    charts.healthScore = echarts.init(gaugeElement);
+    console.log('健康评分仪表盘初始化:', charts.healthScore);
 
     let color = '#10b981'; // 绿色
     if (score < 60) color = '#ef4444'; // 红色
@@ -688,7 +894,17 @@ function updateHealthScoreGauge(score) {
         }]
     };
 
-    charts.healthScore.setOption(option);
+    console.log('健康评分仪表盘配置选项:', option);
+    try {
+        charts.healthScore.setOption(option);
+        // 强制图表重新计算大小
+        setTimeout(() => {
+            charts.healthScore.resize();
+        }, 100);
+        console.log('健康评分仪表盘渲染成功');
+    } catch (error) {
+        console.error('健康评分仪表盘渲染失败:', error);
+    }
 }
 
 function refreshDashboard() {
@@ -751,8 +967,30 @@ function showErrorStatus() {
 
 // 页面加载时初始化
 document.addEventListener('DOMContentLoaded', function() {
-    loadAllMonitoringData();
-    startAutoRefresh();
+    console.log('DOM已加载，检查关键元素...');
+    
+    // 检查关键DOM元素是否存在
+    const keyElements = [
+        'system-status-icon', 'system-status-text', 'system-uptime',
+        'database-status-icon', 'database-status-text', 'database-records',
+        'cpu-usage-display', 'cpu-status-text',
+        'memory-usage-display', 'memory-status-text',
+        'disk-usage-display', 'disk-status-text'
+    ];
+    
+    const missingElements = keyElements.filter(id => !document.getElementById(id));
+    if (missingElements.length > 0) {
+        console.error('缺失的DOM元素:', missingElements);
+    } else {
+        console.log('所有关键DOM元素已找到');
+    }
+    
+    // 延迟500ms再加载数据，确保所有元素都已渲染
+    setTimeout(() => {
+        console.log('开始初始化数据加载...');
+        loadAllMonitoringData();
+        startAutoRefresh();
+    }, 500);
     
     // 响应式图表
     window.addEventListener('resize', function() {

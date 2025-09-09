@@ -802,14 +802,7 @@ async def index(request: Request, db: AsyncSession = Depends(get_db)):
         {"request": request}
     )
 
-@router.get("/tools/monitor/dashboard", response_class=HTMLResponse)
-async def monitor_dashboard(request: Request, db: AsyncSession = Depends(get_db)):
-    """系统监控仪表板"""
-    from common import bi_templates_env
-    return bi_templates_env.TemplateResponse(
-        "monitor/dashboard.html",
-        {"request": request, "title": "系统监控仪表盘"}
-    )
+# 监控仪表板路由已迁移到 tools/system_monitor.py，避免路由冲突
 
 @router.get("/api/monitor/system")
 async def get_system_status(db: AsyncSession = Depends(get_db)):

@@ -523,7 +523,7 @@ async def monitor_dashboard(request: Request):
     """监控仪表盘页面"""
     return templates.TemplateResponse(
         "monitor/dashboard.html",
-        {"request": request, "title": "系统监控仪表盘"}
+        {"request": request, "title": "系统监控仪表盘", "monitor_page_title": "系统监控仪表盘"}
     )
 
 @router.get("/database", response_class=HTMLResponse)
@@ -531,7 +531,7 @@ async def database_monitor_page(request: Request):
     """数据库健康监控页面"""
     return templates.TemplateResponse(
         "monitor/database_health.html",
-        {"request": request, "title": "数据库健康监控"}
+        {"request": request, "title": "数据库健康监控", "monitor_page_title": "数据库健康监控"}
     )
 
 @router.get("/performance", response_class=HTMLResponse)
@@ -539,7 +539,7 @@ async def performance_monitor_page(request: Request):
     """系统性能监控页面"""
     return templates.TemplateResponse(
         "monitor/performance.html",
-        {"request": request, "title": "系统性能监控"}
+        {"request": request, "title": "系统性能监控", "monitor_page_title": "系统性能监控"}
     )
 
 @router.get("/status", response_class=HTMLResponse)
@@ -547,7 +547,7 @@ async def system_status_page(request: Request):
     """系统状态概览页面"""
     return templates.TemplateResponse(
         "monitor/status.html",
-        {"request": request, "title": "系统状态概览"}
+        {"request": request, "title": "系统状态概览", "monitor_page_title": "系统状态概览"}
     )
 
 @router.get("/logs", response_class=HTMLResponse)
@@ -555,5 +555,5 @@ async def logs_monitor_page(request: Request):
     """日志监控页面"""
     return templates.TemplateResponse(
         "monitor/logs.html",
-        {"request": request, "title": "系统日志监控"}
+        {"request": request, "title": "系统日志监控", "monitor_page_title": "系统日志监控"}
     )
