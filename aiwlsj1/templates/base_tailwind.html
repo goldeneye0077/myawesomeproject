@@ -33,61 +33,24 @@
     <!-- Alpine.js for interactivity -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     
-    <!-- Compiled Tailwind styles (fixes @apply issues) -->
-    <link rel="stylesheet" href="{{ url_for('static', path='/css/tailwind-compiled.css') }}">
-    
-    <!-- Custom styles (fallback) -->
+    <!-- Custom styles -->
     <link rel="stylesheet" href="{{ url_for('static', path='/css/tailwind-custom.css') }}">
-    
-    <!-- Note: Consider removing CDN in production and use local Tailwind build -->
     
     {% block extra_head %}{% endblock %}
 </head>
 
 <body class="bg-gray-50 min-h-screen" x-data="{ sidebarOpen: true }">
-    <!-- 顶部横幅 -->
-    <header class="fixed top-0 left-0 right-0 z-50 h-16 bg-gradient-to-r from-blue-600 to-blue-700 shadow-lg">
-        <div class="flex items-center justify-between h-full px-6">
-            <!-- Logo和系统名称 -->
-            <a href="/" class="flex items-center hover:opacity-90 transition-opacity duration-200">
-                <img src="{{ url_for('static', path='/images/移动logo.png') }}" alt="移动logo" class="h-12 w-auto mr-4">
-                <h1 class="text-xl font-bold text-white">网络视界指标管理系统</h1>
-            </a>
-            
-            <!-- 右侧工具栏 -->
-            <div class="flex items-center space-x-4">
-                <!-- 搜索框 -->
-                <div class="hidden md:flex items-center">
-                    <div class="relative">
-                        <input type="text" placeholder="搜索..." class="w-64 px-4 py-2 pl-10 text-sm text-gray-700 bg-white bg-opacity-20 border border-white border-opacity-30 rounded-lg placeholder-white placeholder-opacity-70 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 focus:bg-white focus:text-gray-900 focus:placeholder-gray-500">
-                        <svg class="absolute left-3 top-2.5 h-4 w-4 text-white text-opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                    </div>
-                </div>
-                
-                <!-- 用户信息 -->
-                <div class="flex items-center space-x-3">
-                    <div class="hidden md:block text-right">
-                        <div class="text-sm font-medium text-white">管理员</div>
-                        <div class="text-xs text-blue-200">在线</div>
-                    </div>
-                    <div class="h-8 w-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                        <svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                    </div>
-                </div>
+    <div class="flex h-screen bg-gray-50">
+        <!-- 侧边栏 -->
+        <div class="flex-shrink-0 w-64 bg-white shadow-lg overflow-hidden" x-show="sidebarOpen" x-transition:enter="transition-transform ease-out duration-300" x-transition:enter-start="-translate-x-full" x-transition:enter-end="translate-x-0" x-transition:leave="transition-transform ease-in duration-300" x-transition:leave-start="translate-x-0" x-transition:leave-end="-translate-x-full">
+            <!-- Logo 区域 -->
+            <div class="flex items-center justify-center h-16 px-4 bg-gradient-to-r from-blue-600 to-blue-700 shadow-sm">
+                <img src="{{ url_for('static', path='/images/移动logo.png') }}" alt="移动logo" class="h-8 w-auto mr-3">
+                <h1 class="text-lg font-semibold text-white">网络视界指标管理</h1>
             </div>
-        </div>
-    </header>
 
-    <!-- 主体内容区 -->
-    <div class="flex h-screen bg-gray-50 pt-16">
-        <!-- 桌面端侧边栏 -->
-        <div class="hidden lg:flex flex-shrink-0 w-64 bg-white shadow-lg overflow-hidden" x-show="sidebarOpen">
             <!-- 导航菜单 -->
-            <nav class="w-full mt-5 flex-1 px-2 pb-4 space-y-1 custom-scrollbar overflow-y-auto" style="height: calc(100vh - 8rem);">
+            <nav class="mt-5 flex-1 px-2 pb-4 space-y-1 custom-scrollbar overflow-y-auto" style="height: calc(100vh - 4rem);">
                 <!-- 契约化指标大屏管理 -->
                 <div x-data="{ open: false }" class="space-y-1">
                     <button @click="open = !open" 
@@ -102,7 +65,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
                     </button>
-                    <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-1" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-1" class="space-y-1">
+                    <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-1" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-1" class="space-y-1 pl-11">
                         <a href="/center_top_top" class="sidebar-submenu-item {% if request.url.path == '/center_top_top' %}active{% endif %}">故障割接管理</a>
                         <a href="/center_top_bottom" class="sidebar-submenu-item {% if request.url.path == '/center_top_bottom' %}active{% endif %}">地图管理</a>
                         <a href="/left_top" class="sidebar-submenu-item {% if request.url.path == '/left_top' %}active{% endif %}">汇聚骨干管理</a>
@@ -127,7 +90,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
                     </button>
-                    <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-1" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-1" class="space-y-1">
+                    <div x-show="open" x-transition class="space-y-1 pl-11">
                         <a href="/kpi_indicators" class="sidebar-submenu-item {% if request.url.path == '/kpi_indicators' %}active{% endif %}">KPI数据管理</a>
                         <a href="/left_middle_kpi" class="sidebar-submenu-item {% if request.url.path == '/left_middle_kpi' %}active{% endif %}">机楼PUE KPI管理</a>
                         <a href="/center_middle_kpi" class="sidebar-submenu-item {% if request.url.path == '/center_middle_kpi' %}active{% endif %}">宽带装机交付KPI管理</a>
@@ -155,10 +118,10 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
                     </button>
-                    <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-1" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-1" class="space-y-1">
+                    <div x-show="open" x-transition class="space-y-1 pl-6">
                         <!-- PUE指标 -->
                         <div x-data="{ open: false }" class="space-y-1">
-                            <button @click="open = !open" class="sidebar-submenu-item flex w-full items-center justify-between">
+                            <button @click="open = !open" class="group flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors duration-200">
                                 <span class="flex items-center">
                                     <svg class="mr-2 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -169,16 +132,16 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                 </svg>
                             </button>
-                            <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-1" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-1" class="space-y-1">
-                                <a href="/pue_data" class="sidebar-submenu-item-nested {% if request.url.path == '/pue_data' %}active{% endif %}">PUE指标数据管理</a>
-                                <a href="/pue_drill_down_manage" class="sidebar-submenu-item-nested {% if request.url.path == '/pue_drill_down_manage' %}active{% endif %}">PUE下钻数据管理</a>
-                                <a href="/pue_analyze" class="sidebar-submenu-item-nested {% if request.url.path == '/pue_analyze' %}active{% endif %}">PUE指标数据分析</a>
+                            <div x-show="open" x-transition class="space-y-1 pl-6">
+                                <a href="/pue_data" class="sidebar-submenu-item {% if request.url.path == '/pue_data' %}active{% endif %}">PUE指标数据管理</a>
+                                <a href="/pue_drill_down_manage" class="sidebar-submenu-item {% if request.url.path == '/pue_drill_down_manage' %}active{% endif %}">PUE下钻数据管理</a>
+                                <a href="/pue_analyze" class="sidebar-submenu-item {% if request.url.path == '/pue_analyze' %}active{% endif %}">PUE指标数据分析</a>
                             </div>
                         </div>
 
                         <!-- 汇聚骨干指标 -->
                         <div x-data="{ open: false }" class="space-y-1">
-                            <button @click="open = !open" class="sidebar-submenu-item flex w-full items-center justify-between">
+                            <button @click="open = !open" class="group flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors duration-200">
                                 <span class="flex items-center">
                                     <svg class="mr-2 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
@@ -189,15 +152,15 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                 </svg>
                             </button>
-                            <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-1" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-1" class="space-y-1">
-                                <a href="/huiju/data" class="sidebar-submenu-item-nested {% if request.url.path == '/huiju_data' %}active{% endif %}">汇聚骨干指标数据管理</a>
-                                <a href="/huiju/analyze" class="sidebar-submenu-item-nested {% if request.url.path == '/huiju_analyze' %}active{% endif %}">汇聚骨干指标数据分析</a>
+                            <div x-show="open" x-transition class="space-y-1 pl-6">
+                                <a href="/huiju/data" class="sidebar-submenu-item {% if request.url.path == '/huiju_data' %}active{% endif %}">汇聚骨干指标数据管理</a>
+                                <a href="/huiju/analyze" class="sidebar-submenu-item {% if request.url.path == '/huiju_analyze' %}active{% endif %}">汇聚骨干指标数据分析</a>
                             </div>
                         </div>
 
                         <!-- 故障指标分析 -->
                         <div x-data="{ open: false }" class="space-y-1">
-                            <button @click="open = !open" class="sidebar-submenu-item flex w-full items-center justify-between">
+                            <button @click="open = !open" class="group flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors duration-200">
                                 <span class="flex items-center">
                                     <svg class="mr-2 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
@@ -208,11 +171,11 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                 </svg>
                             </button>
-                            <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-1" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-1" class="space-y-1">
-                                <a href="/fault/data" class="sidebar-submenu-item-nested {% if request.url.path == '/fault/data' %}active{% endif %}">故障指标数据管理</a>
-                                <a href="/fault/dashboard" class="sidebar-submenu-item-nested {% if request.url.path == '/fault/dashboard' %}active{% endif %}">故障指标数据分析</a>
-                                <a href="/fault/prediction" class="sidebar-submenu-item-nested {% if request.url.path == '/fault/prediction' %}active{% endif %}">故障预测分析</a>
-                                <a href="/fault/indicators" class="sidebar-submenu-item-nested {% if request.url.path == '/fault/indicators' %}active{% endif %}">指标管理与绩效评估</a>
+                            <div x-show="open" x-transition class="space-y-1 pl-6">
+                                <a href="/fault/data" class="sidebar-submenu-item {% if request.url.path == '/fault/data' %}active{% endif %}">故障指标数据管理</a>
+                                <a href="/fault/dashboard" class="sidebar-submenu-item {% if request.url.path == '/fault/dashboard' %}active{% endif %}">故障指标数据分析</a>
+                                <a href="/fault/prediction" class="sidebar-submenu-item {% if request.url.path == '/fault/prediction' %}active{% endif %}">故障预测分析</a>
+                                <a href="/fault/indicators" class="sidebar-submenu-item {% if request.url.path == '/fault/indicators' %}active{% endif %}">指标管理与绩效评估</a>
                             </div>
                         </div>
                     </div>
@@ -235,7 +198,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
                     </button>
-                    <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-1" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-1" class="space-y-1">
+                    <div x-show="open" x-transition class="space-y-1 pl-11">
                         <a href="/tools/monitor/dashboard" class="sidebar-submenu-item {% if request.url.path == '/tools/monitor/dashboard' %}active{% endif %}">监控仪表盘</a>
                         <a href="/tools/monitor/database" class="sidebar-submenu-item {% if request.url.path == '/tools/monitor/database' %}active{% endif %}">数据库健康</a>
                         <a href="/tools/monitor/performance" class="sidebar-submenu-item {% if request.url.path == '/tools/monitor/performance' %}active{% endif %}">性能监控</a>
@@ -248,68 +211,45 @@
                 <div class="border-t border-gray-200 my-4"></div>
 
                 <!-- 大屏预览 -->
-                <div x-data="{ open: false }" class="space-y-1">
-                    <button @click="open = !open" 
-                            class="group flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors duration-200">
-                        <span class="flex items-center">
-                            <svg class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                            </svg>
-                            大屏管理
-                        </span>
-                        <svg class="ml-3 h-5 w-5 transform transition-transform duration-200" :class="{'rotate-180': open}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                <div class="space-y-2">
+                    <a href="/bi" target="_blank" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 rounded-md hover:bg-primary-50 hover:text-primary-700 transition-colors duration-200 group">
+                        <svg class="mr-3 h-5 w-5 text-gray-400 group-hover:text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                         </svg>
-                    </button>
-                    <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-1" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-1" class="space-y-1">
-                        <a href="/bi" target="_blank" class="sidebar-submenu-item group">
-                            契约化指标大屏预览
-                            <svg class="ml-auto h-4 w-4 text-gray-400 group-hover:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
-                        </a>
-                        <a href="/bi2" target="_blank" class="sidebar-submenu-item group">
-                            KPI指标大屏预览
-                            <svg class="ml-auto h-4 w-4 text-gray-400 group-hover:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
-                        </a>
-                    </div>
-                </div>
-            </nav>
-        </div>
-
-        <!-- 移动端侧边栏遮罩 -->
-        <div class="lg:hidden fixed inset-0 z-40 bg-gray-600 bg-opacity-75" x-show="sidebarOpen" x-transition:enter="transition-opacity ease-linear duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-linear duration-300" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" @click="sidebarOpen = false" style="margin-top: 4rem;"></div>
-        
-        <!-- 移动端侧边栏 -->
-        <div class="lg:hidden fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform" x-show="sidebarOpen" x-transition:enter="transition ease-in-out duration-300 transform" x-transition:enter-start="-translate-x-full" x-transition:enter-end="translate-x-0" x-transition:leave="transition ease-in-out duration-300 transform" x-transition:leave-start="translate-x-0" x-transition:leave-end="-translate-x-full" style="margin-top: 4rem;">
-            <!-- 移动端导航菜单 - 与桌面端相同结构 -->
-            <nav class="mt-5 flex-1 px-2 pb-4 space-y-1 custom-scrollbar overflow-y-auto" style="height: calc(100vh - 8rem);">
-                <!-- 这里复制上面的导航菜单内容 -->
-                <div class="text-center py-4 text-gray-500 text-sm">
-                    移动端导航菜单<br>
-                    <span class="text-xs">点击遮罩关闭</span>
+                        契约化指标大屏预览
+                        <svg class="ml-auto h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                    </a>
+                    <a href="/bi2" target="_blank" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 rounded-md hover:bg-primary-50 hover:text-primary-700 transition-colors duration-200 group">
+                        <svg class="mr-3 h-5 w-5 text-gray-400 group-hover:text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        KPI指标大屏预览
+                        <svg class="ml-auto h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                    </a>
                 </div>
             </nav>
         </div>
 
         <!-- 主内容区 -->
         <div class="flex-1 flex flex-col overflow-hidden">
-            <!-- 页面标题栏 -->
-            <div class="bg-white border-b border-gray-200">
+            <!-- 顶部导航栏 -->
+            <header class="bg-white shadow-sm border-b border-gray-200">
                 <div class="px-6 py-4">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center">
                             <!-- 侧边栏切换按钮 -->
-                            <button @click="sidebarOpen = !sidebarOpen" class="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500 mr-4 lg:hidden">
+                            <button @click="sidebarOpen = !sidebarOpen" class="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500 mr-4">
                                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                                 </svg>
                             </button>
                             
                             <div>
-                                <h1 class="text-xl font-semibold text-gray-900">{% block page_title %}首页{% endblock %}</h1>
+                                <h1 class="text-2xl font-semibold text-gray-900">{% block page_title %}网络视界指标管理系统{% endblock %}</h1>
                                 <nav class="flex mt-1" aria-label="Breadcrumb">
                                     <ol class="flex items-center space-x-2 text-sm text-gray-500">
                                         <li><a href="/" class="hover:text-gray-700 transition-colors duration-200">首页</a></li>
@@ -323,7 +263,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </header>
 
             <!-- 主内容 -->
             <main class="flex-1 overflow-y-auto bg-gray-50 p-6 custom-scrollbar">

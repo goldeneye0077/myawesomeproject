@@ -3,10 +3,11 @@ from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from typing import Optional, List
 import io
 import pandas as pd
-from db.models import Zbk, CenterTopTop, CenterTopBottom, LeftTop, LeftMiddle, RightTop, RightMiddle, Bottom, LeftMiddleKPI, CenterMiddleKPI, RightMiddleKPI, LeftBottomKPI, RightBottomKPI, TopKPI
+from db.models import Zbk, CenterTopTop, CenterTopBottom, LeftTop, LeftMiddle, RightTop, RightMiddle, Bottom, LeftMiddleKPI, CenterMiddleKPI, RightMiddleKPI, LeftBottomKPI, RightBottomKPI, TopKPI, PUEData, FaultRecord
 from common import bi_data_templates, bi_data_templates_env
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy import func
 from fastapi import Depends
 from db.session import get_db
 
@@ -793,10 +794,51 @@ async def top_kpi_delete(
 
 # 路由定义
 @router.get("/", response_class=HTMLResponse)
-async def index(request: Request, location: str = None, db: AsyncSession = Depends(get_db)):
-    # 重定向到PUE分析页面
-    from fastapi.responses import RedirectResponse
-    return RedirectResponse(url="/pue_analyze")
+async def index(request: Request, db: AsyncSession = Depends(get_db)):
+    """主页仪表板"""
+    from common import bi_templates_env
+    return bi_templates_env.TemplateResponse(
+        "index.html",
+        {"request": request}
+    )
+
+@router.get("/tools/monitor/dashboard", response_class=HTMLResponse)
+async def monitor_dashboard(request: Request, db: AsyncSession = Depends(get_db)):
+    """系统监控仪表板"""
+    from common import bi_templates_env
+    return bi_templates_env.TemplateResponse(
+        "monitor/simple_dashboard.html",
+        {"request": request, "title": "系统监控仪表盘"}
+    )
+
+@router.get("/api/monitor/system")
+async def get_system_status(db: AsyncSession = Depends(get_db)):
+    """获取系统状态"""
+    try:
+        # 检查数据库连接
+        result = await db.execute(select(func.count()).select_from(PUEData))
+        pue_count = result.scalar()
+        
+        result = await db.execute(select(func.count()).select_from(FaultRecord))
+        fault_count = result.scalar()
+        
+        return {
+            "status": "healthy",
+            "database": {
+                "status": "connected",
+                "pue_records": pue_count,
+                "fault_records": fault_count
+            },
+            "system": {
+                "status": "running",
+                "uptime": "运行中"
+            }
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
 
 @router.get("/contract_indicators", response_class=HTMLResponse)
 async def contract_indicators(request: Request, db: AsyncSession = Depends(get_db)):

@@ -1,0 +1,342 @@
+{% extends "base_tailwind.html" %}
+
+{% block title %}添加PUE数据 - 网络视界指标后台管理{% endblock %}
+
+{% block page_title %}添加PUE数据{% endblock %}
+
+{% block breadcrumb %}
+    <li><span class="text-gray-300">/</span></li>
+    <li><span class="text-gray-500">契约化指标分析</span></li>
+    <li><span class="text-gray-300">/</span></li>
+    <li><a href="/pue_data" class="text-gray-500 hover:text-gray-700">PUE数据管理</a></li>
+    <li><span class="text-gray-300">/</span></li>
+    <li><span class="text-primary-600">添加数据</span></li>
+{% endblock %}
+
+{% block page_actions %}
+    <a href="/pue_data" class="btn-secondary">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+        </svg>
+        返回列表
+    </a>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+    <!-- 表单卡片 -->
+    <div class="bg-white shadow-sm rounded-lg">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">PUE数据信息</h3>
+            <p class="mt-1 text-sm text-gray-500">请填写准确的PUE数据信息，所有标有 * 的字段为必填项。</p>
+        </div>
+
+        <form method="post" class="px-6 py-4 space-y-6">
+            {{ csrf_token() if csrf_token }}
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- 地点 -->
+                <div>
+                    <label for="location" class="block text-sm font-medium text-gray-700 mb-1">
+                        地点 <span class="text-red-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <select name="location" id="location" required 
+                                class="form-select {% if errors and 'location' in errors %}border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500{% endif %}">
+                            <option value="">请选择地点</option>
+                            <option value="北京" {% if form_data and form_data.location == '北京' %}selected{% endif %}>北京</option>
+                            <option value="上海" {% if form_data and form_data.location == '上海' %}selected{% endif %}>上海</option>
+                            <option value="广州" {% if form_data and form_data.location == '广州' %}selected{% endif %}>广州</option>
+                            <option value="深圳" {% if form_data and form_data.location == '深圳' %}selected{% endif %}>深圳</option>
+                            <option value="杭州" {% if form_data and form_data.location == '杭州' %}selected{% endif %}>杭州</option>
+                            <option value="南京" {% if form_data and form_data.location == '南京' %}selected{% endif %}>南京</option>
+                            <option value="成都" {% if form_data and form_data.location == '成都' %}selected{% endif %}>成都</option>
+                            <option value="武汉" {% if form_data and form_data.location == '武汉' %}selected{% endif %}>武汉</option>
+                        </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    {% if errors and 'location' in errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ errors['location'] }}</p>
+                    {% endif %}
+                    <p class="mt-1 text-xs text-gray-500">选择机房所在地点</p>
+                </div>
+
+                <!-- 数据中心 -->
+                <div>
+                    <label for="datacenter" class="block text-sm font-medium text-gray-700 mb-1">
+                        数据中心
+                    </label>
+                    <div class="relative">
+                        <input type="text" name="datacenter" id="datacenter" 
+                               value="{{ form_data.datacenter if form_data else '' }}"
+                               placeholder="请输入数据中心名称"
+                               class="form-input {% if errors and 'datacenter' in errors %}border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500{% endif %}">
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    {% if errors and 'datacenter' in errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ errors['datacenter'] }}</p>
+                    {% endif %}
+                    <p class="mt-1 text-xs text-gray-500">可选，具体的数据中心名称</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- 年份 -->
+                <div>
+                    <label for="year" class="block text-sm font-medium text-gray-700 mb-1">
+                        年份 <span class="text-red-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <select name="year" id="year" required 
+                                class="form-select {% if errors and 'year' in errors %}border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500{% endif %}">
+                            <option value="">请选择年份</option>
+                            {% for year in range(2020, 2030) %}
+                            <option value="{{ year }}" {% if form_data and form_data.year == year %}selected{% elif not form_data and year == current_year %}selected{% endif %}>{{ year }}年</option>
+                            {% endfor %}
+                        </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    {% if errors and 'year' in errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ errors['year'] }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- 月份 -->
+                <div>
+                    <label for="month" class="block text-sm font-medium text-gray-700 mb-1">
+                        月份 <span class="text-red-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <select name="month" id="month" required 
+                                class="form-select {% if errors and 'month' in errors %}border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500{% endif %}">
+                            <option value="">请选择月份</option>
+                            {% for month in range(1, 13) %}
+                            <option value="{{ month }}" {% if form_data and form_data.month == month %}selected{% elif not form_data and month == current_month %}selected{% endif %}>{{ month }}月</option>
+                            {% endfor %}
+                        </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    {% if errors and 'month' in errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ errors['month'] }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- PUE值 -->
+            <div>
+                <label for="pue_value" class="block text-sm font-medium text-gray-700 mb-1">
+                    PUE值 <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                    <input type="number" name="pue_value" id="pue_value" step="0.001" min="1.0" max="5.0"
+                           value="{{ form_data.pue_value if form_data else '' }}"
+                           placeholder="请输入PUE值（如：1.25）" required
+                           class="form-input {% if errors and 'pue_value' in errors %}border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500{% endif %}">
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                        <span class="text-gray-500 text-sm">PUE</span>
+                    </div>
+                </div>
+                {% if errors and 'pue_value' in errors %}
+                <p class="mt-1 text-sm text-red-600">{{ errors['pue_value'] }}</p>
+                {% endif %}
+                <p class="mt-1 text-xs text-gray-500">PUE值范围：1.0-5.0，建议值：≤1.3（优秀）、≤1.8（良好）、≤2.0（一般）</p>
+                
+                <!-- PUE值状态指示 -->
+                <div class="mt-2" id="pue-status" style="display: none;">
+                    <div class="flex items-center space-x-2">
+                        <span class="status-indicator" id="pue-status-badge">状态</span>
+                        <span class="text-sm" id="pue-status-text">状态描述</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 备注 -->
+            <div>
+                <label for="comment" class="block text-sm font-medium text-gray-700 mb-1">
+                    备注
+                </label>
+                <textarea name="comment" id="comment" rows="3" 
+                          placeholder="请输入备注信息（可选）"
+                          class="form-textarea {% if errors and 'comment' in errors %}border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500{% endif %}">{{ form_data.comment if form_data else '' }}</textarea>
+                {% if errors and 'comment' in errors %}
+                <p class="mt-1 text-sm text-red-600">{{ errors['comment'] }}</p>
+                {% endif %}
+                <p class="mt-1 text-xs text-gray-500">可选，用于记录特殊情况或说明</p>
+            </div>
+
+            <!-- 提交按钮 -->
+            <div class="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200">
+                <a href="/pue_data" class="btn-secondary">取消</a>
+                <button type="submit" class="btn-primary" id="submitBtn">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    保存数据
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- 帮助信息卡片 -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-blue-800">关于PUE</h3>
+                <div class="mt-2 text-sm text-blue-700">
+                    <p>PUE（Power Usage Effectiveness）是衡量数据中心能源效率的指标：</p>
+                    <ul class="list-disc list-inside mt-2 space-y-1">
+                        <li><strong>PUE = 总耗电量 / IT设备耗电量</strong></li>
+                        <li><strong>优秀：</strong> PUE ≤ 1.3</li>
+                        <li><strong>良好：</strong> 1.3 < PUE ≤ 1.8</li>
+                        <li><strong>一般：</strong> 1.8 < PUE ≤ 2.0</li>
+                        <li><strong>较差：</strong> PUE > 2.0</li>
+                    </ul>
+                    <p class="mt-2">理想情况下PUE值越接近1.0越好，表示能源利用效率越高。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// PUE值实时状态更新
+const pueInput = document.getElementById('pue_value');
+const pueStatus = document.getElementById('pue-status');
+const pueStatusBadge = document.getElementById('pue-status-badge');
+const pueStatusText = document.getElementById('pue-status-text');
+
+function updatePueStatus() {
+    const value = parseFloat(pueInput.value);
+    
+    if (isNaN(value) || value <= 0) {
+        pueStatus.style.display = 'none';
+        return;
+    }
+    
+    pueStatus.style.display = 'block';
+    
+    // 清除所有状态类
+    pueStatusBadge.className = 'status-indicator';
+    
+    if (value <= 1.3) {
+        pueStatusBadge.classList.add('status-success');
+        pueStatusText.textContent = '优秀 - 能源效率很高';
+    } else if (value <= 1.8) {
+        pueStatusBadge.classList.add('status-info');
+        pueStatusText.textContent = '良好 - 能源效率较好';
+    } else if (value <= 2.0) {
+        pueStatusBadge.classList.add('status-warning');
+        pueStatusText.textContent = '一般 - 有改进空间';
+    } else {
+        pueStatusBadge.classList.add('status-error');
+        pueStatusText.textContent = '较差 - 需要优化能源使用';
+    }
+    
+    pueStatusBadge.textContent = value.toFixed(3);
+}
+
+pueInput.addEventListener('input', updatePueStatus);
+pueInput.addEventListener('change', updatePueStatus);
+
+// 页面加载时检查初始值
+document.addEventListener('DOMContentLoaded', function() {
+    if (pueInput.value) {
+        updatePueStatus();
+    }
+});
+
+// 表单验证
+document.querySelector('form').addEventListener('submit', function(e) {
+    const submitBtn = document.getElementById('submitBtn');
+    const location = document.getElementById('location').value;
+    const year = document.getElementById('year').value;
+    const month = document.getElementById('month').value;
+    const pueValue = document.getElementById('pue_value').value;
+    
+    // 基础验证
+    if (!location || !year || !month || !pueValue) {
+        e.preventDefault();
+        showNotification('请填写所有必填字段', 'error');
+        return;
+    }
+    
+    const pue = parseFloat(pueValue);
+    if (isNaN(pue) || pue < 1.0 || pue > 5.0) {
+        e.preventDefault();
+        showNotification('PUE值必须在1.0-5.0之间', 'error');
+        return;
+    }
+    
+    // 提交时显示加载状态
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `
+        <svg class="w-4 h-4 mr-2 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        正在保存...
+    `;
+    
+    // 如果有错误，恢复按钮状态
+    setTimeout(() => {
+        if (submitBtn.disabled) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = `
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                保存数据
+            `;
+        }
+    }, 3000);
+});
+
+// 自动完成和建议
+const locationSelect = document.getElementById('location');
+const datacenterInput = document.getElementById('datacenter');
+
+const datacenterMapping = {
+    '北京': ['北京数据中心A', '北京数据中心B', '北京云计算中心'],
+    '上海': ['上海数据中心A', '上海数据中心B', '上海金融云中心'],
+    '广州': ['广州数据中心A', '广州数据中心B'],
+    '深圳': ['深圳数据中心A', '深圳数据中心B'],
+    '杭州': ['杭州数据中心A', '杭州云计算中心'],
+    '南京': ['南京数据中心A'],
+    '成都': ['成都数据中心A'],
+    '武汉': ['武汉数据中心A']
+};
+
+locationSelect.addEventListener('change', function() {
+    const location = this.value;
+    if (location && datacenterMapping[location]) {
+        datacenterInput.placeholder = `建议：${datacenterMapping[location].join('、')}`;
+    } else {
+        datacenterInput.placeholder = '请输入数据中心名称';
+    }
+});
+</script>
+{% endblock %}

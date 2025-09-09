@@ -24,14 +24,11 @@ from db.models import (
 )
 
 # 导入模板支持
-from fastapi.templating import Jinja2Templates
 from fastapi import Request
 from fastapi.responses import HTMLResponse
 
-# 初始化模板环境 - 修复模板路径
-import os
-template_dir = os.path.join(os.path.dirname(__file__), '..', 'templates')
-templates = Jinja2Templates(directory=template_dir)
+# 使用共享模板环境
+from common import bi_templates_env as templates
 
 # 尝试导入psutil，如果失败则使用基础监控
 try:

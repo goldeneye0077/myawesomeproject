@@ -24,6 +24,7 @@ from huijugugan import router as huiju_router
 from bi_data_manage import router as bi_data_manage_router
 from bi_api import router as bi_api_router
 from fault_analysis_fastapi import router as fault_router
+from dashboard_api import router as dashboard_router
 
 # 初始化日志系统
 setup_logging()
@@ -101,6 +102,7 @@ app.include_router(pue_router, prefix="", tags=["PUE指标"])
 app.include_router(huiju_router, tags=["汇聚骨干指标"])
 app.include_router(bi_api_router, prefix="", tags=["API接口"])
 app.include_router(fault_router, tags=["故障分析"])
+app.include_router(dashboard_router, prefix="", tags=["仪表板"])
 
 # 安全注册工具模块路由 (可选功能)
 if TOOLS_AVAILABLE:

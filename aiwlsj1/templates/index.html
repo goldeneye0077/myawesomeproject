@@ -1,74 +1,814 @@
 {% extends "base.html" %}  
 
-{% block title %}网络视界指标后台管理{% endblock %}  
+{% block title %}网络视界指标管理 - 首页{% endblock %}
 
-{% block content %}  
-<!-- 与 contract_indicators.html 相同的内容 -->
-<div class="card">
-    <h2 class="card-title">契约化攻坚指标</h2>
-    <div class="data-table-container">
-        <table class="data-table">
-            <thead class="sticky-header">
-                <tr>
-                    <th>序号</th>
-                    <th>指标项</th>
-                    <th>分值</th>
-                    <th>全省排名</th>
-                    <th>全年累计得分</th>
-                    <th>年度达成评估</th>
-                    <th>1月指标</th>
-                    <th>2月指标</th>
-                    <th>3月指标</th>
-                    <th>4月指标</th>
-                    <th>5月指标</th>
-                    <th>6月指标</th>
-                    <th>基准值</th>
-                    <th>挑战值</th>
-                    <th>操作</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for zbk in zbk_list %}
-                <tr>
-                    <td>{{ zbk.xh }}</td>
-                    <td title="{{ zbk.zbx }}">{{ zbk.zbx }}</td>
-                    <td>{{ zbk.fz }}</td>
-                    <td>{{ zbk.qspm }}</td>
-                    <td>{{ zbk.qnljdfzb }}</td>
-                    <td>
-                            {% if zbk.qnljdfzb is not none and zbk.jzz is not none and zbk.qnljdfzb|float > zbk.jzz|float %}
-                             <span class="status-circle status-success"></span>
-                           {% else %}
-                                   <span class="status-circle status-danger"></span>
-                           {% endif %}
+{% block page_title %}仪表板概览{% endblock %}
 
-                    </td>
-                    <td>{{ zbk.y1zb }}</td>
-                    <td>{{ zbk.y2zb }}</td>
-                    <td>{{ zbk.y3zb }}</td>
-                    <td>{{ zbk.y4zb }}</td>
-                    <td>{{ zbk.y5zb }}</td>
-                    <td>{{ zbk.y6zb }}</td>
-                    <td>{{ zbk.jzz }}</td>
-                    <td>{{ zbk.tzz }}</td>
-                    <td class="action-buttons">
-                        <a href="/edit/{{ zbk.xh }}" class="btn btn-info">编辑</a>
-                        <a href="javascript:void(0)" onclick="confirmDelete({{ zbk.xh }})" class="btn btn-danger">删除</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+{% block breadcrumb %}
+    <li><span class="text-primary-600">首页</span></li>
+{% endblock %}
+
+{% block page_actions %}
+    <div class="flex items-center space-x-3">
+        <button class="p-2 text-gray-400 hover:text-gray-500 rounded-md hover:bg-gray-100 transition-colors duration-200" data-tooltip="刷新数据">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+        </button>
+    </div>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- 欢迎区域 -->
+    <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg shadow-sm">
+        <div class="dashboard-welcome px-6 py-8 text-white">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+                <div class="mb-4 lg:mb-0">
+                    <h1 class="text-2xl lg:text-2xl font-bold mb-2">网络视界指标管理系统</h1>
+                    <p class="text-blue-100">企业级指标监控、分析和管理平台</p>
+                    <div class="dashboard-stats mt-4 flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-2 sm:space-y-0">
+                        <div class="flex items-center">
+                            <div class="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
+                            <span class="text-sm">系统运行正常</span>
+                        </div>
+                        <div class="text-sm" id="last-update">数据更新时间: 加载中...</div>
+                    </div>
+                </div>
+                <div class="mobile-hidden lg:block">
+                    <div class="text-center">
+                        <div class="text-3xl font-bold mb-1" id="health-score">--</div>
+                        <div class="text-sm text-blue-200" id="health-level">系统健康度</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 关键指标概览 -->
+    <div class="dashboard-grid dashboard-grid-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- PUE指标卡片 -->
+        <div class="bg-white rounded-lg shadow-sm stat-card p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">PUE当前值</h3>
+                    <div class="mt-2">
+                        <div class="stat-number text-gray-900" id="pue-current">--</div>
+                        <div class="flex items-center mt-1">
+                            <span class="text-sm text-gray-500">环比</span>
+                            <span class="ml-1 text-sm" id="pue-change">--</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex-shrink-0">
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4">
+                <div class="text-xs text-gray-500" id="pue-status">状态评估</div>
+            </div>
+        </div>
+
+        <!-- 故障统计卡片 -->
+        <div class="bg-white rounded-lg shadow-sm stat-card p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">今日故障</h3>
+                    <div class="mt-2">
+                        <div class="stat-number text-gray-900" id="fault-today">--</div>
+                        <div class="flex items-center mt-1">
+                            <span class="text-sm text-gray-500">本周</span>
+                            <span class="ml-1 text-sm text-gray-500" id="fault-week">--</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex-shrink-0">
+                    <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4">
+                <div class="text-xs text-gray-500" id="fault-status">运行状态</div>
+            </div>
+        </div>
+
+        <!-- 网络状态卡片 -->
+        <div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">网络在线率</h3>
+                    <div class="mt-2">
+                        <div class="text-2xl font-bold text-gray-900" id="network-rate">--</div>
+                        <div class="flex items-center mt-1">
+                            <span class="text-sm text-gray-500">记录数</span>
+                            <span class="ml-1 text-sm text-gray-500" id="network-records">--</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex-shrink-0">
+                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4">
+                <div class="text-xs text-gray-500" id="network-status">连接状态</div>
+            </div>
+        </div>
+
+        <!-- 数据统计卡片 -->
+        <div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">数据更新</h3>
+                    <div class="mt-2">
+                        <div class="text-lg font-bold text-gray-900">实时</div>
+                        <div class="flex items-center mt-1">
+                            <span class="text-sm text-gray-500">自动刷新</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex-shrink-0">
+                    <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4">
+                <button onclick="refreshDashboard()" class="text-xs text-purple-600 hover:text-purple-700">立即刷新</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 数据趋势图表区 -->
+    <div class="dashboard-grid dashboard-grid-2-lg grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- PUE趋势图 -->
+        <div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
+                <h3 class="text-lg font-medium text-gray-900 mb-2 sm:mb-0">PUE趋势分析</h3>
+                <div class="text-sm text-gray-500">最近6个月</div>
+            </div>
+            <div id="pue-trend-chart" class="chart-responsive">加载中...</div>
+        </div>
+
+        <!-- 故障分布图 -->
+        <div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
+                <h3 class="text-lg font-medium text-gray-900 mb-2 sm:mb-0">故障类型分布</h3>
+                <div class="text-sm text-gray-500">最近30天</div>
+            </div>
+            <div id="fault-chart" class="chart-responsive">加载中...</div>
+        </div>
+    </div>
+
+    <!-- 告警与通知 -->
+    <div class="bg-white rounded-lg shadow-sm p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-medium text-gray-900">最新告警</h3>
+            <a href="/fault/dashboard" class="text-sm text-blue-600 hover:text-blue-700">查看全部 →</a>
+        </div>
+        <div id="alerts-container">
+            <div class="text-gray-500 text-center py-8">加载告警信息中...</div>
+        </div>
+    </div>
+
+    <!-- 主要功能区域 -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- 快速操作 -->
+        <div class="bg-white rounded-lg shadow-sm p-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">快速操作</h3>
+            <div class="space-y-3">
+                <a href="/add_pue_data" class="flex items-center p-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-50 hover:text-primary-600 transition-colors duration-200 group">
+                    <div class="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200">
+                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                    </div>
+                    <span class="ml-3">添加PUE数据</span>
+                </a>
+                
+                <a href="/fault/data" class="flex items-center p-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-50 hover:text-primary-600 transition-colors duration-200 group">
+                    <div class="flex-shrink-0 w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center group-hover:bg-red-200">
+                        <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                        </svg>
+                    </div>
+                    <span class="ml-3">报告故障</span>
+                </a>
+                
+                <a href="/huiju/data" class="flex items-center p-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-50 hover:text-primary-600 transition-colors duration-200 group">
+                    <div class="flex-shrink-0 w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200">
+                        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                        </svg>
+                    </div>
+                    <span class="ml-3">网络数据</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- 大屏预览 -->
+        <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">契约化指标大屏</h3>
+                </div>
+                <div class="p-6">
+                    <div class="aspect-video bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg flex items-center justify-center">
+                        <div class="text-center">
+                            <svg class="w-16 h-16 text-blue-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                            </svg>
+                            <p class="text-gray-600">契约化指标可视化大屏</p>
+                            <a href="/bi" target="_blank" class="mt-2 inline-flex items-center text-primary-600 hover:text-primary-700">
+                                查看大屏 →
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">KPI指标大屏</h3>
+                </div>
+                <div class="p-6">
+                    <div class="aspect-video bg-gradient-to-br from-green-50 to-emerald-100 rounded-lg flex items-center justify-center">
+                        <div class="text-center">
+                            <svg class="w-16 h-16 text-green-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            <p class="text-gray-600">KPI指标可视化大屏</p>
+                            <a href="/bi2" target="_blank" class="mt-2 inline-flex items-center text-primary-600 hover:text-primary-700">
+                                查看大屏 →
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 快速链接 -->
+    <div class="bg-white rounded-lg shadow-sm p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">快速访问</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <a href="/pue_data" class="flex flex-col items-center p-4 text-center rounded-lg hover:bg-gray-50 transition-colors duration-200 group">
+                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 mb-3">
+                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                </div>
+                <span class="text-sm font-medium text-gray-900">PUE管理</span>
+            </a>
+            
+            <a href="/fault/dashboard" class="flex flex-col items-center p-4 text-center rounded-lg hover:bg-gray-50 transition-colors duration-200 group">
+                <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center group-hover:bg-red-200 mb-3">
+                    <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                    </svg>
+                </div>
+                <span class="text-sm font-medium text-gray-900">故障分析</span>
+            </a>
+            
+            <a href="/huiju/analyze" class="flex flex-col items-center p-4 text-center rounded-lg hover:bg-gray-50 transition-colors duration-200 group">
+                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 mb-3">
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                </svg>
+            </div>
+            <span class="text-sm font-medium text-gray-900">网络监控</span>
+        </a>
+        
+        <a href="/kpi_indicators" class="flex flex-col items-center p-4 text-center rounded-lg hover:bg-gray-50 transition-colors duration-200 group">
+            <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center group-hover:bg-yellow-200 mb-3">
+                <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+            </div>
+            <span class="text-sm font-medium text-gray-900">KPI指标</span>
+        </a>
+        
+        <a href="/tools/monitor/dashboard" class="flex flex-col items-center p-4 text-center rounded-lg hover:bg-gray-50 transition-colors duration-200 group">
+            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center group-hover:bg-purple-200 mb-3">
+                <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                </svg>
+            </div>
+            <span class="text-sm font-medium text-gray-900">系统监控</span>
+        </a>
+        
+        <a href="/contract_indicators" class="flex flex-col items-center p-4 text-center rounded-lg hover:bg-gray-50 transition-colors duration-200 group">
+            <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center group-hover:bg-indigo-200 mb-3">
+                <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+            </div>
+            <span class="text-sm font-medium text-gray-900">契约指标</span>
+        </a>
+    </div>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
+<!-- ECharts库 -->
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.0/dist/echarts.min.js"></script>
+
 <script>
-    function confirmDelete(id) {
-        if (confirm('确定要删除这条指标记录吗？此操作不可恢复。')) {
-            window.location.href = '/delete/' + id;
-        }
+// 全局变量
+let pueChart = null;
+let faultChart = null;
+let refreshInterval = null;
+
+// 页面加载完成后初始化
+document.addEventListener('DOMContentLoaded', function() {
+    initDashboard();
+    startAutoRefresh();
+});
+
+// 初始化仪表板
+async function initDashboard() {
+    try {
+        await loadDashboardData();
+        await loadTrendData();
+        await loadAlerts();
+    } catch (error) {
+        console.error('初始化仪表板失败:', error);
+        showError('仪表板初始化失败，请刷新页面重试');
     }
+}
+
+// 加载仪表板汇总数据
+async function loadDashboardData() {
+    try {
+        const response = await fetch('/api/dashboard/summary');
+        const result = await response.json();
+        
+        if (result.success) {
+            const data = result.data;
+            updateSummaryCards(data);
+        } else {
+            throw new Error(result.message || '获取数据失败');
+        }
+    } catch (error) {
+        console.error('加载仪表板数据失败:', error);
+        updateSummaryCards(null);
+    }
+}
+
+// 更新汇总卡片数据
+function updateSummaryCards(data) {
+    if (!data) {
+        // 显示错误状态
+        document.getElementById('health-score').textContent = '--';
+        document.getElementById('health-level').textContent = '数据加载失败';
+        document.getElementById('pue-current').textContent = '--';
+        document.getElementById('pue-change').textContent = '--';
+        document.getElementById('fault-today').textContent = '--';
+        document.getElementById('fault-week').textContent = '--';
+        document.getElementById('network-rate').textContent = '--';
+        document.getElementById('network-records').textContent = '--';
+        document.getElementById('last-update').textContent = '更新失败';
+        return;
+    }
+
+    // 更新健康度评分
+    const healthScore = data.health_score;
+    document.getElementById('health-score').textContent = healthScore.score;
+    document.getElementById('health-level').textContent = healthScore.level;
+    document.getElementById('health-score').style.color = getHealthColor(healthScore.color);
+
+    // 更新PUE数据
+    const pueStats = data.pue_stats;
+    document.getElementById('pue-current').textContent = pueStats.latest_value;
+    const changeText = pueStats.change_rate > 0 ? `+${pueStats.change_rate}%` : `${pueStats.change_rate}%`;
+    const changeColor = pueStats.change_rate > 0 ? 'text-red-500' : 'text-green-500';
+    document.getElementById('pue-change').innerHTML = `<span class="${changeColor}">${changeText}</span>`;
+    document.getElementById('pue-status').textContent = `状态: ${pueStats.status}`;
+
+    // 更新故障数据
+    const faultStats = data.fault_stats;
+    document.getElementById('fault-today').textContent = faultStats.today;
+    document.getElementById('fault-week').textContent = faultStats.week;
+    document.getElementById('fault-status').textContent = `运行状态: ${faultStats.status}`;
+
+    // 更新网络数据
+    const networkStats = data.network_stats;
+    document.getElementById('network-rate').textContent = `${networkStats.online_rate}%`;
+    document.getElementById('network-records').textContent = networkStats.total_records;
+    document.getElementById('network-status').textContent = `连接状态: ${networkStats.status}`;
+
+    // 更新时间
+    const updateTime = new Date(data.last_updated).toLocaleString('zh-CN');
+    document.getElementById('last-update').textContent = `数据更新时间: ${updateTime}`;
+}
+
+// 获取健康度颜色
+function getHealthColor(color) {
+    const colorMap = {
+        'green': '#10B981',
+        'blue': '#3B82F6',
+        'yellow': '#F59E0B',
+        'orange': '#F97316',
+        'red': '#EF4444',
+        'gray': '#6B7280'
+    };
+    return colorMap[color] || '#6B7280';
+}
+
+// 加载趋势数据并绘制图表
+async function loadTrendData() {
+    try {
+        // 加载PUE趋势数据
+        const pueResponse = await fetch('/api/dashboard/trend/pue?months=6');
+        const pueResult = await pueResponse.json();
+        
+        if (pueResult.success) {
+            initPueChart(pueResult.data);
+        }
+
+        // 加载故障分布数据（从汇总数据中获取）
+        const summaryResponse = await fetch('/api/dashboard/summary');
+        const summaryResult = await summaryResponse.json();
+        
+        if (summaryResult.success) {
+            const faultTypes = summaryResult.data.fault_stats.types_distribution;
+            initFaultChart(faultTypes);
+        }
+    } catch (error) {
+        console.error('加载趋势数据失败:', error);
+    }
+}
+
+// 初始化PUE趋势图表
+function initPueChart(data) {
+    const chartDom = document.getElementById('pue-trend-chart');
+    if (!chartDom) return;
+    
+    pueChart = echarts.init(chartDom);
+    
+    if (!data || data.length === 0) {
+        const option = {
+            title: {
+                text: '暂无PUE数据',
+                left: 'center',
+                top: 'middle',
+                textStyle: {
+                    color: '#9CA3AF',
+                    fontSize: 14
+                }
+            }
+        };
+        pueChart.setOption(option);
+        return;
+    }
+    
+    const months = data.map(item => item.month);
+    const values = data.map(item => item.value);
+
+    const option = {
+        tooltip: {
+            trigger: 'axis',
+            formatter: 'PUE值: {c}',
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            borderColor: '#E5E7EB',
+            borderWidth: 1,
+            textStyle: {
+                color: '#374151'
+            }
+        },
+        grid: {
+            left: '3%',
+            right: '4%',
+            bottom: '8%',
+            top: '5%',
+            containLabel: true
+        },
+        xAxis: {
+            type: 'category',
+            data: months,
+            axisLine: {
+                lineStyle: {
+                    color: '#E5E7EB'
+                }
+            },
+            axisLabel: {
+                color: '#6B7280',
+                fontSize: 12
+            },
+            axisTick: {
+                show: false
+            }
+        },
+        yAxis: {
+            type: 'value',
+            axisLine: {
+                show: false
+            },
+            axisTick: {
+                show: false
+            },
+            axisLabel: {
+                color: '#6B7280',
+                fontSize: 12
+            },
+            splitLine: {
+                lineStyle: {
+                    color: '#F3F4F6'
+                }
+            }
+        },
+        series: [{
+            data: values,
+            type: 'line',
+            smooth: true,
+            symbol: 'circle',
+            symbolSize: 6,
+            lineStyle: {
+                color: '#3B82F6',
+                width: 3
+            },
+            itemStyle: {
+                color: '#3B82F6'
+            },
+            areaStyle: {
+                color: {
+                    type: 'linear',
+                    x: 0,
+                    y: 0,
+                    x2: 0,
+                    y2: 1,
+                    colorStops: [{
+                        offset: 0, color: 'rgba(59, 130, 246, 0.3)'
+                    }, {
+                        offset: 1, color: 'rgba(59, 130, 246, 0.05)'
+                    }]
+                }
+            }
+        }]
+    };
+
+    pueChart.setOption(option);
+    
+    // 确保图表能够响应容器大小变化
+    setTimeout(() => {
+        if (pueChart) {
+            pueChart.resize();
+        }
+    }, 100);
+}
+
+// 初始化故障分布图表
+function initFaultChart(data) {
+    const chartDom = document.getElementById('fault-chart');
+    if (!chartDom) return;
+    
+    faultChart = echarts.init(chartDom);
+    
+    if (!data || data.length === 0) {
+        const option = {
+            title: {
+                text: '暂无故障数据',
+                left: 'center',
+                top: 'middle',
+                textStyle: {
+                    color: '#9CA3AF',
+                    fontSize: 14
+                }
+            }
+        };
+        faultChart.setOption(option);
+        return;
+    }
+
+    // 检查屏幕宽度决定图表布局
+    const isMobile = window.innerWidth < 768;
+    
+    const option = {
+        tooltip: {
+            trigger: 'item',
+            formatter: '{b}: {c} ({d}%)',
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            borderColor: '#E5E7EB',
+            borderWidth: 1,
+            textStyle: {
+                color: '#374151'
+            }
+        },
+        legend: {
+            orient: isMobile ? 'horizontal' : 'vertical',
+            left: isMobile ? 'center' : 'right',
+            top: isMobile ? 'bottom' : 'center',
+            bottom: isMobile ? '5%' : 'auto',
+            textStyle: {
+                color: '#6B7280',
+                fontSize: 12
+            },
+            itemWidth: 14,
+            itemHeight: 14
+        },
+        series: [{
+            type: 'pie',
+            radius: isMobile ? ['30%', '60%'] : ['40%', '70%'],
+            center: isMobile ? ['50%', '40%'] : ['40%', '50%'],
+            data: data.map(item => ({
+                value: item.count,
+                name: item.type
+            })),
+            emphasis: {
+                itemStyle: {
+                    shadowBlur: 10,
+                    shadowOffsetX: 0,
+                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                }
+            },
+            itemStyle: {
+                borderRadius: 4,
+                borderColor: '#fff',
+                borderWidth: 2
+            },
+            label: {
+                show: !isMobile,
+                fontSize: 12,
+                color: '#6B7280'
+            },
+            labelLine: {
+                show: !isMobile
+            }
+        }],
+        color: ['#EF4444', '#F97316', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6']
+    };
+
+    faultChart.setOption(option);
+    
+    // 确保图表能够响应容器大小变化
+    setTimeout(() => {
+        if (faultChart) {
+            faultChart.resize();
+        }
+    }, 100);
+}
+
+// 加载告警信息
+async function loadAlerts() {
+    try {
+        const response = await fetch('/api/dashboard/alerts?limit=5');
+        const result = await response.json();
+        
+        if (result.success) {
+            displayAlerts(result.data);
+        } else {
+            throw new Error(result.message || '获取告警失败');
+        }
+    } catch (error) {
+        console.error('加载告警失败:', error);
+        displayAlerts([]);
+    }
+}
+
+// 显示告警信息
+function displayAlerts(alerts) {
+    const container = document.getElementById('alerts-container');
+    
+    if (!alerts || alerts.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-8">
+                <svg class="w-12 h-12 text-green-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <p class="text-gray-500">暂无告警信息</p>
+                <p class="text-sm text-gray-400 mt-1">系统运行正常</p>
+            </div>
+        `;
+        return;
+    }
+
+    const alertsHtml = alerts.map(alert => {
+        const levelColor = alert.level === '高' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800';
+        const timeAgo = getTimeAgo(alert.time);
+        
+        return `
+            <div class="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg">
+                <div class="flex-shrink-0">
+                    <div class="w-2 h-2 ${alert.level === '高' ? 'bg-red-400' : 'bg-yellow-400'} rounded-full mt-2"></div>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-900">${alert.message}</p>
+                    <div class="flex items-center mt-1">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${levelColor}">
+                            ${alert.level}级
+                        </span>
+                        <span class="ml-2 text-xs text-gray-500">${timeAgo}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = alertsHtml;
+}
+
+// 计算时间差
+function getTimeAgo(timeString) {
+    if (!timeString) return '未知';
+    
+    const now = new Date();
+    const time = new Date(timeString);
+    const diff = Math.floor((now - time) / 1000);
+    
+    if (diff < 60) return '刚刚';
+    if (diff < 3600) return `${Math.floor(diff / 60)}分钟前`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}小时前`;
+    return `${Math.floor(diff / 86400)}天前`;
+}
+
+// 手动刷新仪表板
+async function refreshDashboard() {
+    const button = event.target;
+    button.textContent = '刷新中...';
+    button.disabled = true;
+    
+    try {
+        await initDashboard();
+        button.textContent = '刷新完成';
+        setTimeout(() => {
+            button.textContent = '立即刷新';
+            button.disabled = false;
+        }, 1000);
+    } catch (error) {
+        button.textContent = '刷新失败';
+        setTimeout(() => {
+            button.textContent = '立即刷新';
+            button.disabled = false;
+        }, 2000);
+    }
+}
+
+// 启动自动刷新
+function startAutoRefresh() {
+    // 每5分钟自动刷新一次
+    refreshInterval = setInterval(async () => {
+        try {
+            await loadDashboardData();
+            console.log('自动刷新完成');
+        } catch (error) {
+            console.error('自动刷新失败:', error);
+        }
+    }, 5 * 60 * 1000);
+}
+
+// 停止自动刷新
+function stopAutoRefresh() {
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+        refreshInterval = null;
+    }
+}
+
+// 显示错误信息
+function showError(message) {
+    console.error(message);
+    // 可以在这里添加用户友好的错误提示
+}
+
+// 页面卸载时清理资源
+window.addEventListener('beforeunload', function() {
+    stopAutoRefresh();
+    if (pueChart) {
+        pueChart.dispose();
+    }
+    if (faultChart) {
+        faultChart.dispose();
+    }
+});
+
+// 窗口大小改变时重新调整图表
+window.addEventListener('resize', function() {
+    if (pueChart) {
+        pueChart.resize();
+    }
+    if (faultChart) {
+        faultChart.resize();
+    }
+});
+
+// 兼容原有功能
+function confirmDelete(id) {
+    if (confirm('确定要删除这条指标记录吗？此操作不可恢复。')) {
+        window.location.href = '/delete/' + id;
+    }
+}
 </script>  
 {% endblock %}

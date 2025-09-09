@@ -1,0 +1,310 @@
+/* Tailwind Custom Styles */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* 基础样式重置 */
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    background-color: #f8fafc;
+}
+
+/* 自定义组件样式 */
+.sidebar-nav-item {
+    @apply relative flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200;
+}
+
+.sidebar-nav-item:hover {
+    @apply bg-gray-50 text-gray-900;
+}
+
+.sidebar-nav-item.active {
+    @apply bg-primary-50 text-primary-700 border-r-2 border-primary-500;
+}
+
+.sidebar-submenu-item {
+    @apply relative flex items-center pl-12 pr-3 py-2 text-sm text-gray-600 rounded-md transition-colors duration-200;
+}
+
+.sidebar-submenu-item:hover {
+    @apply bg-gray-50 text-gray-900;
+}
+
+.sidebar-submenu-item.active {
+    @apply text-primary-600 bg-primary-50;
+}
+
+/* 三级菜单样式 */
+.sidebar-submenu-item-nested {
+    @apply relative flex items-center pl-16 pr-3 py-2 text-sm text-gray-600 rounded-md transition-colors duration-200;
+}
+
+.sidebar-submenu-item-nested:hover {
+    @apply bg-gray-50 text-gray-900;
+}
+
+.sidebar-submenu-item-nested.active {
+    @apply text-primary-600 bg-primary-50;
+}
+
+/* 卡片阴影效果 */
+.card-shadow {
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
+/* 表格样式 */
+.table-auto {
+    @apply w-full text-sm text-left text-gray-500;
+}
+
+.table-auto thead {
+    @apply text-xs text-gray-700 uppercase bg-gray-50;
+}
+
+.table-auto thead th {
+    @apply px-6 py-3 font-medium;
+}
+
+.table-auto tbody tr {
+    @apply bg-white border-b hover:bg-gray-50 transition-colors duration-200;
+}
+
+.table-auto tbody td {
+    @apply px-6 py-4 whitespace-nowrap;
+}
+
+/* 按钮样式增强 */
+.btn-primary {
+    @apply inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-transparent rounded-md shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200;
+}
+
+.btn-secondary {
+    @apply inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200;
+}
+
+.btn-danger {
+    @apply inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200;
+}
+
+.btn-success {
+    @apply inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200;
+}
+
+/* 表单控件样式 */
+.form-input {
+    @apply block w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200;
+}
+
+.form-select {
+    @apply block w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200;
+}
+
+.form-textarea {
+    @apply block w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 resize-none;
+}
+
+/* 状态指示器 */
+.status-indicator {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.status-success {
+    @apply bg-green-100 text-green-800;
+}
+
+.status-warning {
+    @apply bg-yellow-100 text-yellow-800;
+}
+
+.status-error {
+    @apply bg-red-100 text-red-800;
+}
+
+.status-info {
+    @apply bg-blue-100 text-blue-800;
+}
+
+/* 数据可视化容器 */
+.chart-container {
+    @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6;
+}
+
+/* 响应式网格 */
+.dashboard-grid {
+    @apply grid gap-6;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+/* 加载动画 */
+.loading-spinner {
+    @apply inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600;
+}
+
+/* 自定义滚动条 */
+.custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.5);
+    border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(156, 163, 175, 0.8);
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+    .sidebar-nav-item {
+        @apply px-2 py-1.5 text-xs;
+    }
+    
+    .sidebar-submenu-item {
+        @apply pl-8 pr-2 py-1.5 text-xs;
+    }
+}
+
+/* 兼容旧页面样式 - 让现有页面在Tailwind下正常显示 */
+.card {
+    @apply bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-6;
+}
+
+.card-title {
+    @apply text-lg font-medium text-gray-900 px-6 py-4 border-b border-gray-200 bg-gray-50;
+}
+
+.data-table-container {
+    @apply overflow-x-auto border border-gray-200 rounded-lg;
+}
+
+.data-table {
+    @apply w-full text-sm text-left text-gray-500;
+}
+
+.data-table thead {
+    @apply text-xs text-gray-700 uppercase bg-gray-50;
+}
+
+.data-table thead th {
+    @apply px-6 py-3 font-medium border-b border-gray-200;
+}
+
+.data-table tbody tr {
+    @apply bg-white border-b border-gray-200 hover:bg-gray-50 transition-colors duration-200;
+}
+
+.data-table tbody td {
+    @apply px-6 py-4;
+}
+
+.sticky-header {
+    @apply sticky top-0 bg-gray-50 z-10;
+}
+
+.action-bar {
+    @apply flex items-center justify-between mb-4 px-6 py-3 bg-gray-50 border-b border-gray-200;
+}
+
+.btn {
+    @apply inline-flex items-center px-4 py-2 text-sm font-medium border border-transparent rounded-md shadow-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+}
+
+.btn-primary {
+    @apply text-white bg-primary-600 hover:bg-primary-700 focus:ring-primary-500;
+}
+
+.btn-secondary {
+    @apply text-gray-700 bg-white border-gray-300 hover:bg-gray-50 focus:ring-primary-500;
+}
+
+.btn-success {
+    @apply text-white bg-green-600 hover:bg-green-700 focus:ring-green-500;
+}
+
+.btn-danger {
+    @apply text-white bg-red-600 hover:bg-red-700 focus:ring-red-500;
+}
+
+.btn-info {
+    @apply text-white bg-blue-600 hover:bg-blue-700 focus:ring-blue-500;
+}
+
+.form-row {
+    @apply flex flex-wrap gap-4 mb-4;
+}
+
+.form-col {
+    @apply flex-1 min-w-0;
+}
+
+.form-group {
+    @apply mb-4;
+}
+
+.form-group label {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+}
+
+.form-control {
+    @apply block w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200;
+}
+
+.form-actions {
+    @apply flex items-center justify-end space-x-4 pt-4 border-t border-gray-200;
+}
+
+.action-buttons {
+    @apply flex items-center space-x-2;
+}
+
+.action-buttons .btn {
+    @apply px-3 py-1 text-xs;
+}
+
+.upload-area {
+    @apply border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary-500 hover:bg-primary-50 transition-colors duration-200 cursor-pointer;
+}
+
+.info-card {
+    @apply bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6;
+}
+
+.tabs {
+    @apply flex border-b border-gray-200 mb-6;
+}
+
+.tab {
+    @apply px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent cursor-pointer transition-colors duration-200;
+}
+
+.tab.active {
+    @apply text-primary-600 border-primary-500;
+}
+
+.tab-content {
+    @apply hidden;
+}
+
+.tab-content.active {
+    @apply block;
+}
+    
+    .sidebar-submenu-item {
+        @apply pl-8 pr-2 py-1.5 text-xs;
+    }
+}
