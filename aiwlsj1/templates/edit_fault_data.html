@@ -4,202 +4,149 @@
 
 {% block content %}
 <!-- 编辑故障数据卡片 -->
-<div class="card">
-    <h2 class="card-title">编辑故障数据</h2>
-    
-    <form method="post" action="{{ request.url_for('update_fault_data', fault_id=fault_record.id) }}" class="fault-form">
-        <div class="form-row">
-            <div class="form-group col-md-6">
-                <label for="sequence_no">序号</label>
-                <input type="number" class="form-control" id="sequence_no" name="sequence_no" 
-                       value="{{ fault_record.sequence_no or '' }}" required>
+<div class="bg-white rounded-xl shadow-sm border border-gray-200">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h2 class="text-xl font-semibold text-gray-900">编辑故障数据</h2>
+    </div>
+    <div class="p-6">
+        <form method="post" action="{{ request.url_for('update_fault_data', fault_id=fault_record.id) }}" class="max-w-4xl">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="mb-4">
+                    <label for="sequence_no" class="block text-sm font-medium text-gray-700 mb-2">序号</label>
+                    <input type="number" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" id="sequence_no" name="sequence_no" 
+                           value="{{ fault_record.sequence_no or '' }}" required>
+                </div>
+                <div class="mb-4">
+                    <label for="fault_date" class="block text-sm font-medium text-gray-700 mb-2">故障日期</label>
+                    <input type="datetime-local" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" id="fault_date" name="fault_date" 
+                           value="{{ fault_record.fault_date.strftime('%Y-%m-%dT%H:%M') if fault_record.fault_date else '' }}" required>
+                </div>
             </div>
-            <div class="form-group col-md-6">
-                <label for="fault_date">故障日期</label>
-                <input type="datetime-local" class="form-control" id="fault_date" name="fault_date" 
-                       value="{{ fault_record.fault_date.strftime('%Y-%m-%dT%H:%M') if fault_record.fault_date else '' }}" required>
+
+            <div class="mb-4">
+                <label for="fault_name" class="block text-sm font-medium text-gray-700 mb-2">故障名称</label>
+                <input type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" id="fault_name" name="fault_name" 
+                       value="{{ fault_record.fault_name or '' }}" required>
             </div>
-        </div>
 
-        <div class="form-group">
-            <label for="fault_name">故障名称</label>
-            <input type="text" class="form-control" id="fault_name" name="fault_name" 
-                   value="{{ fault_record.fault_name or '' }}" required>
-        </div>
-
-        <div class="form-group">
-            <label for="province_cause_analysis">省-故障原因分析</label>
-            <textarea class="form-control" id="province_cause_analysis" name="province_cause_analysis" rows="3">{{ fault_record.province_cause_analysis or '' }}</textarea>
-        </div>
-
-        <div class="form-row">
-            <div class="form-group col-md-4">
-                <label for="province_cause_category">省-原因分类</label>
-                <input type="text" class="form-control" id="province_cause_category" name="province_cause_category"
-                       value="{{ fault_record.province_cause_category or '' }}">
+            <div class="mb-4">
+                <label for="province_cause_analysis" class="block text-sm font-medium text-gray-700 mb-2">省-故障原因分析</label>
+                <textarea class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" id="province_cause_analysis" name="province_cause_analysis" rows="3">{{ fault_record.province_cause_analysis or '' }}</textarea>
             </div>
-            <div class="form-group col-md-4">
-                <label for="province_fault_type">省-故障类型</label>
-                <select class="form-control" id="province_fault_type" name="province_fault_type">
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="mb-4">
+                    <label for="province_cause_category" class="block text-sm font-medium text-gray-700 mb-2">省-原因分类</label>
+                    <input type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" id="province_cause_category" name="province_cause_category"
+                           value="{{ fault_record.province_cause_category or '' }}">
+                </div>
+                <div class="mb-4">
+                    <label for="province_fault_type" class="block text-sm font-medium text-gray-700 mb-2">省-故障类型</label>
+                    <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" id="province_fault_type" name="province_fault_type">
+                        <option value="">请选择</option>
+                        <option value="无线退服" {{ 'selected' if fault_record.province_fault_type == '无线退服' else '' }}>无线退服</option>
+                        <option value="核心网故障" {{ 'selected' if fault_record.province_fault_type == '核心网故障' else '' }}>核心网故障</option>
+                        <option value="传输故障" {{ 'selected' if fault_record.province_fault_type == '传输故障' else '' }}>传输故障</option>
+                        <option value="电源故障" {{ 'selected' if fault_record.province_fault_type == '电源故障' else '' }}>电源故障</option>
+                        <option value="其他" {{ 'selected' if fault_record.province_fault_type == '其他' else '' }}>其他</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="notification_level" class="block text-sm font-medium text-gray-700 mb-2">通报级别</label>
+                    <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" id="notification_level" name="notification_level">
+                        <option value="">请选择</option>
+                        <option value="快讯" {{ 'selected' if fault_record.notification_level == '快讯' else '' }}>快讯</option>
+                        <option value="通报" {{ 'selected' if fault_record.notification_level == '通报' else '' }}>通报</option>
+                        <option value="重要" {{ 'selected' if fault_record.notification_level == '重要' else '' }}>重要</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="mb-4">
+                    <label for="cause_category" class="block text-sm font-medium text-gray-700 mb-2">原因分类</label>
+                    <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" id="cause_category" name="cause_category">
+                        <option value="">请选择</option>
+                        <option value="供电局停电" {{ 'selected' if fault_record.cause_category == '供电局停电' else '' }}>供电局停电</option>
+                        <option value="设备故障" {{ 'selected' if fault_record.cause_category == '设备故障' else '' }}>设备故障</option>
+                        <option value="人为因素" {{ 'selected' if fault_record.cause_category == '人为因素' else '' }}>人为因素</option>
+                        <option value="环境因素" {{ 'selected' if fault_record.cause_category == '环境因素' else '' }}>环境因素</option>
+                        <option value="其他" {{ 'selected' if fault_record.cause_category == '其他' else '' }}>其他</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="fault_duration_hours" class="block text-sm font-medium text-gray-700 mb-2">故障处理时长（小时）</label>
+                    <input type="number" step="0.1" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" id="fault_duration_hours" name="fault_duration_hours"
+                           value="{{ fault_record.fault_duration_hours or '' }}">
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label for="complaint_situation" class="block text-sm font-medium text-gray-700 mb-2">投诉情况</label>
+                <textarea class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" id="complaint_situation" name="complaint_situation" rows="2">{{ fault_record.complaint_situation or '' }}</textarea>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="mb-4">
+                    <label for="start_time" class="block text-sm font-medium text-gray-700 mb-2">发生时间</label>
+                    <input type="datetime-local" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" id="start_time" name="start_time"
+                           value="{{ fault_record.start_time.strftime('%Y-%m-%dT%H:%M') if fault_record.start_time else '' }}">
+                </div>
+                <div class="mb-4">
+                    <label for="end_time" class="block text-sm font-medium text-gray-700 mb-2">结束时间</label>
+                    <input type="datetime-local" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" id="end_time" name="end_time"
+                           value="{{ fault_record.end_time.strftime('%Y-%m-%dT%H:%M') if fault_record.end_time else '' }}">
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label for="fault_cause" class="block text-sm font-medium text-gray-700 mb-2">故障原因</label>
+                <textarea class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" id="fault_cause" name="fault_cause" rows="3">{{ fault_record.fault_cause or '' }}</textarea>
+            </div>
+
+            <div class="mb-4">
+                <label for="fault_handling" class="block text-sm font-medium text-gray-700 mb-2">故障处理</label>
+                <textarea class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" id="fault_handling" name="fault_handling" rows="3">{{ fault_record.fault_handling or '' }}</textarea>
+            </div>
+
+            <div class="mb-4">
+                <label for="is_proactive_discovery" class="block text-sm font-medium text-gray-700 mb-2">主动发现</label>
+                <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" id="is_proactive_discovery" name="is_proactive_discovery">
                     <option value="">请选择</option>
-                    <option value="无线退服" {{ 'selected' if fault_record.province_fault_type == '无线退服' else '' }}>无线退服</option>
-                    <option value="核心网故障" {{ 'selected' if fault_record.province_fault_type == '核心网故障' else '' }}>核心网故障</option>
-                    <option value="传输故障" {{ 'selected' if fault_record.province_fault_type == '传输故障' else '' }}>传输故障</option>
-                    <option value="电源故障" {{ 'selected' if fault_record.province_fault_type == '电源故障' else '' }}>电源故障</option>
-                    <option value="其他" {{ 'selected' if fault_record.province_fault_type == '其他' else '' }}>其他</option>
+                    <option value="是" {{ 'selected' if fault_record.is_proactive_discovery == '是' else '' }}>是</option>
+                    <option value="否" {{ 'selected' if fault_record.is_proactive_discovery == '否' else '' }}>否</option>
                 </select>
             </div>
-            <div class="form-group col-md-4">
-                <label for="notification_level">通报级别</label>
-                <select class="form-control" id="notification_level" name="notification_level">
-                    <option value="">请选择</option>
-                    <option value="快讯" {{ 'selected' if fault_record.notification_level == '快讯' else '' }}>快讯</option>
-                    <option value="通报" {{ 'selected' if fault_record.notification_level == '通报' else '' }}>通报</option>
-                    <option value="重要" {{ 'selected' if fault_record.notification_level == '重要' else '' }}>重要</option>
-                </select>
+
+            <div class="mb-4">
+                <label for="remarks" class="block text-sm font-medium text-gray-700 mb-2">备注</label>
+                <textarea class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" id="remarks" name="remarks" rows="2">{{ fault_record.remarks or '' }}</textarea>
             </div>
-        </div>
 
-        <div class="form-row">
-            <div class="form-group col-md-6">
-                <label for="cause_category">原因分类</label>
-                <select class="form-control" id="cause_category" name="cause_category">
-                    <option value="">请选择</option>
-                    <option value="供电局停电" {{ 'selected' if fault_record.cause_category == '供电局停电' else '' }}>供电局停电</option>
-                    <option value="设备故障" {{ 'selected' if fault_record.cause_category == '设备故障' else '' }}>设备故障</option>
-                    <option value="人为因素" {{ 'selected' if fault_record.cause_category == '人为因素' else '' }}>人为因素</option>
-                    <option value="环境因素" {{ 'selected' if fault_record.cause_category == '环境因素' else '' }}>环境因素</option>
-                    <option value="其他" {{ 'selected' if fault_record.cause_category == '其他' else '' }}>其他</option>
-                </select>
+            <div class="mt-8 pt-6 border-t border-gray-200 flex flex-wrap gap-3">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">保存修改</button>
+                <a href="/fault/data" class="bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">取消</a>
+                <a href="/fault/view_fault_data/{{ fault_record.id }}" class="bg-cyan-600 hover:bg-cyan-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">查看详情</a>
             </div>
-            <div class="form-group col-md-6">
-                <label for="fault_duration_hours">故障处理时长（小时）</label>
-                <input type="number" step="0.1" class="form-control" id="fault_duration_hours" name="fault_duration_hours"
-                       value="{{ fault_record.fault_duration_hours or '' }}">
-            </div>
-        </div>
-
-        <div class="form-group">
-            <label for="complaint_situation">投诉情况</label>
-            <textarea class="form-control" id="complaint_situation" name="complaint_situation" rows="2">{{ fault_record.complaint_situation or '' }}</textarea>
-        </div>
-
-        <div class="form-row">
-            <div class="form-group col-md-6">
-                <label for="start_time">发生时间</label>
-                <input type="datetime-local" class="form-control" id="start_time" name="start_time"
-                       value="{{ fault_record.start_time.strftime('%Y-%m-%dT%H:%M') if fault_record.start_time else '' }}">
-            </div>
-            <div class="form-group col-md-6">
-                <label for="end_time">结束时间</label>
-                <input type="datetime-local" class="form-control" id="end_time" name="end_time"
-                       value="{{ fault_record.end_time.strftime('%Y-%m-%dT%H:%M') if fault_record.end_time else '' }}">
-            </div>
-        </div>
-
-        <div class="form-group">
-            <label for="fault_cause">故障原因</label>
-            <textarea class="form-control" id="fault_cause" name="fault_cause" rows="3">{{ fault_record.fault_cause or '' }}</textarea>
-        </div>
-
-        <div class="form-group">
-            <label for="fault_handling">故障处理</label>
-            <textarea class="form-control" id="fault_handling" name="fault_handling" rows="3">{{ fault_record.fault_handling or '' }}</textarea>
-        </div>
-
-        <div class="form-group">
-            <label for="is_proactive_discovery">主动发现</label>
-            <select class="form-control" id="is_proactive_discovery" name="is_proactive_discovery">
-                <option value="">请选择</option>
-                <option value="是" {{ 'selected' if fault_record.is_proactive_discovery == '是' else '' }}>是</option>
-                <option value="否" {{ 'selected' if fault_record.is_proactive_discovery == '否' else '' }}>否</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label for="remarks">备注</label>
-            <textarea class="form-control" id="remarks" name="remarks" rows="2">{{ fault_record.remarks or '' }}</textarea>
-        </div>
-
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary">保存修改</button>
-            <a href="/fault/data" class="btn btn-secondary">取消</a>
-            <a href="/fault/view_fault_data/{{ fault_record.id }}" class="btn btn-info">查看详情</a>
-        </div>
-    </form>
+        </form>
+    </div>
 </div>
 
+<!-- 移动端响应式调整样式 -->
 <style>
-.fault-form {
-    max-width: 800px;
-}
-
-.form-row {
-    display: flex;
-    flex-wrap: wrap;
-    margin: 0 -15px;
-}
-
-.form-group {
-    margin-bottom: 1rem;
-}
-
-.col-md-4 {
-    flex: 0 0 33.333333%;
-    max-width: 33.333333%;
-    padding: 0 15px;
-}
-
-.col-md-6 {
-    flex: 0 0 50%;
-    max-width: 50%;
-    padding: 0 15px;
-}
-
-.form-control {
-    display: block;
-    width: 100%;
-    padding: 0.375rem 0.75rem;
-    font-size: 1rem;
-    line-height: 1.5;
-    color: #495057;
-    background-color: #fff;
-    background-clip: padding-box;
-    border: 1px solid #ced4da;
-    border-radius: 0.25rem;
-    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-}
-
-.form-control:focus {
-    color: #495057;
-    background-color: #fff;
-    border-color: #80bdff;
-    outline: 0;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-}
-
-label {
-    display: inline-block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-    color: #333;
-}
-
-.form-actions {
-    margin-top: 2rem;
-    padding-top: 1rem;
-    border-top: 1px solid #dee2e6;
-}
-
-.form-actions .btn {
-    margin-right: 10px;
-}
-
 @media (max-width: 768px) {
-    .col-md-4,
-    .col-md-6 {
-        flex: 0 0 100%;
-        max-width: 100%;
+    .grid.grid-cols-1.md\\:grid-cols-2.gap-4,
+    .grid.grid-cols-1.md\\:grid-cols-3.gap-4 {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .flex.flex-wrap.gap-3 {
+        flex-direction: column;
+    }
+    
+    .flex.flex-wrap.gap-3 > * {
+        width: 100%;
+        text-align: center;
     }
 }
 </style>

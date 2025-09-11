@@ -1,0 +1,643 @@
+{% extends "base.html" %}
+
+{% block title %}批量导入故障数据 - 网络视界指标后台管理{% endblock %}
+
+{% block content %}
+<!-- 批量导入卡片 -->
+<div class="card">
+    <h2 class="card-title">批量导入故障数据</h2>
+    
+    <!-- 文件上传区域 -->
+    <div class="upload-section">
+        <h3>选择文件</h3>
+        <form id="uploadForm" enctype="multipart/form-data" method="post" action="/fault/upload_fault_data">
+            <div class="file-upload-area">
+                <div class="upload-icon">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7,10 12,15 17,10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                </div>
+                <div class="upload-text">
+                    <p><strong>点击选择文件</strong> 或拖拽文件到此处</p>
+                    <p class="upload-hint">支持 .xlsx, .xls 格式，文件大小不超过 10MB</p>
+                </div>
+                <input type="file" id="fileInput" name="file" accept=".xlsx,.xls" style="display: none;">
+            </div>
+        </form>
+        
+        <!-- 文件信息显示 -->
+        <div id="fileInfo" class="file-info" style="display: none;">
+            <div class="file-details">
+                <span class="file-name"></span>
+                <span class="file-size"></span>
+            </div>
+            <button type="button" class="btn btn-danger btn-sm" onclick="clearFile()">移除</button>
+        </div>
+    </div>
+
+    <!-- 导入选项 -->
+    <div class="import-options">
+        <h3>导入选项</h3>
+        <div class="option-group">
+            <label class="checkbox-label">
+                <input type="checkbox" id="skipFirstRow" checked>
+                <span class="checkmark"></span>
+                跳过第一行（表头）
+            </label>
+        </div>
+        <div class="option-group">
+            <label class="checkbox-label">
+                <input type="checkbox" id="updateExisting">
+                <span class="checkmark"></span>
+                更新已存在的记录（根据序号匹配）
+            </label>
+        </div>
+        <div class="option-group">
+            <label class="checkbox-label">
+                <input type="checkbox" id="validateData" checked>
+                <span class="checkmark"></span>
+                数据验证（检查必填字段和数据格式）
+            </label>
+        </div>
+    </div>
+
+    <!-- 操作按钮 -->
+    <div class="action-bar">
+        <button type="button" id="importBtn" class="btn btn-primary" disabled>开始导入</button>
+        <button type="button" id="previewBtn" class="btn btn-secondary" disabled>预览数据</button>
+        <a href="/fault/data" class="btn btn-outline">返回数据管理</a>
+    </div>
+
+    <!-- 进度显示 -->
+    <div id="progressSection" class="progress-section" style="display: none;">
+        <h3>导入进度</h3>
+        <div class="progress-bar">
+            <div id="progressFill" class="progress-fill"></div>
+        </div>
+        <div id="progressText" class="progress-text">0%</div>
+        <div id="statusText" class="status-text">准备中...</div>
+    </div>
+
+    <!-- 结果显示 -->
+    <div id="resultSection" class="result-section" style="display: none;">
+        <h3>导入结果</h3>
+        <div id="resultContent"></div>
+    </div>
+</div>
+
+<!-- 导入说明卡片 -->
+<div class="card" style="margin-top: 20px;">
+    <h3>导入说明</h3>
+    <div class="import-instructions">
+        <h4>Excel文件格式要求：</h4>
+        <div class="instruction-grid">
+            <div class="instruction-item">
+                <strong>文件格式：</strong>
+                <span>.xlsx 或 .xls 格式</span>
+            </div>
+            <div class="instruction-item">
+                <strong>文件大小：</strong>
+                <span>不超过 10MB</span>
+            </div>
+            <div class="instruction-item">
+                <strong>表头行：</strong>
+                <span>第一行应为字段名称</span>
+            </div>
+            <div class="instruction-item">
+                <strong>日期格式：</strong>
+                <span>YYYY-MM-DD 或 YYYY/MM/DD</span>
+            </div>
+        </div>
+        
+        <h4>必填字段：</h4>
+        <div class="required-fields">
+            <span class="field-tag">序号</span>
+            <span class="field-tag">故障日期</span>
+            <span class="field-tag">故障名称</span>
+            <span class="field-tag">省-故障类型</span>
+            <span class="field-tag">原因分类</span>
+            <span class="field-tag">通报级别</span>
+        </div>
+        
+        <h4>可选字段：</h4>
+        <div class="optional-fields">
+            <span class="field-tag optional">省-故障原因分析</span>
+            <span class="field-tag optional">故障处理时长</span>
+            <span class="field-tag optional">投诉情况</span>
+            <span class="field-tag optional">发生时间</span>
+            <span class="field-tag optional">结束时间</span>
+            <span class="field-tag optional">故障原因</span>
+            <span class="field-tag optional">故障处理</span>
+            <span class="field-tag optional">主动发现</span>
+            <span class="field-tag optional">备注</span>
+        </div>
+    </div>
+</div>
+
+<style>
+/* 文件上传区域样式 */
+.upload-section {
+    margin-bottom: 30px;
+}
+
+.file-upload-area {
+    border: 2px dashed #d1d5db;
+    border-radius: 8px;
+    padding: 40px 20px;
+    text-align: center;
+    background: #f9fafb;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.file-upload-area:hover {
+    border-color: #3b82f6;
+    background: #eff6ff;
+}
+
+.file-upload-area.dragover {
+    border-color: #3b82f6;
+    background: #dbeafe;
+}
+
+.upload-icon {
+    color: #6b7280;
+    margin-bottom: 16px;
+}
+
+.upload-text p {
+    margin: 8px 0;
+    color: #374151;
+}
+
+.upload-hint {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+/* 文件信息显示 */
+.file-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #f3f4f6;
+    border-radius: 6px;
+    margin-top: 16px;
+}
+
+.file-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.file-name {
+    font-weight: 500;
+    color: #374151;
+}
+
+.file-size {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+/* 导入选项样式 */
+.import-options {
+    margin-bottom: 30px;
+}
+
+.option-group {
+    margin-bottom: 12px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: #374151;
+}
+
+.checkbox-label input[type="checkbox"] {
+    margin-right: 8px;
+    width: 16px;
+    height: 16px;
+}
+
+/* 进度条样式 */
+.progress-section {
+    margin-top: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 20px;
+    background: #e5e7eb;
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    text-align: center;
+    font-weight: 500;
+    color: #374151;
+}
+
+.status-text {
+    text-align: center;
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-top: 8px;
+}
+
+/* 结果显示样式 */
+.result-section {
+    margin-top: 30px;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.result-success {
+    background: #d1fae5;
+    border: 1px solid #a7f3d0;
+}
+
+.result-error {
+    background: #fee2e2;
+    border: 1px solid #fca5a5;
+}
+
+/* 导入说明样式 */
+.import-instructions {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 4px solid #007bff;
+}
+
+.instruction-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.instruction-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.instruction-item strong {
+    color: #374151;
+    font-size: 0.875rem;
+}
+
+.instruction-item span {
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
+/* 字段标签样式 */
+.required-fields,
+.optional-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.field-tag {
+    display: inline-block;
+    padding: 4px 8px;
+    background: #3b82f6;
+    color: white;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.field-tag.optional {
+    background: #6b7280;
+}
+
+/* 按钮样式 */
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-outline {
+    background: transparent;
+    border: 1px solid #d1d5db;
+    color: #374151;
+}
+
+.btn-outline:hover {
+    background: #f9fafb;
+}
+
+.btn-sm {
+    padding: 4px 8px;
+    font-size: 0.75rem;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .file-upload-area {
+        padding: 30px 15px;
+    }
+    
+    .instruction-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .required-fields,
+    .optional-fields {
+        justify-content: center;
+    }
+}
+</style>
+
+<script>
+// 文件上传功能
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('fileInput');
+    const uploadArea = document.querySelector('.file-upload-area');
+    const fileInfo = document.getElementById('fileInfo');
+    const importBtn = document.getElementById('importBtn');
+    const previewBtn = document.getElementById('previewBtn');
+    
+    // 点击上传区域选择文件
+    uploadArea.addEventListener('click', function() {
+        fileInput.click();
+    });
+    
+    // 文件选择处理
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            showFileInfo(file);
+            enableButtons();
+        }
+    });
+    
+    // 拖拽上传
+    uploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+    
+    uploadArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+    });
+    
+    uploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            const file = files[0];
+            if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                fileInput.files = files;
+                showFileInfo(file);
+                enableButtons();
+            } else {
+                alert('请选择 Excel 文件（.xlsx 或 .xls 格式）');
+            }
+        }
+    });
+    
+    // 显示文件信息
+    function showFileInfo(file) {
+        const fileName = fileInfo.querySelector('.file-name');
+        const fileSize = fileInfo.querySelector('.file-size');
+        
+        fileName.textContent = file.name;
+        fileSize.textContent = formatFileSize(file.size);
+        fileInfo.style.display = 'flex';
+    }
+    
+    // 启用按钮
+    function enableButtons() {
+        importBtn.disabled = false;
+        previewBtn.disabled = false;
+    }
+    
+    // 格式化文件大小
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    // 导入按钮点击事件
+    importBtn.addEventListener('click', function() {
+        if (!fileInput.files[0]) {
+            alert('请先选择文件');
+            return;
+        }
+        startImport();
+    });
+    
+    // 预览按钮点击事件
+    previewBtn.addEventListener('click', function() {
+        if (!fileInput.files[0]) {
+            alert('请先选择文件');
+            return;
+        }
+        previewData();
+    });
+    
+    // 开始导入
+    function startImport() {
+        const progressSection = document.getElementById('progressSection');
+        const resultSection = document.getElementById('resultSection');
+        const skipFirstRow = document.getElementById('skipFirstRow').checked;
+        
+        progressSection.style.display = 'block';
+        resultSection.style.display = 'none';
+        
+        // 实际上传文件
+        uploadFile(skipFirstRow);
+    }
+    
+    // 预览数据
+    function previewData() {
+        alert('预览功能开发中，敬请期待！');
+    }
+    
+    // 实际上传文件
+    async function uploadFile(skipFirstRow) {
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const statusText = document.getElementById('statusText');
+        const fileInput = document.getElementById('fileInput');
+        
+        try {
+            // 初始化进度
+            progressFill.style.width = '10%';
+            progressText.textContent = '10%';
+            statusText.textContent = '正在读取文件...';
+            
+            // 创建表单数据
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('skip_first_row', skipFirstRow);
+            
+            // 更新进度
+            progressFill.style.width = '30%';
+            progressText.textContent = '30%';
+            statusText.textContent = '正在上传文件...';
+            
+            // 发送请求
+            const response = await fetch('/fault/upload_fault_data', {
+                method: 'POST',
+                body: formData
+            });
+            
+            // 更新进度
+            progressFill.style.width = '70%';
+            progressText.textContent = '70%';
+            statusText.textContent = '正在处理数据...';
+            
+            const result = await response.json();
+            
+            // 完成进度
+            progressFill.style.width = '100%';
+            progressText.textContent = '100%';
+            statusText.textContent = '处理完成';
+            
+            // 显示结果
+            showResult(result);
+            
+        } catch (error) {
+            console.error('上传错误:', error);
+            showError('上传失败: ' + error.message);
+        }
+    }
+    
+    // 显示导入结果
+    function showResult(result) {
+        const resultSection = document.getElementById('resultSection');
+        const resultContent = document.getElementById('resultContent');
+        
+        if (result.success) {
+            resultContent.innerHTML = `
+                <div class="result-success">
+                    <h4>✅ 导入成功</h4>
+                    <p>${result.message}</p>
+                    <ul>
+                        <li>总记录数：<strong>${result.total_rows}</strong> 条</li>
+                        <li>成功导入：<strong>${result.success_count}</strong> 条记录</li>
+                        <li>失败记录：<strong>${result.error_count}</strong> 条记录</li>
+                        ${result.duplicate_count > 0 ? `<li>重复记录：<strong>${result.duplicate_count}</strong> 条记录</li>` : ''}
+                    </ul>
+                    ${result.errors && result.errors.length > 0 ? `
+                        <div style="margin-top: 16px;">
+                            <h5>错误详情：</h5>
+                            <ul style="color: #dc3545; font-size: 0.9em;">
+                                ${result.errors.map(error => `<li>${error}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                    <div style="margin-top: 16px;">
+                        <a href="/fault/data" class="btn btn-primary">查看导入数据</a>
+                        <button type="button" class="btn btn-secondary" onclick="resetForm()">继续导入</button>
+                    </div>
+                </div>
+            `;
+        } else {
+            resultContent.innerHTML = `
+                <div class="result-error">
+                    <h4>❌ 导入失败</h4>
+                    <p>${result.error || '未知错误'}</p>
+                    <div style="margin-top: 16px;">
+                        <button type="button" class="btn btn-secondary" onclick="resetForm()">重新尝试</button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        resultSection.style.display = 'block';
+    }
+
+    // 重置表单
+    function resetForm() {
+        // 重置文件输入
+        document.getElementById('fileInput').value = '';
+        
+        // 重置UI状态
+        const uploadArea = document.getElementById('uploadArea');
+        uploadArea.classList.remove('active');
+        uploadArea.querySelector('.upload-text').innerHTML = `
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p>点击选择文件或拖拽文件到此处</p>
+            <small>支持 .xlsx 和 .xls 格式</small>
+        `;
+        
+        // 隐藏进度条和结果
+        document.getElementById('progressSection').style.display = 'none';
+        document.getElementById('resultSection').style.display = 'none';
+        
+        // 重置进度条
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        progressBar.style.width = '0%';
+        progressText.textContent = '准备中...';
+        
+        // 显示导入按钮
+        document.getElementById('importBtn').style.display = 'inline-block';
+    }
+
+    // 清除文件
+    function clearFile() {
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const importBtn = document.getElementById('importBtn');
+        const previewBtn = document.getElementById('previewBtn');
+        
+        fileInput.value = '';
+        fileInfo.style.display = 'none';
+        importBtn.disabled = true;
+        previewBtn.disabled = true;
+    }
+
+    // 预览文件
+    function previewFile() {
+        alert('预览功能正在开发中...');
+    }
+
+});
+
+// 全局函数定义
+function clearFile() {
+    const fileInput = document.getElementById('fileInput');
+    const fileInfo = document.getElementById('fileInfo');
+    const importBtn = document.getElementById('importBtn');
+    const previewBtn = document.getElementById('previewBtn');
+    
+    fileInput.value = '';
+    fileInfo.style.display = 'none';
+    importBtn.disabled = true;
+    previewBtn.disabled = true;
+}
+</script>
+{% endblock %}

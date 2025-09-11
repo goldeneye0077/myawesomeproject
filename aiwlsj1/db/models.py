@@ -278,3 +278,96 @@ class SystemFaultLog(Base):
     occurred_at = Column(DateTime, default=datetime.utcnow, comment="故障发生时间")
     created_at = Column(DateTime, default=datetime.utcnow, comment="记录创建时间")
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment="更新时间")
+
+
+class PerformanceTarget(Base):
+    """绩效目标管理模型 - 用于存储各类指标的目标值和绩效目标"""
+    __tablename__ = "performance_target"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    
+    # 基本信息
+    target_name = Column(String(100), comment="目标名称")
+    target_category = Column(String(50), comment="目标分类: fault_resolution, availability, proactive_discovery, customer_satisfaction, system_performance")
+    description = Column(Text, comment="目标描述")
+    
+    # 目标值设置
+    target_value = Column(Float, comment="目标值")
+    unit = Column(String(20), comment="单位：分钟、小时、百分比、次数等")
+    target_type = Column(String(20), comment="目标类型: minimum(最小值), maximum(最大值), exact(精确值)")
+    
+    # 时间范围
+    effective_date = Column(DateTime, comment="生效日期")
+    expiry_date = Column(DateTime, comment="失效日期")
+    year = Column(Integer, comment="目标年份")
+    quarter = Column(String(10), comment="目标季度：Q1, Q2, Q3, Q4 或 ALL")
+    month = Column(String(10), comment="目标月份：01-12 或 ALL")
+    
+    # 状态和优先级
+    status = Column(String(20), default="active", comment="状态: active, inactive, archived")
+    priority = Column(String(20), default="medium", comment="优先级: high, medium, low")
+    
+    # 绩效评估相关
+    baseline_value = Column(Float, comment="基准值")
+    challenge_value = Column(Float, comment="挑战值")
+    warning_threshold = Column(Float, comment="预警阈值")
+    critical_threshold = Column(Float, comment="严重阈值")
+    
+    # 关联信息
+    related_metric = Column(String(100), comment="关联的指标项")
+    department = Column(String(100), comment="负责部门")
+    responsible_person = Column(String(100), comment="负责人")
+    
+    # 计算规则
+    calculation_rule = Column(Text, comment="计算规则和方式")
+    data_source = Column(String(100), comment="数据来源")
+    update_frequency = Column(String(50), comment="更新频率: daily, weekly, monthly, quarterly")
+    
+    # 附加信息
+    notes = Column(Text, comment="备注说明")
+    tags = Column(String(255), comment="标签，用逗号分隔")
+    
+    # 系统字段
+    created_by = Column(String(100), comment="创建者")
+    created_at = Column(DateTime, default=datetime.utcnow, comment="创建时间")
+    updated_by = Column(String(100), comment="最后更新者")
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment="更新时间")
+
+
+class PerformanceRecord(Base):
+    """绩效记录模型 - 用于记录实际绩效数据与目标对比"""
+    __tablename__ = "performance_record"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    
+    # 关联目标
+    target_id = Column(Integer, comment="关联的PerformanceTarget记录ID")
+    
+    # 记录信息
+    record_date = Column(DateTime, comment="记录日期")
+    actual_value = Column(Float, comment="实际值")
+    target_value = Column(Float, comment="当期目标值")
+    
+    # 绩效评估
+    achievement_rate = Column(Float, comment="达成率（百分比）")
+    performance_level = Column(String(20), comment="绩效等级: excellent, good, acceptable, poor, critical")
+    is_target_met = Column(String(10), comment="是否达成目标: yes, no")
+    deviation = Column(Float, comment="偏差值（实际值-目标值）")
+    deviation_percentage = Column(Float, comment="偏差百分比")
+    
+    # 分析信息
+    analysis_notes = Column(Text, comment="分析说明")
+    improvement_actions = Column(Text, comment="改进措施")
+    risk_level = Column(String(20), comment="风险等级: low, medium, high, critical")
+    
+    # 时间维度
+    year = Column(Integer, comment="年份")
+    quarter = Column(String(10), comment="季度")
+    month = Column(String(10), comment="月份")
+    week = Column(Integer, comment="周数")
+    
+    # 系统字段
+    created_by = Column(String(100), comment="创建者")
+    created_at = Column(DateTime, default=datetime.utcnow, comment="创建时间")
+    updated_by = Column(String(100), comment="最后更新者")
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment="更新时间")

@@ -66,7 +66,11 @@
       "mcp__serena__read_file",
       "mcp__serena__read_memory",
       "mcp__serena__search_for_pattern",
-      "mcp__serena__find_file"
+      "mcp__serena__find_file",
+      "Bash(curl:*)",
+      "Bash(awk:*)",
+      "Bash(\"./venv/Scripts/python.exe\":*)",
+      "mcp__serena__find_symbol"
     ],
     "deny": [],
     "ask": []

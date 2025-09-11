@@ -17,7 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 # 1. 激活虚拟环境
 cd aiwlsj1
-.\venv1\Scripts\activate  # Windows
+.\venv\Scripts\activate  # Windows
 # source venv1/bin/activate  # Linux/Mac
 
 # 2. 安装依赖

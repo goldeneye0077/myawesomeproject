@@ -821,24 +821,62 @@
                 return;
             }
             
-            let html = '';
+            let html = '<div class="flex items-center justify-center space-x-1">';
             
             // 上一页
             if (data.page > 1) {
-                html += `<li class="page-item"><a class="page-link" href="#" onclick="loadDetailList(${data.page - 1})">上一页</a></li>`;
+                html += `<button 
+                    onclick="loadDetailList(${data.page - 1})" 
+                    class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    上一页
+                </button>`;
+            } else {
+                html += `<button 
+                    disabled 
+                    class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 border border-gray-300 rounded-md cursor-not-allowed">
+                    上一页
+                </button>`;
             }
             
             // 页码
             for (let i = Math.max(1, data.page - 2); i <= Math.min(data.total_pages, data.page + 2); i++) {
-                html += `<li class="page-item ${i === data.page ? 'active' : ''}">
-                    <a class="page-link" href="#" onclick="loadDetailList(${i})">${i}</a>
-                </li>`;
+                if (i === data.page) {
+                    html += `<button 
+                        class="px-3 py-2 text-sm font-medium text-white bg-blue-600 border border-blue-600 rounded-md">
+                        ${i}
+                    </button>`;
+                } else {
+                    html += `<button 
+                        onclick="loadDetailList(${i})" 
+                        class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        ${i}
+                    </button>`;
+                }
             }
             
             // 下一页
             if (data.page < data.total_pages) {
-                html += `<li class="page-item"><a class="page-link" href="#" onclick="loadDetailList(${data.page + 1})">下一页</a></li>`;
+                html += `<button 
+                    onclick="loadDetailList(${data.page + 1})" 
+                    class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    下一页
+                </button>`;
+            } else {
+                html += `<button 
+                    disabled 
+                    class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 border border-gray-300 rounded-md cursor-not-allowed">
+                    下一页
+                </button>`;
             }
+            
+            html += '</div>';
+            
+            // 添加分页信息显示
+            html += `<div class="mt-3 text-center">
+                <span class="text-sm text-gray-600">
+                    第 ${data.page} 页，共 ${data.total_pages} 页，总计 ${data.total} 条记录
+                </span>
+            </div>`;
             
             pagination.innerHTML = html;
         }

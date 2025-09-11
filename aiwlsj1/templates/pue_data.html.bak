@@ -25,20 +25,20 @@
 {% block content %}
 <!-- PUE数据列表卡片 -->
 <div class="card">
+    <h2 class="card-title">PUE数据管理</h2>
+
     <!-- 筛选表单 -->
-    <form method="get" id="filterForm" class="mb-6 flex gap-4 items-center flex-wrap">
-        <label class="flex items-center gap-2 text-sm font-medium text-gray-700">
-            地点：
-            <select name="location" onchange="document.getElementById('filterForm').submit();" class="form-select">
+    <form method="get" id="filterForm" style="margin-bottom: 18px; display: flex; gap: 18px; align-items: center; flex-wrap: wrap;">
+        <label>地点：
+            <select name="location" onchange="document.getElementById('filterForm').submit();" style="min-width: 60px;">
                 <option value="">全部</option>
                 {% for loc in all_locations %}
                 <option value="{{ loc }}" {% if current_location==loc %}selected{% endif %}>{{ loc }}</option>
                 {% endfor %}
             </select>
         </label>
-        <label class="flex items-center gap-2 text-sm font-medium text-gray-700">
-            年份：
-            <select name="year" onchange="document.getElementById('filterForm').submit();" class="form-select">
+        <label>年份：
+            <select name="year" onchange="document.getElementById('filterForm').submit();" style="min-width: 60px;">
                 <option value="">全部</option>
                 {% for y in all_years %}
                 <option value="{{ y }}" {% if current_year==y %}selected{% endif %}>{{ y }}</option>
@@ -49,8 +49,9 @@
     </form>
 
     <!-- 操作按钮区 -->
-    <div class="mb-4">
-        <a href="/add_pue_data" class="btn-primary">添加PUE数据</a>
+    <div class="action-bar">
+        <a href="/add_pue_data" class="btn btn-primary">添加PUE数据</a>
+
     </div>
 
     <div class="data-table-container">
@@ -75,11 +76,9 @@
                     <td>{{ "{:.2f}".format(item.pue_value) }}</td>
                     <td>{{ item.created_at.strftime('%Y-%m-%d') if item.created_at else '' }}</td>
                     <td>{{ item.updated_at.strftime('%Y-%m-%d') if item.updated_at else '' }}</td>
-                    <td class="action-column">
-                        <div class="action-buttons">
-                            <a href="/edit_pue_data/{{ item.id }}" class="btn-xs btn-primary">编辑</a>
-                            <a href="/delete_pue_data/{{ item.id }}" class="btn-xs btn-danger" onclick="return confirm('确定要删除吗？');">删除</a>
-                        </div>
+                    <td>
+                        <a href="/edit_pue_data/{{ item.id }}" class="btn btn-sm btn-primary">编辑</a>
+                        <a href="/delete_pue_data/{{ item.id }}" class="btn btn-sm btn-danger" onclick="return confirm('确定要删除吗？');">删除</a>
                     </td>
                 </tr>
                 {% endfor %}
@@ -87,17 +86,17 @@
         </table>
     </div>
     <!-- 分页控件 -->
-    <div class="pagination">
+    <div class="pagination" style="margin-top: 18px; display: flex; justify-content: center; align-items: center; gap: 8px;">
         {% if page > 1 %}
             <a href="?page=1&location={{ current_location }}&year={{ current_year }}" class="page-link">首页</a>
             <a href="?page={{ page - 1 }}&location={{ current_location }}&year={{ current_year }}" class="page-link">上一页</a>
         {% endif %}
-        <span class="px-3 py-2 text-sm text-gray-600">第 {{ page }} / {{ pages }} 页</span>
+        <span>第 {{ page }} / {{ pages }} 页</span>
         {% if page < pages %}
             <a href="?page={{ page + 1 }}&location={{ current_location }}&year={{ current_year }}" class="page-link">下一页</a>
             <a href="?page={{ pages }}&location={{ current_location }}&year={{ current_year }}" class="page-link">末页</a>
         {% endif %}
-        <span class="ml-3 px-3 py-2 text-sm text-gray-600">共 {{ total }} 条</span>
+        <span style="margin-left:12px;">共 {{ total }} 条</span>
     </div>
 </div>
 {% endblock %}

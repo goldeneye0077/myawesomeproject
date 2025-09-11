@@ -7,37 +7,37 @@
     <form method="post" class="form-container">
         <div class="form-group">
             <label for="month">月份</label>
-            <input type="text" id="month" name="month" required class="form-input" placeholder="例如: 2023-01">
+            <input type="text" id="month" name="month" required class="form-control" placeholder="例如: 2023-01">
         </div>
         
         <div class="form-group">
             <label for="city">城市</label>
-            <input type="text" id="city" name="city" required class="form-input" placeholder="输入城市名称">
+            <input type="text" id="city" name="city" required class="form-control" placeholder="输入城市名称">
         </div>
         
         <div class="form-group">
             <label for="huiju_amount">汇聚全量</label>
-            <input type="number" id="huiju_amount" name="huiju_amount" required class="form-input" min="0" value="0">
+            <input type="number" id="huiju_amount" name="huiju_amount" required class="form-control" min="0" value="0">
         </div>
         
         <div class="form-group">
             <label for="over_4h">超4小时数量</label>
-            <input type="number" id="over_4h" name="over_4h" required class="form-input" min="0" value="0">
+            <input type="number" id="over_4h" name="over_4h" required class="form-control" min="0" value="0">
         </div>
         
         <div class="form-group">
             <label for="important_amount">重要环全量</label>
-            <input type="number" id="important_amount" name="important_amount" required class="form-input" min="0" value="0">
+            <input type="number" id="important_amount" name="important_amount" required class="form-control" min="0" value="0">
         </div>
         
         <div class="form-group">
             <label for="over_12h">超12小时数量</label>
-            <input type="number" id="over_12h" name="over_12h" required class="form-input" min="0" value="0">
+            <input type="number" id="over_12h" name="over_12h" required class="form-control" min="0" value="0">
         </div>
         
         <div class="form-actions">
-            <button type="submit" class="btn-primary">保存</button>
-            <a href="{{ url_for('huiju_data_page') }}" class="btn-secondary">返回</a>
+            <button type="submit" class="btn btn-primary">保存</button>
+            <a href="{{ url_for('huiju_data_page') }}" class="btn btn-secondary">返回</a>
         </div>
     </form>
 </div>
@@ -59,7 +59,7 @@
     font-weight: bold;
 }
 
-.form-input {
+.form-control {
     width: 100%;
     padding: 8px 12px;
     border: 1px solid #ddd;

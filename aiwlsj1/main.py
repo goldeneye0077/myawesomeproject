@@ -30,6 +30,15 @@ from dashboard_api import router as dashboard_router
 setup_logging()
 logger = logging.getLogger(__name__)
 
+# 安全导入绩效目标API
+try:
+    from performance_targets_api import router as targets_router
+    TARGETS_API_AVAILABLE = True
+    logger.info("绩效目标API模块加载成功")
+except ImportError as e:
+    TARGETS_API_AVAILABLE = False
+    logger.warning(f"绩效目标API模块不可用: {e}")
+
 # 导入新工具模块路由 (安全集成)
 try:
     from tools.system_monitor import router as system_monitor_router
@@ -103,6 +112,11 @@ app.include_router(huiju_router, tags=["汇聚骨干指标"])
 app.include_router(bi_api_router, prefix="", tags=["API接口"])
 app.include_router(fault_router, tags=["故障分析"])
 app.include_router(dashboard_router, prefix="", tags=["仪表板"])
+
+# 条件性注册绩效目标API
+if TARGETS_API_AVAILABLE:
+    app.include_router(targets_router, tags=["绩效目标"])
+    logger.info("绩效目标API路由已注册")
 
 # 安全注册工具模块路由 (可选功能)
 if TOOLS_AVAILABLE:

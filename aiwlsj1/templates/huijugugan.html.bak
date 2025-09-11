@@ -4,6 +4,7 @@
 
 {% block content %}
 <div class="card">
+    <h2 class="card-title">汇聚故障感知数据管理</h2>
     <!-- 筛选表单 -->
     <form method="get" id="filterForm" style="margin-bottom: 18px; display: flex; gap: 18px; align-items: center; flex-wrap: wrap;">
         <label>城市：
@@ -25,7 +26,7 @@
         <input type="hidden" name="page" value="1">
     </form>
     <div class="action-bar">
-        <button class="btn-primary" onclick="openAddModal()">添加数据</button>
+        <button class="btn btn-primary" onclick="openAddModal()">添加数据</button>
     </div>
 
     <!-- 添加/编辑弹窗Modal -->
@@ -37,32 +38,32 @@
                 <div style="display:flex;flex-wrap:wrap;gap:16px 24px;">
                     <div style="flex:1 1 150px;min-width:140px;">
                         <label>月份</label>
-                        <input type="text" id="modal-month" name="month" class="form-input" required>
+                        <input type="text" id="modal-month" name="month" class="form-control" required>
                     </div>
                     <div style="flex:1 1 150px;min-width:140px;">
                         <label>城市</label>
-                        <input type="text" id="modal-city" name="city" class="form-input" required>
+                        <input type="text" id="modal-city" name="city" class="form-control" required>
                     </div>
                     <div style="flex:1 1 150px;min-width:140px;">
                         <label>汇聚全量</label>
-                        <input type="number" id="modal-huiju_amount" name="huiju_amount" class="form-input" required>
+                        <input type="number" id="modal-huiju_amount" name="huiju_amount" class="form-control" required>
                     </div>
                     <div style="flex:1 1 150px;min-width:140px;">
                         <label>超4小时</label>
-                        <input type="number" id="modal-over_4h" name="over_4h" class="form-input" required>
+                        <input type="number" id="modal-over_4h" name="over_4h" class="form-control" required>
                     </div>
                     <div style="flex:1 1 150px;min-width:140px;">
                         <label>重要环全量</label>
-                        <input type="number" id="modal-important_amount" name="important_amount" class="form-input" required>
+                        <input type="number" id="modal-important_amount" name="important_amount" class="form-control" required>
                     </div>
                     <div style="flex:1 1 150px;min-width:140px;">
                         <label>超12小时</label>
-                        <input type="number" id="modal-over_12h" name="over_12h" class="form-input" required>
+                        <input type="number" id="modal-over_12h" name="over_12h" class="form-control" required>
                     </div>
                 </div>
                 <div style="margin-top:24px;text-align:right;">
-                    <button type="submit" class="btn-primary" id="modal-save-btn">保存</button>
-                    <button type="button" class="btn-secondary" onclick="closeModal()">取消</button>
+                    <button type="submit" class="btn btn-primary" id="modal-save-btn">保存</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button>
                 </div>
             </form>
         </div>

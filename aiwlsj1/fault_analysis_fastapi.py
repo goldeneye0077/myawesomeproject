@@ -7,17 +7,30 @@
 
 from fastapi import APIRouter, Request, Depends, Query, Form, HTTPException
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import JSONResponse, RedirectResponse, HTMLResponse
+from fastapi.responses import JSONResponse, RedirectResponse, HTMLResponse, Response
 from sqlalchemy import func, extract, and_, or_, distinct, case
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from db.session import get_db
-from db.models import FaultRecord
+from db.models import FaultRecord, PerformanceTarget, PerformanceRecord
 from datetime import datetime, timedelta
 import json
 import logging
 import numpy as np
 import pandas as pd
+
+# 自定义JSON编码器处理numpy类型
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif isinstance(obj, np.bool_):
+            return bool(obj)
+        return super().default(obj)
 from collections import defaultdict, Counter
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
@@ -1255,7 +1268,7 @@ async def anomaly_detection(
         counts = [int(r[1]) for r in daily_data]
         durations = [float(r[2]) if r[2] else 0 for r in daily_data]
         proactive_counts = [int(r[3]) for r in daily_data]
-        dates = [r[0].strftime('%Y-%m-%d') for r in daily_data]
+        dates = [r[0].strftime('%Y-%m-%d') if hasattr(r[0], 'strftime') else str(r[0]) for r in daily_data]
         
         # 异常检测算法 (基于Z-score)
         def detect_anomalies(data, threshold=anomaly_threshold):
@@ -1284,7 +1297,7 @@ async def anomaly_detection(
                 'date': dates[i],
                 'type': 'fault_count',
                 'value': counts[i],
-                'anomaly_score': round(score, 2),
+                'anomaly_score': score,
                 'description': f'故障数量异常：{counts[i]}件（日均{np.mean(counts):.1f}件）'
             })
         
@@ -1293,8 +1306,8 @@ async def anomaly_detection(
                 detected_anomalies.append({
                     'date': dates[i],
                     'type': 'duration',
-                    'value': round(durations[i], 2),
-                    'anomaly_score': round(score, 2),
+                    'value': durations[i],
+                    'anomaly_score': score,
                     'description': f'处理时长异常：{durations[i]:.1f}小时（平均{np.mean([d for d in durations if d > 0]):.1f}小时）'
                 })
         
@@ -1307,32 +1320,43 @@ async def anomaly_detection(
             np.mean(duration_scores) if duration_scores else 0
         ])
         
-        is_anomaly = len(detected_anomalies) > 0 or overall_anomaly_score > anomaly_threshold
+        is_anomaly = bool(len(detected_anomalies) > 0 or overall_anomaly_score > anomaly_threshold)
         
-        return JSONResponse({
+        response_data = {
             'success': True,
             'data': {
                 'analysis_period': f'{start_date.strftime("%Y-%m-%d")} 至 {end_date.strftime("%Y-%m-%d")}',
                 'is_anomaly_detected': is_anomaly,
-                'overall_anomaly_score': round(overall_anomaly_score, 3),
+                'overall_anomaly_score': overall_anomaly_score,
                 'detection_threshold': anomaly_threshold,
                 'detected_anomalies': detected_anomalies,
                 'pattern_analysis': pattern_analysis,
                 'summary_statistics': {
-                    'avg_daily_faults': round(np.mean(counts), 2),
-                    'avg_duration_hours': round(np.mean([d for d in durations if d > 0]), 2) if any(d > 0 for d in durations) else 0,
-                    'proactive_discovery_rate': round(sum(proactive_counts) / sum(counts) * 100, 1) if sum(counts) > 0 else 0,
+                    'avg_daily_faults': np.mean(counts),
+                    'avg_duration_hours': np.mean([d for d in durations if d > 0]) if any(d > 0 for d in durations) else 0,
+                    'proactive_discovery_rate': sum(proactive_counts) / sum(counts) * 100 if sum(counts) > 0 else 0,
                     'total_analysis_days': len(daily_data)
                 },
                 'recommendations': _generate_anomaly_recommendations(detected_anomalies, pattern_analysis)
             }
-        })
+        }
+        
+        # 使用自定义编码器和原生Response确保JSON可序列化
+        return Response(
+            content=json.dumps(response_data, cls=NumpyEncoder),
+            media_type="application/json"
+        )
         
     except Exception as e:
-        return JSONResponse({
-            'success': False,
-            'error': f'异常检测失败: {str(e)}'
-        })
+        import traceback
+        return Response(
+            content=json.dumps({
+                'success': False,
+                'error': f'异常检测失败: {str(e)}',
+                'traceback': traceback.format_exc()
+            }),
+            media_type="application/json"
+        )
 
 # ==================== 辅助函数 ====================
 
@@ -1480,11 +1504,11 @@ def _analyze_fault_patterns(daily_data: List, analysis_days: int) -> Dict[str, A
     trend = 'increasing' if np.mean(second_half) > np.mean(first_half) else 'decreasing'
     
     # 周期性检测（简化版）
-    weekly_pattern = len(counts) >= 14
+    weekly_pattern = bool(len(counts) >= 14)
     if weekly_pattern:
         week1_avg = np.mean(counts[:7])
         week2_avg = np.mean(counts[7:14]) if len(counts) >= 14 else np.mean(counts[7:])
-        weekly_stability = abs(week1_avg - week2_avg) < np.std(counts)
+        weekly_stability = bool(abs(week1_avg - week2_avg) < np.std(counts))
     else:
         weekly_stability = False
     
@@ -1492,12 +1516,12 @@ def _analyze_fault_patterns(daily_data: List, analysis_days: int) -> Dict[str, A
         'pattern_detected': True,
         'trend': trend,
         'weekly_stability': weekly_stability,
-        'volatility': 'high' if np.std(counts) > np.mean(counts) else 'normal',
+        'volatility': 'high' if float(np.std(counts)) > float(np.mean(counts)) else 'normal',
         'peak_detection': {
-            'max_day': daily_data[np.argmax(counts)][0].strftime('%Y-%m-%d'),
-            'max_count': max(counts),
-            'min_day': daily_data[np.argmin(counts)][0].strftime('%Y-%m-%d'),
-            'min_count': min(counts)
+            'max_day': daily_data[np.argmax(counts)][0].strftime('%Y-%m-%d') if hasattr(daily_data[np.argmax(counts)][0], 'strftime') else str(daily_data[np.argmax(counts)][0]),
+            'max_count': int(max(counts)),
+            'min_day': daily_data[np.argmin(counts)][0].strftime('%Y-%m-%d') if hasattr(daily_data[np.argmin(counts)][0], 'strftime') else str(daily_data[np.argmin(counts)][0]),
+            'min_count': int(min(counts))
         }
     }
 
@@ -1508,6 +1532,29 @@ def _generate_anomaly_recommendations(anomalies: List[Dict], pattern_analysis: D
     if not anomalies:
         recommendations.append('当前无异常检测到，继续保持现有运维策略')
         return recommendations
+    
+    # 根据异常类型生成建议
+    fault_count_anomalies = [a for a in anomalies if a['type'] == 'fault_count']
+    duration_anomalies = [a for a in anomalies if a['type'] == 'duration']
+    
+    if fault_count_anomalies:
+        recommendations.append('检测到故障数量异常，建议：')
+        recommendations.append('• 加强系统监控，识别故障高发时段')
+        recommendations.append('• 分析故障根因，制定预防措施')
+        
+    if duration_anomalies:
+        recommendations.append('检测到故障处理时长异常，建议：')
+        recommendations.append('• 优化故障响应流程和处理程序')
+        recommendations.append('• 培训运维团队，提升故障处理效率')
+        
+    # 根据模式分析添加建议
+    if pattern_analysis.get('trend') == 'increasing':
+        recommendations.append('• 注意：故障趋势呈上升态势，需要重点关注')
+    
+    if pattern_analysis.get('volatility') == 'high':
+        recommendations.append('• 故障波动性较大，建议建立更稳定的监控机制')
+        
+    return recommendations
 
 # ==================== 增强时序分析模块 ====================
 
@@ -4820,17 +4867,29 @@ async def get_indicators_dashboard(
     try:
         logger.info(f"获取指标仪表盘数据: {dashboard_type}")
         
-        # 实时指标数据
-        realtime_data = await _get_realtime_indicators(db)
+        # 获取绩效目标数据
+        current_year = datetime.now().year
+        targets_result = await db.execute(
+            select(PerformanceTarget).where(
+                and_(
+                    PerformanceTarget.year == current_year,
+                    PerformanceTarget.status == 'active'
+                )
+            )
+        )
+        targets = targets_result.scalars().all()
         
-        # 关键指标趋势
-        key_trends = await _get_key_indicator_trends(db)
+        # 实时指标数据（包含目标对比）
+        realtime_data = await _get_realtime_indicators(db, targets)
+        
+        # 关键指标趋势（包含目标线）
+        key_trends = await _get_key_indicator_trends(db, targets)
         
         # 告警和异常
         alerts_and_anomalies = await _get_alerts_and_anomalies(db)
         
-        # 绩效摘要
-        performance_summary = await _get_performance_summary(db)
+        # 绩效摘要（包含目标达成情况）
+        performance_summary = await _get_performance_summary(db, targets)
         
         # 预测性指标
         predictive_indicators = await _get_predictive_indicators(db)
@@ -4861,42 +4920,492 @@ async def get_indicators_dashboard(
         logger.error(f"获取仪表盘数据失败: {str(e)}")
         raise HTTPException(status_code=500, detail=f"获取仪表盘数据失败: {str(e)}")
 
-@router.post('/api/indicators/targets', response_model=Dict[str, Any])
-async def set_performance_targets(
+@router.post('/api/test/quick-save', response_model=Dict[str, Any])
+async def test_quick_save_targets(
     targets_data: Dict[str, Any],
     db: AsyncSession = Depends(get_db)
 ):
-    """
-    设置绩效目标
-    """
+    """快速测试端点：验证数据库保存功能"""
     try:
-        logger.info("设置绩效目标")
+        logger.info(f"测试端点收到数据: {targets_data}")
         
-        # 验证目标数据
-        validated_targets = await _validate_performance_targets(targets_data)
+        # 创建一个简单的测试记录
+        test_target = PerformanceTarget(
+            target_name='测试目标',
+            target_category='test',
+            target_value=99.5,
+            unit='%',
+            year=2025,
+            status='active',
+            created_by='test_system'
+        )
         
-        # 保存目标设置
-        target_records = await _save_performance_targets(validated_targets, db)
+        db.add(test_target)
+        await db.commit()
         
-        # 生成目标追踪计划
-        tracking_plan = await _generate_target_tracking_plan(validated_targets)
+        logger.info("测试记录保存成功")
         
-        # 设置自动监控
-        monitoring_setup = await _setup_target_monitoring(validated_targets)
+        # 验证保存结果
+        result = await db.execute(
+            select(PerformanceTarget).where(PerformanceTarget.target_category == 'test')
+        )
+        saved_record = result.scalars().first()
         
         return {
             'status': 'success',
-            'targets_set': len(validated_targets),
-            'target_records': target_records,
-            'tracking_plan': tracking_plan,
-            'monitoring_setup': monitoring_setup,
-            'next_review_date': (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d'),
-            'created_at': datetime.now().isoformat()
+            'message': '测试端点工作正常',
+            'test_record_id': saved_record.id if saved_record else None,
+            'database_working': saved_record is not None
         }
         
     except Exception as e:
-        logger.error(f"设置绩效目标失败: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"设置绩效目标失败: {str(e)}")
+        await db.rollback()
+        logger.error(f"测试端点失败: {str(e)}")
+        return {
+            'status': 'error',
+            'message': f'测试失败: {str(e)}'
+        }
+
+# 已删除旧版本，使用下面的新版本
+
+@router.post('/api/indicators/targets', response_model=Dict[str, Any])
+async def set_performance_targets_final(
+    targets_data: Dict[str, Any],
+    db: AsyncSession = Depends(get_db)
+):
+    """设置绩效目标 - 修复版本"""
+    try:
+        print(f"[API] 收到绩效目标数据: {targets_data}")
+        logger.info(f"设置绩效目标: {targets_data}")
+        
+        # 清理旧数据（当前年份的目标）
+        current_year = datetime.now().year
+        from sqlalchemy import delete
+        delete_result = await db.execute(
+            delete(PerformanceTarget).where(
+                and_(
+                    PerformanceTarget.year == current_year,
+                    PerformanceTarget.status == 'active'
+                )
+            )
+        )
+        print(f"[API] 清理了 {delete_result.rowcount} 条旧目标数据")
+        
+        # 保存新目标
+        saved_targets = []
+        target_configs = {
+            'resolution_time_target': {'name': '故障解决时间目标', 'unit': '分钟'},
+            'availability_target': {'name': '系统可用性目标', 'unit': '%'},
+            'proactive_discovery_target': {'name': '主动发现率目标', 'unit': '%'},
+            'customer_satisfaction_target': {'name': '客户满意度目标', 'unit': '%'}
+        }
+        
+        for key, config in target_configs.items():
+            if key in targets_data:
+                value = targets_data[key]
+                print(f"[API] 处理目标 {key}: {value} (类型: {type(value)})")
+                
+                if isinstance(value, (int, float, str)):
+                    try:
+                        value_float = float(value)
+                        if value_float > 0:
+                            new_target = PerformanceTarget(
+                                target_name=config['name'],
+                                target_category=key,
+                                target_value=value_float,
+                                unit=config['unit'],
+                                year=current_year,
+                                status='active',
+                                created_by='system',
+                                effective_date=datetime.utcnow()
+                            )
+                            db.add(new_target)
+                            saved_targets.append({
+                                'name': config['name'],
+                                'value': value_float,
+                                'key': key
+                            })
+                            print(f"[API] 添加目标: {config['name']} = {value_float}")
+                        else:
+                            print(f"[API] 跳过无效值 {key}: {value} (值必须大于0)")
+                    except (ValueError, TypeError) as e:
+                        print(f"[API] 跳过无效值 {key}: {value} - {e}")
+                else:
+                    print(f"[API] 跳过不支持的数据类型 {key}: {value} ({type(value)})")
+        
+        # 提交到数据库
+        await db.commit()
+        print(f"[API] 成功保存了 {len(saved_targets)} 个目标到数据库")
+        
+        # 验证保存结果
+        from sqlalchemy import select
+        verify_result = await db.execute(
+            select(PerformanceTarget).where(
+                and_(
+                    PerformanceTarget.year == current_year,
+                    PerformanceTarget.status == 'active'
+                )
+            )
+        )
+        actual_count = len(verify_result.scalars().all())
+        print(f"[API] 数据库验证: 实际保存了 {actual_count} 条记录")
+        
+        return {
+            'success': True,
+            'targets_set': len(saved_targets),
+            'target_records': saved_targets,
+            'message': f'成功保存了 {len(saved_targets)} 个绩效目标',
+            'version': 'FIXED_VERSION'
+        }
+        
+    except Exception as e:
+        await db.rollback()
+        print(f"[API] 保存绩效目标失败: {str(e)}")
+        logger.error(f"保存绩效目标失败: {str(e)}", exc_info=True)
+        return {
+            'success': False,
+            'targets_set': 0,
+            'target_records': [],
+            'message': f'保存失败: {str(e)}',
+            'version': 'FIXED_VERSION'
+        }
+
+# ===============================
+# 简单的绩效目标管理API (新路径)
+# ===============================
+
+@router.post('/api/targets/save', response_model=Dict[str, Any])
+async def save_targets_simple(
+    targets_data: Dict[str, Any],
+    db: AsyncSession = Depends(get_db)
+):
+    """保存绩效目标 - 简单版本 (新API路径)"""
+    try:
+        print(f"[SIMPLE API] 收到目标数据: {targets_data}")
+        
+        # 清理旧数据
+        current_year = datetime.now().year
+        from sqlalchemy import delete
+        delete_result = await db.execute(
+            delete(PerformanceTarget).where(
+                and_(
+                    PerformanceTarget.year == current_year,
+                    PerformanceTarget.status == 'active'
+                )
+            )
+        )
+        print(f"[SIMPLE API] 清理了 {delete_result.rowcount} 条旧数据")
+        
+        # 保存新目标
+        saved_count = 0
+        target_configs = {
+            'resolution_time_target': {'name': '故障解决时间目标', 'unit': '分钟'},
+            'availability_target': {'name': '系统可用性目标', 'unit': '%'},
+            'proactive_discovery_target': {'name': '主动发现率目标', 'unit': '%'},
+            'customer_satisfaction_target': {'name': '客户满意度目标', 'unit': '%'}
+        }
+        
+        for key, config in target_configs.items():
+            if key in targets_data:
+                value = targets_data[key]
+                try:
+                    value_float = float(value)
+                    if value_float > 0:
+                        new_target = PerformanceTarget(
+                            target_name=config['name'],
+                            target_category=key,
+                            target_value=value_float,
+                            unit=config['unit'],
+                            year=current_year,
+                            status='active',
+                            created_by='system',
+                            effective_date=datetime.utcnow()
+                        )
+                        db.add(new_target)
+                        saved_count += 1
+                        print(f"[SIMPLE API] 保存目标: {config['name']} = {value_float}")
+                except (ValueError, TypeError):
+                    print(f"[SIMPLE API] 跳过无效值: {key} = {value}")
+        
+        await db.commit()
+        print(f"[SIMPLE API] 成功保存 {saved_count} 个目标")
+        
+        return {
+            'success': True,
+            'count': saved_count,
+            'message': f'成功保存 {saved_count} 个目标'
+        }
+        
+    except Exception as e:
+        await db.rollback()
+        print(f"[SIMPLE API] 保存失败: {str(e)}")
+        return {
+            'success': False,
+            'count': 0,
+            'message': f'保存失败: {str(e)}'
+        }
+
+@router.get('/api/targets/list', response_model=Dict[str, Any])
+async def get_targets_simple(
+    db: AsyncSession = Depends(get_db)
+):
+    """获取绩效目标列表 - 简单版本"""
+    try:
+        print(f"[SIMPLE API] 获取目标列表")
+        
+        current_year = datetime.now().year
+        from sqlalchemy import select
+        result = await db.execute(
+            select(PerformanceTarget).where(
+                and_(
+                    PerformanceTarget.year == current_year,
+                    PerformanceTarget.status == 'active'
+                )
+            ).order_by(PerformanceTarget.created_at.desc())
+        )
+        targets = result.scalars().all()
+        
+        targets_list = []
+        for target in targets:
+            targets_list.append({
+                'id': target.id,
+                'target_name': target.target_name,
+                'target_category': target.target_category,
+                'target_value': target.target_value,
+                'unit': target.unit,
+                'year': target.year,
+                'created_at': target.created_at.isoformat() if target.created_at else None
+            })
+        
+        print(f"[SIMPLE API] 返回 {len(targets_list)} 个目标")
+        return {
+            'success': True,
+            'targets': targets_list,
+            'count': len(targets_list)
+        }
+        
+    except Exception as e:
+        print(f"[SIMPLE API] 获取失败: {str(e)}")
+        return {
+            'success': False,
+            'targets': [],
+            'count': 0,
+            'message': f'获取失败: {str(e)}'
+        }
+
+# ===============================
+# 全新的绩效目标管理端点 (独立实现)
+# ===============================
+
+@router.post('/api/v2/performance-targets', response_model=Dict[str, Any])
+async def save_performance_targets_v2(
+    targets_data: Dict[str, Any],
+    db: AsyncSession = Depends(get_db)
+):
+    """保存绩效目标 - V2版本 (完全重写)"""
+    try:
+        print(f"[V2 API] 接收到目标数据: {targets_data}")
+        
+        # 清理当前年份的旧目标
+        current_year = datetime.now().year
+        from sqlalchemy import delete
+        await db.execute(
+            delete(PerformanceTarget).where(
+                and_(
+                    PerformanceTarget.year == current_year,
+                    PerformanceTarget.status == 'active'
+                )
+            )
+        )
+        
+        saved_count = 0
+        saved_targets = []
+        
+        # 目标配置映射
+        target_configs = {
+            'resolution_time_target': '故障解决时间目标',
+            'availability_target': '系统可用性目标', 
+            'proactive_discovery_target': '主动发现率目标',
+            'customer_satisfaction_target': '客户满意度目标'
+        }
+        
+        # 保存每个目标
+        for key, name in target_configs.items():
+            if key in targets_data and targets_data[key] is not None:
+                value = float(targets_data[key])
+                if value > 0:
+                    new_target = PerformanceTarget(
+                        target_name=name,
+                        target_category=key,
+                        target_value=value,
+                        unit='%' if 'rate' in key or 'availability' in key else ('分钟' if 'time' in key else '分'),
+                        year=current_year,
+                        status='active',
+                        created_by='system',
+                        effective_date=datetime.utcnow()
+                    )
+                    db.add(new_target)
+                    saved_count += 1
+                    saved_targets.append({
+                        'category': key,
+                        'name': name, 
+                        'value': value
+                    })
+        
+        # 提交到数据库
+        await db.commit()
+        print(f"[V2 API] 成功保存了 {saved_count} 个目标")
+        
+        return {
+            'success': True,
+            'targets_set': saved_count,
+            'saved_targets': saved_targets,
+            'message': f'成功保存了 {saved_count} 个绩效目标',
+            'api_version': 'v2'
+        }
+        
+    except Exception as e:
+        await db.rollback()
+        print(f"[V2 API] 保存失败: {str(e)}")
+        return {
+            'success': False,
+            'targets_set': 0,
+            'saved_targets': [],
+            'message': f'保存失败: {str(e)}',
+            'api_version': 'v2'
+        }
+
+@router.get('/api/v2/performance-targets', response_model=Dict[str, Any])
+async def get_performance_targets_v2(
+    year: Optional[int] = Query(None, description="年份"),
+    db: AsyncSession = Depends(get_db)
+):
+    """获取绩效目标 - V2版本"""
+    try:
+        print(f"[V2 API] 获取绩效目标数据")
+        
+        # 构建查询
+        query_year = year or datetime.now().year
+        query = select(PerformanceTarget).where(
+            and_(
+                PerformanceTarget.year == query_year,
+                PerformanceTarget.status == 'active'
+            )
+        )
+        
+        # 执行查询
+        result = await db.execute(query.order_by(PerformanceTarget.created_at.desc()))
+        targets = result.scalars().all()
+        
+        # 格式化数据
+        targets_data = []
+        for target in targets:
+            targets_data.append({
+                'id': target.id,
+                'target_name': target.target_name,
+                'target_category': target.target_category,
+                'target_value': target.target_value,
+                'unit': target.unit,
+                'year': target.year,
+                'created_at': target.created_at.isoformat() if target.created_at else None
+            })
+        
+        print(f"[V2 API] 找到 {len(targets_data)} 个目标")
+        
+        return {
+            'success': True,
+            'data': {
+                'total_count': len(targets_data),
+                'targets': targets_data,
+                'year': query_year
+            },
+            'message': f'成功获取 {len(targets_data)} 个绩效目标',
+            'api_version': 'v2'
+        }
+        
+    except Exception as e:
+        print(f"[V2 API] 获取失败: {str(e)}")
+        return {
+            'success': False,
+            'data': {'total_count': 0, 'targets': []},
+            'message': f'获取失败: {str(e)}',
+            'api_version': 'v2'
+        }
+
+
+@router.get('/api/performance/targets')
+async def get_performance_targets(
+    year: Optional[int] = Query(None, description="筛选年份"),
+    category: Optional[str] = Query(None, description="筛选分类"),
+    db: AsyncSession = Depends(get_db)
+):
+    """获取绩效目标数据"""
+    try:
+        logger.info("获取绩效目标数据")
+        
+        # 构建查询条件
+        query = select(PerformanceTarget).where(PerformanceTarget.status == 'active')
+        
+        # 添加年份过滤
+        if year:
+            query = query.where(PerformanceTarget.year == year)
+        else:
+            query = query.where(PerformanceTarget.year == datetime.now().year)
+            
+        # 添加分类过滤
+        if category:
+            query = query.where(PerformanceTarget.target_category == category)
+            
+        # 执行查询
+        result = await db.execute(query.order_by(PerformanceTarget.created_at.desc()))
+        targets = result.scalars().all()
+        
+        # 格式化返回数据
+        targets_data = []
+        for target in targets:
+            targets_data.append({
+                'id': target.id,
+                'target_name': target.target_name,
+                'target_category': target.target_category,
+                'target_value': target.target_value,
+                'unit': target.unit,
+                'target_type': target.target_type,
+                'baseline_value': target.baseline_value,
+                'challenge_value': target.challenge_value,
+                'warning_threshold': target.warning_threshold,
+                'critical_threshold': target.critical_threshold,
+                'year': target.year,
+                'quarter': target.quarter,
+                'month': target.month,
+                'description': target.description,
+                'related_metric': target.related_metric,
+                'created_at': target.created_at.isoformat() if target.created_at else None,
+                'updated_at': target.updated_at.isoformat() if target.updated_at else None
+            })
+        
+        # 按分类组织数据
+        targets_by_category = {}
+        for target in targets_data:
+            category_key = target['target_category']
+            if category_key not in targets_by_category:
+                targets_by_category[category_key] = []
+            targets_by_category[category_key].append(target)
+        
+        return {
+            'success': True,
+            'message': f'成功获取{len(targets_data)}个绩效目标',
+            'data': {
+                'total_count': len(targets_data),
+                'targets': targets_data,
+                'targets_by_category': targets_by_category,
+                'query_year': year or datetime.now().year
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"获取绩效目标失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"获取绩效目标失败: {str(e)}")
+    
 
 # ===============================
 # 指标管理辅助函数
@@ -5767,6 +6276,116 @@ async def _analyze_duration_trend(daily_stats, dates):
         if len(dates) < 2:
             return {'trend': 'insufficient_data'}
         
+        avg_durations = []
+        for date in dates:
+            total_duration = daily_stats[date]['total_duration']
+            count = daily_stats[date]['count']
+            avg_duration = (total_duration / count) if count > 0 else 0
+            avg_durations.append(avg_duration)
+        
+        # 计算趋势
+        recent_avg = np.mean(avg_durations[-3:]) if len(avg_durations) >= 3 else avg_durations[-1]
+        earlier_avg = np.mean(avg_durations[:-3]) if len(avg_durations) > 3 else avg_durations[0]
+        
+        if recent_avg > earlier_avg * 1.2:
+            trend = 'worsening'
+        elif recent_avg < earlier_avg * 0.8:
+            trend = 'improving'
+        else:
+            trend = 'stable'
+        
+        return {
+            'trend': trend,
+            'current_avg': round(recent_avg, 2),
+            'previous_avg': round(earlier_avg, 2),
+            'change': round(recent_avg - earlier_avg, 2)
+        }
+        
+    except Exception as e:
+        return {'trend': 'error', 'message': str(e)}
+
+async def _analyze_proactive_trend(daily_stats, dates):
+    """分析主动发现趋势"""
+    try:
+        if len(dates) < 2:
+            return {'trend': 'insufficient_data'}
+        
+        proactive_rates = []
+        for date in dates:
+            proactive_count = daily_stats[date]['proactive']
+            total_count = daily_stats[date]['count']
+            rate = (proactive_count / total_count * 100) if total_count > 0 else 0
+            proactive_rates.append(rate)
+        
+        # 计算趋势
+        recent_avg = np.mean(proactive_rates[-3:]) if len(proactive_rates) >= 3 else proactive_rates[-1]
+        earlier_avg = np.mean(proactive_rates[:-3]) if len(proactive_rates) > 3 else proactive_rates[0]
+        
+        if recent_avg > earlier_avg * 1.1:
+            trend = 'improving'
+        elif recent_avg < earlier_avg * 0.9:
+            trend = 'worsening'
+        else:
+            trend = 'stable'
+        
+        return {
+            'trend': trend,
+            'current_rate': round(recent_avg, 2),
+            'previous_rate': round(earlier_avg, 2),
+            'change': round(recent_avg - earlier_avg, 2)
+        }
+        
+    except Exception as e:
+        return {'trend': 'error', 'message': str(e)}
+
+async def _calculate_repeat_incident_rate(fault_records):
+    """计算重复故障率"""
+    try:
+        fault_names = [f.fault_name for f in fault_records if f.fault_name]
+        if not fault_names:
+            return 0
+        
+        unique_faults = len(set(fault_names))
+        repeat_rate = ((len(fault_names) - unique_faults) / len(fault_names) * 100)
+        return round(repeat_rate, 2)
+        
+    except Exception as e:
+        logger.error(f"计算重复故障率失败: {str(e)}")
+        return 0
+
+async def _evaluate_handling_consistency(fault_records):
+    """评估处理一致性"""
+    try:
+        if not fault_records:
+            return 0
+        
+        # 按故障类型分组，计算处理时间的标准差
+        fault_groups = {}
+        for record in fault_records:
+            fault_type = record.cause_category or '未分类'
+            if fault_type not in fault_groups:
+                fault_groups[fault_type] = []
+            
+            if record.fault_duration_hours:
+                fault_groups[fault_type].append(record.fault_duration_hours)
+        
+        consistency_scores = []
+        for fault_type, durations in fault_groups.items():
+            if len(durations) > 1:
+                std_dev = np.std(durations)
+                avg_duration = np.mean(durations)
+                # 一致性得分：标准差越小，一致性越高
+                consistency = max(0, 1 - (std_dev / max(avg_duration, 1)))
+                consistency_scores.append(consistency)
+        
+        return round(np.mean(consistency_scores), 2) if consistency_scores else 0.5
+        
+    except Exception as e:
+        logger.error(f"评估处理一致性失败: {str(e)}")
+        return 0
+        if len(dates) < 2:
+            return {'trend': 'insufficient_data'}
+        
         daily_averages = []
         for date in dates:
             total_duration = daily_stats[date]['total_duration']
@@ -6035,8 +6654,8 @@ async def _generate_evaluation_summary(current_performance, performance_changes,
 # 仪表盘数据获取函数
 # ===============================
 
-async def _get_realtime_indicators(db: AsyncSession):
-    """获取实时指标数据"""
+async def _get_realtime_indicators(db: AsyncSession, targets=None):
+    """获取实时指标数据（包含目标对比）"""
     try:
         # 获取最近24小时的故障数据
         end_time = datetime.now()
@@ -6049,20 +6668,60 @@ async def _get_realtime_indicators(db: AsyncSession):
         result = await db.execute(query)
         recent_faults = result.scalars().all()
         
-        return {
-            'current_fault_count': len(recent_faults),
-            'high_severity_count': len([f for f in recent_faults if f.notification_level in ['A级', '重大', '严重']]),
-            'active_incidents': len([f for f in recent_faults if not f.end_time]),
-            'avg_resolution_time': np.mean([f.fault_duration_hours for f in recent_faults if f.fault_duration_hours]) if recent_faults else 0,
-            'proactive_discovery_rate': (len([f for f in recent_faults if f.is_proactive_discovery == '是']) / len(recent_faults) * 100) if recent_faults else 0,
+        # 计算实际指标
+        current_fault_count = len(recent_faults)
+        high_severity_count = len([f for f in recent_faults if f.notification_level in ['A级', '重大', '严重']])
+        active_incidents = len([f for f in recent_faults if not f.end_time])
+        avg_resolution_time = np.mean([f.fault_duration_hours for f in recent_faults if f.fault_duration_hours]) if recent_faults else 0
+        proactive_discovery_rate = (len([f for f in recent_faults if f.is_proactive_discovery == '是']) / len(recent_faults) * 100) if recent_faults else 0
+        
+        # 构建目标映射
+        targets_map = {}
+        if targets:
+            for target in targets:
+                targets_map[target.target_category] = target
+        
+        # 准备返回数据（包含目标对比）
+        indicators_data = {
+            'current_fault_count': current_fault_count,
+            'high_severity_count': high_severity_count,
+            'active_incidents': active_incidents,
+            'avg_resolution_time': float(avg_resolution_time),
+            'proactive_discovery_rate': float(proactive_discovery_rate),
             'last_update': datetime.now().isoformat()
         }
+        
+        # 添加目标对比数据
+        if targets_map:
+            # 故障解决时间目标对比
+            if 'fault_resolution' in targets_map:
+                target = targets_map['fault_resolution']
+                indicators_data['resolution_time_target'] = {
+                    'target_value': float(target.target_value),
+                    'actual_value': float(avg_resolution_time),
+                    'achievement_rate': (target.target_value / avg_resolution_time * 100) if avg_resolution_time > 0 else 100,
+                    'status': 'good' if avg_resolution_time <= target.target_value else 'warning',
+                    'unit': target.unit
+                }
+            
+            # 主动发现率目标对比
+            if 'proactive_discovery' in targets_map:
+                target = targets_map['proactive_discovery']
+                indicators_data['proactive_discovery_target'] = {
+                    'target_value': float(target.target_value),
+                    'actual_value': float(proactive_discovery_rate),
+                    'achievement_rate': (proactive_discovery_rate / target.target_value * 100) if target.target_value > 0 else 0,
+                    'status': 'good' if proactive_discovery_rate >= target.target_value else 'warning',
+                    'unit': target.unit
+                }
+        
+        return indicators_data
         
     except Exception as e:
         logger.error(f"获取实时指标数据失败: {str(e)}")
         return {'error': str(e)}
 
-async def _get_key_indicator_trends(db: AsyncSession):
+async def _get_key_indicator_trends(db: AsyncSession, targets=None):
     """获取关键指标趋势"""
     try:
         # 获取最近30天的数据
@@ -6181,7 +6840,7 @@ async def _get_alerts_and_anomalies(db: AsyncSession):
         logger.error(f"获取告警和异常失败: {str(e)}")
         return {'error': str(e)}
 
-async def _get_performance_summary(db: AsyncSession):
+async def _get_performance_summary(db: AsyncSession, targets=None):
     """获取绩效摘要"""
     try:
         # 获取最近30天和上个30天的数据进行对比
@@ -6349,43 +7008,147 @@ async def _get_action_item_tracking(db: AsyncSession):
 async def _validate_performance_targets(targets_data):
     """验证绩效目标数据"""
     try:
+        print(f"DEBUG: 开始验证目标数据: {targets_data}")
+        logger.info(f"DEBUG: 开始验证目标数据: {targets_data}")
+        
         validated_targets = {}
         
-        required_fields = ['fault_volume_target', 'high_severity_rate_target', 'avg_resolution_time_target', 'proactive_discovery_rate_target']
+        required_fields = ['resolution_time_target', 'availability_target', 'proactive_discovery_target', 'customer_satisfaction_target']
         
         for field in required_fields:
             if field in targets_data:
                 value = targets_data[field]
+                print(f"DEBUG: 验证字段 {field}, 值: {value}")
                 # 基本数据验证
                 if isinstance(value, (int, float)) and value >= 0:
                     validated_targets[field] = value
+                    print(f"DEBUG: 字段 {field} 验证通过")
                 else:
                     raise ValueError(f'目标 {field} 数值无效')
         
+        print(f"DEBUG: 验证完成，返回: {validated_targets}")
+        logger.info(f"DEBUG: 验证完成，返回: {validated_targets}")
         return validated_targets
         
     except Exception as e:
+        print(f"DEBUG: 验证失败: {str(e)}")
         logger.error(f"目标数据验证失败: {str(e)}")
         raise HTTPException(status_code=400, detail=f"目标数据验证失败: {str(e)}")
 
 async def _save_performance_targets(targets, db: AsyncSession):
-    """保存绩效目标"""
+    """保存绩效目标到数据库"""
     try:
-        # 这里应该将目标保存到数据库
-        # 由于没有专门的目标表，这里返回示例响应
+        print(f"DEBUG: 开始保存目标到数据库: {targets}")
+        logger.info(f"DEBUG: 开始保存目标到数据库: {targets}")
         
         target_records = []
-        for target_name, target_value in targets.items():
-            target_records.append({
-                'target_name': target_name,
-                'target_value': target_value,
-                'created_at': datetime.now().isoformat(),
-                'status': 'active'
-            })
+        current_year = datetime.now().year
         
+        print(f"DEBUG: 当前年份: {current_year}")
+        
+        # 定义目标映射配置
+        target_mapping = {
+            'resolution_time_target': {
+                'name': '故障解决时间目标',
+                'category': 'fault_resolution',
+                'unit': '分钟',
+                'target_type': 'maximum',
+                'description': '故障平均解决时间目标值'
+            },
+            'availability_target': {
+                'name': '系统可用性目标', 
+                'category': 'availability',
+                'unit': '百分比',
+                'target_type': 'minimum',
+                'description': '系统可用性目标值'
+            },
+            'proactive_discovery_target': {
+                'name': '主动发现率目标',
+                'category': 'proactive_discovery', 
+                'unit': '百分比',
+                'target_type': 'minimum',
+                'description': '故障主动发现率目标值'
+            },
+            'customer_satisfaction_target': {
+                'name': '客户满意度目标',
+                'category': 'customer_satisfaction',
+                'unit': '百分比', 
+                'target_type': 'minimum',
+                'description': '客户满意度目标值'
+            }
+        }
+        
+        for target_name, target_value in targets.items():
+            if target_name not in target_mapping:
+                continue
+                
+            config = target_mapping[target_name]
+            
+            # 检查是否已存在相同的目标记录
+            existing_result = await db.execute(
+                select(PerformanceTarget).where(
+                    and_(
+                        PerformanceTarget.target_category == config['category'],
+                        PerformanceTarget.year == current_year,
+                        PerformanceTarget.status == 'active'
+                    )
+                )
+            )
+            existing_target = existing_result.scalar_one_or_none()
+            
+            if existing_target:
+                # 更新现有记录
+                existing_target.target_value = float(target_value)
+                existing_target.updated_at = datetime.utcnow()
+                existing_target.updated_by = 'system'
+                target_records.append({
+                    'id': existing_target.id,
+                    'target_name': existing_target.target_name,
+                    'target_value': existing_target.target_value,
+                    'category': existing_target.target_category,
+                    'status': 'updated'
+                })
+            else:
+                # 创建新记录
+                new_target = PerformanceTarget(
+                    target_name=config['name'],
+                    target_category=config['category'],
+                    description=config['description'],
+                    target_value=float(target_value),
+                    unit=config['unit'],
+                    target_type=config['target_type'],
+                    effective_date=datetime.utcnow(),
+                    year=current_year,
+                    quarter='ALL',
+                    month='ALL',
+                    status='active',
+                    priority='high',
+                    related_metric=target_name,
+                    department='运维部',
+                    data_source='fault_analysis_system',
+                    update_frequency='monthly',
+                    created_by='system'
+                )
+                
+                db.add(new_target)
+                await db.flush()  # 获取ID
+                
+                target_records.append({
+                    'id': new_target.id,
+                    'target_name': new_target.target_name,
+                    'target_value': new_target.target_value,
+                    'category': new_target.target_category,
+                    'status': 'created'
+                })
+        
+        # 提交事务
+        await db.commit()
+        
+        logger.info(f"成功保存{len(target_records)}个绩效目标到数据库")
         return target_records
         
     except Exception as e:
+        await db.rollback()
         logger.error(f"保存绩效目标失败: {str(e)}")
         return []
 

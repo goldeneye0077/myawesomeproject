@@ -21,13 +21,13 @@
                             <div class="form-col">
                                 <div class="form-group">
                                     <label for="zbx">指标项</label>
-                                    <input type="text" id="zbx" name="zbx" class="form-control" required>
+                                    <input type="text" id="zbx" name="zbx" class="form-input" required>
                                 </div>
                             </div>
                             <div class="form-col">
                                 <div class="form-group">
                                     <label for="fz">分值</label>
-                                    <input type="text" id="fz" name="fz" class="form-control" required>
+                                    <input type="text" id="fz" name="fz" class="form-input" required>
                                 </div>
                             </div>
                         </div>
@@ -36,13 +36,13 @@
                             <div class="form-col">
                                 <div class="form-group">
                                     <label for="qspm">全省排名</label>
-                                    <input type="text" id="qspm" name="qspm" class="form-control" required>
+                                    <input type="text" id="qspm" name="qspm" class="form-input" required>
                                 </div>
                             </div>
                             <div class="form-col">
                                 <div class="form-group">
                                     <label for="qnljdfzb">全年累计得分</label>
-                                    <input type="text" id="qnljdfzb" name="qnljdfzb" class="form-control" required>
+                                    <input type="text" id="qnljdfzb" name="qnljdfzb" class="form-input" required>
                                 </div>
                             </div>
                         </div>
@@ -51,13 +51,13 @@
                             <div class="form-col">
                                 <div class="form-group">
                                     <label for="nddcpg">年度达成评估</label>
-                                    <input type="text" id="nddcpg" name="nddcpg" class="form-control" required>
+                                    <input type="text" id="nddcpg" name="nddcpg" class="form-input" required>
                                 </div>
                             </div>
                             <div class="form-col">
                                 <div class="form-group">
                                     <label for="y1zb">1月指标</label>
-                                    <input type="text" id="y1zb" name="y1zb" class="form-control" required>
+                                    <input type="text" id="y1zb" name="y1zb" class="form-input" required>
                                 </div>
                             </div>
                         </div>
@@ -66,13 +66,13 @@
                             <div class="form-col">
                                 <div class="form-group">
                                     <label for="y2zb">2月指标</label>
-                                    <input type="text" id="y2zb" name="y2zb" class="form-control" required>
+                                    <input type="text" id="y2zb" name="y2zb" class="form-input" required>
                                 </div>
                             </div>
                             <div class="form-col">
                                 <div class="form-group">
                                     <label for="y3zb">3月指标</label>
-                                    <input type="text" id="y3zb" name="y3zb" class="form-control" required>
+                                    <input type="text" id="y3zb" name="y3zb" class="form-input" required>
                                 </div>
                             </div>
                         </div>
@@ -81,13 +81,13 @@
                             <div class="form-col">
                                 <div class="form-group">
                                     <label for="y4zb">4月指标</label>
-                                    <input type="text" id="y4zb" name="y4zb" class="form-control" required>
+                                    <input type="text" id="y4zb" name="y4zb" class="form-input" required>
                                 </div>
                             </div>
                             <div class="form-col">
                                 <div class="form-group">
                                     <label for="y5zb">5月指标</label>
-                                    <input type="text" id="y5zb" name="y5zb" class="form-control" required>
+                                    <input type="text" id="y5zb" name="y5zb" class="form-input" required>
                                 </div>
                             </div>
                         </div>
@@ -96,13 +96,13 @@
                             <div class="form-col">
                                 <div class="form-group">
                                     <label for="y6zb">6月指标</label>
-                                    <input type="text" id="y6zb" name="y6zb" class="form-control" required>
+                                    <input type="text" id="y6zb" name="y6zb" class="form-input" required>
                                 </div>
                             </div>
                             <div class="form-col">
                                 <div class="form-group">
                                     <label for="jzz">基准值</label>
-                                    <input type="text" id="jzz" name="jzz" class="form-control">
+                                    <input type="text" id="jzz" name="jzz" class="form-input">
                                 </div>
                             </div>
                         </div>
@@ -111,14 +111,14 @@
                             <div class="form-col">
                                 <div class="form-group">
                                     <label for="tzz">挑战值</label>
-                                    <input type="text" id="tzz" name="tzz" class="form-control">
+                                    <input type="text" id="tzz" name="tzz" class="form-input">
                                 </div>
                             </div>
                             <div class="form-col">
                                 <!-- 留空，保持对称 -->
                             </div>
                         </div>
-            <button type="submit" class="btn btn-primary">保存</button>  
+            <button type="submit" class="btn-primary">保存</button>  
         </form>  
     </div>  
 
@@ -137,7 +137,7 @@
                             <div class="upload-icon">📊</div>
                             <div class="upload-text">点击选择Excel文件或拖拽文件到此区域</div>
                             <input type="file" id="file-input" name="file" class="file-input" accept=".xls,.xlsx" onchange="updateFileName(this)">
-                            <label for="file-input" class="btn btn-primary">选择文件</label>
+                            <label for="file-input" class="btn-primary">选择文件</label>
                             <div id="file-name" class="file-name"></div>
                         </div>
                         <button type="submit" class="btn btn-success">上传并导入</button>

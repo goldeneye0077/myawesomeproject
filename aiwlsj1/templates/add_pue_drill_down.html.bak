@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}添加PUE下钻数据{% endblock %}
+{% block content %}
+<div class="card">
+  <h2 class="card-title">添加PUE下钻数据</h2>
+  <form method="post" action="/add_pue_drill_down" style="display:flex;flex-direction:column;gap:12px;max-width:480px;">
+      <label>地点：<input name="location" required class="form-control"></label>
+      <label>年份：<input name="year" required class="form-control"></label>
+      <label>月份：<input name="month" required class="form-control"></label>
+      <label>作业形式：<input name="work_type" class="form-control"></label>
+      <label>作业分类：<input name="work_category" class="form-control"></label>
+      <label>序号：<input name="sequence_no" type="number" class="form-control"></label>
+      <label>作业对象：<input name="work_object" class="form-control"></label>
+      <label>检查项：<textarea name="check_item" rows="3" class="form-control"></textarea></label>
+      <label>操作方法：<textarea name="operation_method" rows="3" class="form-control"></textarea></label>
+      <label>标杆值：<input name="benchmark_value" class="form-control"></label>
+      <label>执行标准：<input name="execution_standard" class="form-control"></label>
+      <label>执行情况：<input name="execution_status" class="form-control"></label>
+      <label>详细情况：<textarea name="detailed_situation" rows="3" class="form-control"></textarea></label>
+      <label>量化标准：<input name="quantification_standard" class="form-control"></label>
+      <label>上月量化标准：<input name="last_month_standard" class="form-control"></label>
+      <label>量化单位：<input name="quantification_unit" class="form-control"></label>
+      <label>执行人：<input name="executor" class="form-control"></label>
+      <button type="submit" class="btn btn-primary">保存</button>
+  </form>
+</div>
+{% endblock %}

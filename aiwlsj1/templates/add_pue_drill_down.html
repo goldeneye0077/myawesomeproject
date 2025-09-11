@@ -1,27 +1,337 @@
-{% extends "base.html" %}
-{% block title %}添加PUE下钻数据{% endblock %}
+{% extends "base_tailwind.html" %}
+
+{% block title %}添加PUE下钻数据 - 网络视界指标后台管理{% endblock %}
+
+{% block page_title %}添加PUE下钻数据{% endblock %}
+
+{% block breadcrumb %}
+    <li><span class="text-gray-300">/</span></li>
+    <li><span class="text-gray-500">契约化指标分析</span></li>
+    <li><span class="text-gray-300">/</span></li>
+    <li><a href="/pue_drill_down_data" class="text-gray-500 hover:text-gray-700">PUE下钻数据管理</a></li>
+    <li><span class="text-gray-300">/</span></li>
+    <li><span class="text-primary-600">添加数据</span></li>
+{% endblock %}
+
+{% block page_actions %}
+    <a href="/pue_drill_down_data" class="btn-secondary">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+        </svg>
+        返回列表
+    </a>
+{% endblock %}
+
 {% block content %}
-<div class="card">
-  <h2 class="card-title">添加PUE下钻数据</h2>
-  <form method="post" action="/add_pue_drill_down" style="display:flex;flex-direction:column;gap:12px;max-width:480px;">
-      <label>地点：<input name="location" required class="form-control"></label>
-      <label>年份：<input name="year" required class="form-control"></label>
-      <label>月份：<input name="month" required class="form-control"></label>
-      <label>作业形式：<input name="work_type" class="form-control"></label>
-      <label>作业分类：<input name="work_category" class="form-control"></label>
-      <label>序号：<input name="sequence_no" type="number" class="form-control"></label>
-      <label>作业对象：<input name="work_object" class="form-control"></label>
-      <label>检查项：<textarea name="check_item" rows="3" class="form-control"></textarea></label>
-      <label>操作方法：<textarea name="operation_method" rows="3" class="form-control"></textarea></label>
-      <label>标杆值：<input name="benchmark_value" class="form-control"></label>
-      <label>执行标准：<input name="execution_standard" class="form-control"></label>
-      <label>执行情况：<input name="execution_status" class="form-control"></label>
-      <label>详细情况：<textarea name="detailed_situation" rows="3" class="form-control"></textarea></label>
-      <label>量化标准：<input name="quantification_standard" class="form-control"></label>
-      <label>上月量化标准：<input name="last_month_standard" class="form-control"></label>
-      <label>量化单位：<input name="quantification_unit" class="form-control"></label>
-      <label>执行人：<input name="executor" class="form-control"></label>
-      <button type="submit" class="btn btn-primary">保存</button>
-  </form>
+<div class="max-w-4xl mx-auto space-y-6">
+    <!-- 表单卡片 -->
+    <div class="bg-white shadow-sm rounded-lg">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">添加PUE下钻数据</h3>
+            <p class="mt-1 text-sm text-gray-500">请填写详细的PUE下钻数据信息，所有标有 * 的字段为必填项。</p>
+        </div>
+
+        <form method="post" action="/add_pue_drill_down" class="px-6 py-4 space-y-6">
+            {{ csrf_token() if csrf_token }}
+            
+            <!-- 基础信息 -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <label for="location" class="block text-sm font-medium text-gray-700 mb-1">
+                        地点 <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" name="location" id="location" required
+                           placeholder="请输入地点"
+                           class="form-input">
+                </div>
+                
+                <div>
+                    <label for="year" class="block text-sm font-medium text-gray-700 mb-1">
+                        年份 <span class="text-red-500">*</span>
+                    </label>
+                    <input type="number" name="year" id="year" required min="2020" max="2030"
+                           placeholder="2024"
+                           class="form-input">
+                </div>
+                
+                <div>
+                    <label for="month" class="block text-sm font-medium text-gray-700 mb-1">
+                        月份 <span class="text-red-500">*</span>
+                    </label>
+                    <input type="number" name="month" id="month" required min="1" max="12"
+                           placeholder="请输入月份（1-12）"
+                           class="form-input">
+                </div>
+            </div>
+
+            <!-- 作业信息 -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <label for="work_type" class="block text-sm font-medium text-gray-700 mb-1">
+                        作业形式
+                    </label>
+                    <input type="text" name="work_type" id="work_type"
+                           placeholder="请输入作业形式"
+                           class="form-input">
+                </div>
+                
+                <div>
+                    <label for="work_category" class="block text-sm font-medium text-gray-700 mb-1">
+                        作业分类
+                    </label>
+                    <input type="text" name="work_category" id="work_category"
+                           placeholder="请输入作业分类"
+                           class="form-input">
+                </div>
+                
+                <div>
+                    <label for="sequence_no" class="block text-sm font-medium text-gray-700 mb-1">
+                        序号
+                    </label>
+                    <input type="number" name="sequence_no" id="sequence_no" min="0"
+                           placeholder="请输入序号"
+                           class="form-input">
+                </div>
+            </div>
+
+            <!-- 作业对象 -->
+            <div>
+                <label for="work_object" class="block text-sm font-medium text-gray-700 mb-1">
+                    作业对象
+                </label>
+                <input type="text" name="work_object" id="work_object"
+                       placeholder="请输入作业对象"
+                       class="form-input">
+            </div>
+
+            <!-- 检查项 -->
+            <div>
+                <label for="check_item" class="block text-sm font-medium text-gray-700 mb-1">
+                    检查项
+                </label>
+                <textarea name="check_item" id="check_item" rows="3"
+                          placeholder="请输入检查项详情"
+                          class="form-textarea"></textarea>
+            </div>
+
+            <!-- 操作方法 -->
+            <div>
+                <label for="operation_method" class="block text-sm font-medium text-gray-700 mb-1">
+                    操作方法
+                </label>
+                <textarea name="operation_method" id="operation_method" rows="3"
+                          placeholder="请输入操作方法详情"
+                          class="form-textarea"></textarea>
+            </div>
+
+            <!-- 标准信息 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="benchmark_value" class="block text-sm font-medium text-gray-700 mb-1">
+                        标杆值
+                    </label>
+                    <input type="text" name="benchmark_value" id="benchmark_value"
+                           placeholder="请输入标杆值"
+                           class="form-input">
+                </div>
+                
+                <div>
+                    <label for="execution_standard" class="block text-sm font-medium text-gray-700 mb-1">
+                        执行标准
+                    </label>
+                    <input type="text" name="execution_standard" id="execution_standard"
+                           placeholder="请输入执行标准"
+                           class="form-input">
+                </div>
+            </div>
+
+            <!-- 执行情况 -->
+            <div>
+                <label for="execution_status" class="block text-sm font-medium text-gray-700 mb-1">
+                    执行情况
+                </label>
+                <input type="text" name="execution_status" id="execution_status"
+                       placeholder="请输入执行情况"
+                       class="form-input">
+            </div>
+
+            <!-- 详细情况 -->
+            <div>
+                <label for="detailed_situation" class="block text-sm font-medium text-gray-700 mb-1">
+                    详细情况
+                </label>
+                <textarea name="detailed_situation" id="detailed_situation" rows="3"
+                          placeholder="请输入详细情况说明"
+                          class="form-textarea"></textarea>
+            </div>
+
+            <!-- 量化信息 -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <label for="quantification_standard" class="block text-sm font-medium text-gray-700 mb-1">
+                        量化标准
+                    </label>
+                    <input type="text" name="quantification_standard" id="quantification_standard"
+                           placeholder="请输入量化标准"
+                           class="form-input">
+                </div>
+                
+                <div>
+                    <label for="last_month_standard" class="block text-sm font-medium text-gray-700 mb-1">
+                        上月量化标准
+                    </label>
+                    <input type="text" name="last_month_standard" id="last_month_standard"
+                           placeholder="请输入上月量化标准"
+                           class="form-input">
+                </div>
+                
+                <div>
+                    <label for="quantification_unit" class="block text-sm font-medium text-gray-700 mb-1">
+                        量化单位
+                    </label>
+                    <input type="text" name="quantification_unit" id="quantification_unit"
+                           placeholder="请输入量化单位"
+                           class="form-input">
+                </div>
+            </div>
+
+            <!-- 执行人 -->
+            <div>
+                <label for="executor" class="block text-sm font-medium text-gray-700 mb-1">
+                    执行人
+                </label>
+                <input type="text" name="executor" id="executor"
+                       placeholder="请输入执行人姓名"
+                       class="form-input">
+            </div>
+
+            <!-- 提交按钮 -->
+            <div class="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200">
+                <a href="/pue_drill_down_data" class="btn-secondary">取消</a>
+                <button type="submit" class="btn-primary" id="submitBtn">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    保存数据
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- 帮助信息卡片 -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-blue-800">填写说明</h3>
+                <div class="mt-2 text-sm text-blue-700">
+                    <ul class="list-disc list-inside space-y-1">
+                        <li><strong>地点、年份、月份</strong>为必填项，用于标识数据的基本信息</li>
+                        <li><strong>作业形式和作业分类</strong>用于分类管理不同类型的作业</li>
+                        <li><strong>检查项和操作方法</strong>详细描述具体的操作内容</li>
+                        <li><strong>量化标准</strong>用于衡量执行效果和对比分析</li>
+                        <li>可选字段留空表示暂无相关信息</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 表单验证
+document.querySelector('form').addEventListener('submit', function(e) {
+    const submitBtn = document.getElementById('submitBtn');
+    const location = document.getElementById('location').value.trim();
+    const year = document.getElementById('year').value.trim();
+    const month = document.getElementById('month').value.trim();
+    
+    // 基础验证
+    if (!location || !year || !month) {
+        e.preventDefault();
+        if (typeof showNotification === 'function') {
+            showNotification('请填写所有必填字段（地点、年份、月份）', 'error');
+        } else {
+            alert('请填写所有必填字段（地点、年份、月份）');
+        }
+        return;
+    }
+    
+    // 年份验证
+    const yearNum = parseInt(year);
+    if (isNaN(yearNum) || yearNum < 2020 || yearNum > 2030) {
+        e.preventDefault();
+        if (typeof showNotification === 'function') {
+            showNotification('年份必须在2020-2030之间', 'error');
+        } else {
+            alert('年份必须在2020-2030之间');
+        }
+        return;
+    }
+    
+    // 月份验证
+    const monthNum = parseInt(month);
+    if (isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
+        e.preventDefault();
+        if (typeof showNotification === 'function') {
+            showNotification('月份必须在1-12之间', 'error');
+        } else {
+            alert('月份必须在1-12之间');
+        }
+        return;
+    }
+    
+    // 提交时显示加载状态
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `
+        <svg class="w-4 h-4 mr-2 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        正在保存...
+    `;
+    
+    // 如果有错误，恢复按钮状态
+    setTimeout(() => {
+        if (submitBtn.disabled) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = `
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                保存数据
+            `;
+        }
+    }, 3000);
+});
+
+// 自动填充当前年份和月份
+document.addEventListener('DOMContentLoaded', function() {
+    const yearInput = document.getElementById('year');
+    const monthInput = document.getElementById('month');
+    const now = new Date();
+    
+    if (!yearInput.value) {
+        yearInput.value = now.getFullYear();
+    }
+    
+    if (!monthInput.value) {
+        monthInput.value = now.getMonth() + 1;
+    }
+});
+
+// 序号自动递增建议
+let sequenceCounter = 1;
+document.getElementById('sequence_no').addEventListener('focus', function() {
+    if (!this.value) {
+        this.value = sequenceCounter++;
+    }
+});
+</script>
 {% endblock %}

@@ -40,13 +40,13 @@
                         <div class="form-col">
                             <div class="form-group">
                                 <label for="zbx">指标项</label>
-                                <input type="text" id="zbx" name="zbx" value="{{ zbk.zbx }}" class="form-input" required>
+                                <input type="text" id="zbx" name="zbx" value="{{ zbk.zbx }}" class="form-control" required>
                             </div>
                         </div>
                         <div class="form-col">
                             <div class="form-group">
                                 <label for="fz">分值</label>
-                                <input type="text" id="fz" name="fz" value="{{ zbk.fz }}" class="form-input" required>
+                                <input type="text" id="fz" name="fz" value="{{ zbk.fz }}" class="form-control" required>
                             </div>
                         </div>
                     </div>
@@ -55,13 +55,13 @@
                         <div class="form-col">
                             <div class="form-group">
                                 <label for="qspm">全省排名</label>
-                                <input type="text" id="qspm" name="qspm" value="{{ zbk.qspm }}" class="form-input" required>
+                                <input type="text" id="qspm" name="qspm" value="{{ zbk.qspm }}" class="form-control" required>
                             </div>
                         </div>
                         <div class="form-col">
                             <div class="form-group">
                                 <label for="qnljdfzb">全年累计得分占比</label>
-                                <input type="text" id="qnljdfzb" name="qnljdfzb" value="{{ zbk.qnljdfzb }}" class="form-input" required>
+                                <input type="text" id="qnljdfzb" name="qnljdfzb" value="{{ zbk.qnljdfzb }}" class="form-control" required>
                             </div>
                         </div>
                     </div>
@@ -70,13 +70,13 @@
                         <div class="form-col">
                             <div class="form-group">
                                 <label for="nddcpg">年度达成评估</label>
-                                <input type="text" id="nddcpg" name="nddcpg" value="{{ zbk.nddcpg }}" class="form-input" required>
+                                <input type="text" id="nddcpg" name="nddcpg" value="{{ zbk.nddcpg }}" class="form-control" required>
                             </div>
                         </div>
                         <div class="form-col">
                             <div class="form-group">
                                 <label for="y1zb">1月指标</label>
-                                <input type="text" id="y1zb" name="y1zb" value="{{ zbk.y1zb }}" class="form-input" required>
+                                <input type="text" id="y1zb" name="y1zb" value="{{ zbk.y1zb }}" class="form-control" required>
                             </div>
                         </div>
                     </div>
@@ -85,13 +85,13 @@
                         <div class="form-col">
                             <div class="form-group">
                                 <label for="y2zb">2月指标</label>
-                                <input type="text" id="y2zb" name="y2zb" value="{{ zbk.y2zb }}" class="form-input" required>
+                                <input type="text" id="y2zb" name="y2zb" value="{{ zbk.y2zb }}" class="form-control" required>
                             </div>
                         </div>
                         <div class="form-col">
                             <div class="form-group">
                                 <label for="y3zb">3月指标</label>
-                                <input type="text" id="y3zb" name="y3zb" value="{{ zbk.y3zb }}" class="form-input" required>
+                                <input type="text" id="y3zb" name="y3zb" value="{{ zbk.y3zb }}" class="form-control" required>
                             </div>
                         </div>
                     </div>
@@ -100,13 +100,13 @@
                         <div class="form-col">
                             <div class="form-group">
                                 <label for="y4zb">4月指标</label>
-                                <input type="text" id="y4zb" name="y4zb" value="{{ zbk.y4zb }}" class="form-input" required>
+                                <input type="text" id="y4zb" name="y4zb" value="{{ zbk.y4zb }}" class="form-control" required>
                             </div>
                         </div>
                         <div class="form-col">
                             <div class="form-group">
                                 <label for="y5zb">5月指标</label>
-                                <input type="text" id="y5zb" name="y5zb" value="{{ zbk.y5zb }}" class="form-input" required>
+                                <input type="text" id="y5zb" name="y5zb" value="{{ zbk.y5zb }}" class="form-control" required>
                             </div>
                         </div>
                     </div>
@@ -115,13 +115,13 @@
                         <div class="form-col">
                             <div class="form-group">
                                 <label for="y6zb">6月指标</label>
-                                <input type="text" id="y6zb" name="y6zb" value="{{ zbk.y6zb }}" class="form-input" required>
+                                <input type="text" id="y6zb" name="y6zb" value="{{ zbk.y6zb }}" class="form-control" required>
                             </div>
                         </div>
                         <div class="form-col">
                             <div class="form-group">
                                 <label for="jzz">基准值</label>
-                                <input type="text" id="jzz" name="jzz" value="{{ zbk.jzz }}" class="form-input">
+                                <input type="text" id="jzz" name="jzz" value="{{ zbk.jzz }}" class="form-control">
                             </div>
                         </div>
                     </div>
@@ -130,7 +130,7 @@
                         <div class="form-col">
                             <div class="form-group">
                                 <label for="tzz">挑战值</label>
-                                <input type="text" id="tzz" name="tzz" value="{{ zbk.tzz }}" class="form-input">
+                                <input type="text" id="tzz" name="tzz" value="{{ zbk.tzz }}" class="form-control">
                             </div>
                         </div>
                         <div class="form-col">
@@ -141,8 +141,8 @@
                     <input type="hidden" name="indicator_type" value="{{ indicator_type }}">
 
                     <div class="form-actions">
-                        <button type="submit" class="btn-primary">更新</button>
-                        <a href="{{ return_url }}" class="btn-danger">取消</a>
+                        <button type="submit" class="btn btn-primary">更新</button>
+                        <a href="{{ return_url }}" class="btn btn-danger">取消</a>
                     </div>
                 </form>
             </div>

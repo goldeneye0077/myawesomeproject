@@ -4,144 +4,140 @@
 
 {% block content %}
 <!-- 批量导入卡片 -->
-<div class="card">
-    <h2 class="card-title">批量导入故障数据</h2>
-    
-    <!-- 文件上传区域 -->
-    <div class="upload-section">
-        <h3>选择文件</h3>
-        <form id="uploadForm" enctype="multipart/form-data" method="post" action="/fault/upload_fault_data">
-            <div class="file-upload-area">
-                <div class="upload-icon">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="7,10 12,15 17,10"></polyline>
-                        <line x1="12" y1="15" x2="12" y2="3"></line>
-                    </svg>
+<div class="bg-white rounded-xl shadow-sm border border-gray-200">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h2 class="text-xl font-semibold text-gray-900">批量导入故障数据</h2>
+    </div>
+    <div class="p-6">
+        <!-- 文件上传区域 -->
+        <div class="mb-8">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">选择文件</h3>
+            <form id="uploadForm" enctype="multipart/form-data" method="post" action="/fault/upload_fault_data">
+                <div class="file-upload-area">
+                    <div class="upload-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7,10 12,15 17,10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                    </div>
+                    <div class="upload-text">
+                        <p><strong>点击选择文件</strong> 或拖拽文件到此处</p>
+                        <p class="upload-hint">支持 .xlsx, .xls 格式，文件大小不超过 10MB</p>
+                    </div>
+                    <input type="file" id="fileInput" name="file" accept=".xlsx,.xls" style="display: none;">
                 </div>
-                <div class="upload-text">
-                    <p><strong>点击选择文件</strong> 或拖拽文件到此处</p>
-                    <p class="upload-hint">支持 .xlsx, .xls 格式，文件大小不超过 10MB</p>
+            </form>
+            
+            <!-- 文件信息显示 -->
+            <div id="fileInfo" class="file-info" style="display: none;">
+                <div class="file-details">
+                    <span class="file-name"></span>
+                    <span class="file-size"></span>
                 </div>
-                <input type="file" id="fileInput" name="file" accept=".xlsx,.xls" style="display: none;">
+                <button type="button" class="bg-red-600 hover:bg-red-700 text-white font-medium py-1 px-2 rounded text-sm transition-colors duration-200" onclick="clearFile()">移除</button>
             </div>
-        </form>
-        
-        <!-- 文件信息显示 -->
-        <div id="fileInfo" class="file-info" style="display: none;">
-            <div class="file-details">
-                <span class="file-name"></span>
-                <span class="file-size"></span>
+        </div>
+
+        <!-- 导入选项 -->
+        <div class="mb-8">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">导入选项</h3>
+            <div class="space-y-3">
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" id="skipFirstRow" checked class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 mr-2">
+                    <span class="text-sm text-gray-700">跳过第一行（表头）</span>
+                </label>
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" id="updateExisting" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 mr-2">
+                    <span class="text-sm text-gray-700">更新已存在的记录（根据序号匹配）</span>
+                </label>
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" id="validateData" checked class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 mr-2">
+                    <span class="text-sm text-gray-700">数据验证（检查必填字段和数据格式）</span>
+                </label>
             </div>
-            <button type="button" class="btn btn-danger btn-sm" onclick="clearFile()">移除</button>
         </div>
-    </div>
 
-    <!-- 导入选项 -->
-    <div class="import-options">
-        <h3>导入选项</h3>
-        <div class="option-group">
-            <label class="checkbox-label">
-                <input type="checkbox" id="skipFirstRow" checked>
-                <span class="checkmark"></span>
-                跳过第一行（表头）
-            </label>
+        <!-- 操作按钮 -->
+        <div class="mb-8 flex flex-wrap gap-3">
+            <button type="button" id="importBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed" disabled>开始导入</button>
+            <button type="button" id="previewBtn" class="bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed" disabled>预览数据</button>
+            <a href="/fault/data" class="bg-transparent border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-2 px-4 rounded-lg transition-colors duration-200">返回数据管理</a>
         </div>
-        <div class="option-group">
-            <label class="checkbox-label">
-                <input type="checkbox" id="updateExisting">
-                <span class="checkmark"></span>
-                更新已存在的记录（根据序号匹配）
-            </label>
-        </div>
-        <div class="option-group">
-            <label class="checkbox-label">
-                <input type="checkbox" id="validateData" checked>
-                <span class="checkmark"></span>
-                数据验证（检查必填字段和数据格式）
-            </label>
-        </div>
-    </div>
 
-    <!-- 操作按钮 -->
-    <div class="action-bar">
-        <button type="button" id="importBtn" class="btn btn-primary" disabled>开始导入</button>
-        <button type="button" id="previewBtn" class="btn btn-secondary" disabled>预览数据</button>
-        <a href="/fault/data" class="btn btn-outline">返回数据管理</a>
-    </div>
-
-    <!-- 进度显示 -->
-    <div id="progressSection" class="progress-section" style="display: none;">
-        <h3>导入进度</h3>
-        <div class="progress-bar">
-            <div id="progressFill" class="progress-fill"></div>
+        <!-- 进度显示 -->
+        <div id="progressSection" class="mb-8" style="display: none;">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">导入进度</h3>
+            <div class="progress-bar">
+                <div id="progressFill" class="progress-fill"></div>
+            </div>
+            <div id="progressText" class="progress-text">0%</div>
+            <div id="statusText" class="status-text">准备中...</div>
         </div>
-        <div id="progressText" class="progress-text">0%</div>
-        <div id="statusText" class="status-text">准备中...</div>
-    </div>
 
-    <!-- 结果显示 -->
-    <div id="resultSection" class="result-section" style="display: none;">
-        <h3>导入结果</h3>
-        <div id="resultContent"></div>
+        <!-- 结果显示 -->
+        <div id="resultSection" class="result-section" style="display: none;">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">导入结果</h3>
+            <div id="resultContent"></div>
+        </div>
     </div>
 </div>
 
 <!-- 导入说明卡片 -->
-<div class="card" style="margin-top: 20px;">
-    <h3>导入说明</h3>
-    <div class="import-instructions">
-        <h4>Excel文件格式要求：</h4>
-        <div class="instruction-grid">
-            <div class="instruction-item">
-                <strong>文件格式：</strong>
-                <span>.xlsx 或 .xls 格式</span>
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 mt-6">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900">导入说明</h3>
+    </div>
+    <div class="p-6">
+        <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+            <h4 class="font-medium text-gray-900 mb-3">Excel文件格式要求：</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                <div class="flex flex-col">
+                    <span class="font-medium text-sm text-gray-700">文件格式：</span>
+                    <span class="text-sm text-gray-600">.xlsx 或 .xls 格式</span>
+                </div>
+                <div class="flex flex-col">
+                    <span class="font-medium text-sm text-gray-700">文件大小：</span>
+                    <span class="text-sm text-gray-600">不超过 10MB</span>
+                </div>
+                <div class="flex flex-col">
+                    <span class="font-medium text-sm text-gray-700">表头行：</span>
+                    <span class="text-sm text-gray-600">第一行应为字段名称</span>
+                </div>
+                <div class="flex flex-col">
+                    <span class="font-medium text-sm text-gray-700">日期格式：</span>
+                    <span class="text-sm text-gray-600">YYYY-MM-DD 或 YYYY/MM/DD</span>
+                </div>
             </div>
-            <div class="instruction-item">
-                <strong>文件大小：</strong>
-                <span>不超过 10MB</span>
+            
+            <h4 class="font-medium text-gray-900 mb-3">必填字段：</h4>
+            <div class="flex flex-wrap gap-2 mb-4">
+                <span class="inline-block px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded">序号</span>
+                <span class="inline-block px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded">故障日期</span>
+                <span class="inline-block px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded">故障名称</span>
+                <span class="inline-block px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded">省-故障类型</span>
+                <span class="inline-block px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded">原因分类</span>
+                <span class="inline-block px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded">通报级别</span>
             </div>
-            <div class="instruction-item">
-                <strong>表头行：</strong>
-                <span>第一行应为字段名称</span>
+            
+            <h4 class="font-medium text-gray-900 mb-3">可选字段：</h4>
+            <div class="flex flex-wrap gap-2">
+                <span class="inline-block px-2 py-1 bg-gray-500 text-white text-xs font-medium rounded">省-故障原因分析</span>
+                <span class="inline-block px-2 py-1 bg-gray-500 text-white text-xs font-medium rounded">故障处理时长</span>
+                <span class="inline-block px-2 py-1 bg-gray-500 text-white text-xs font-medium rounded">投诉情况</span>
+                <span class="inline-block px-2 py-1 bg-gray-500 text-white text-xs font-medium rounded">发生时间</span>
+                <span class="inline-block px-2 py-1 bg-gray-500 text-white text-xs font-medium rounded">结束时间</span>
+                <span class="inline-block px-2 py-1 bg-gray-500 text-white text-xs font-medium rounded">故障原因</span>
+                <span class="inline-block px-2 py-1 bg-gray-500 text-white text-xs font-medium rounded">故障处理</span>
+                <span class="inline-block px-2 py-1 bg-gray-500 text-white text-xs font-medium rounded">主动发现</span>
+                <span class="inline-block px-2 py-1 bg-gray-500 text-white text-xs font-medium rounded">备注</span>
             </div>
-            <div class="instruction-item">
-                <strong>日期格式：</strong>
-                <span>YYYY-MM-DD 或 YYYY/MM/DD</span>
-            </div>
-        </div>
-        
-        <h4>必填字段：</h4>
-        <div class="required-fields">
-            <span class="field-tag">序号</span>
-            <span class="field-tag">故障日期</span>
-            <span class="field-tag">故障名称</span>
-            <span class="field-tag">省-故障类型</span>
-            <span class="field-tag">原因分类</span>
-            <span class="field-tag">通报级别</span>
-        </div>
-        
-        <h4>可选字段：</h4>
-        <div class="optional-fields">
-            <span class="field-tag optional">省-故障原因分析</span>
-            <span class="field-tag optional">故障处理时长</span>
-            <span class="field-tag optional">投诉情况</span>
-            <span class="field-tag optional">发生时间</span>
-            <span class="field-tag optional">结束时间</span>
-            <span class="field-tag optional">故障原因</span>
-            <span class="field-tag optional">故障处理</span>
-            <span class="field-tag optional">主动发现</span>
-            <span class="field-tag optional">备注</span>
         </div>
     </div>
 </div>
 
 <style>
 /* 文件上传区域样式 */
-.upload-section {
-    margin-bottom: 30px;
-}
-
 .file-upload-area {
     border: 2px dashed #d1d5db;
     border-radius: 8px;
@@ -203,37 +199,7 @@
     color: #6b7280;
 }
 
-/* 导入选项样式 */
-.import-options {
-    margin-bottom: 30px;
-}
-
-.option-group {
-    margin-bottom: 12px;
-}
-
-.checkbox-label {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    font-size: 0.95rem;
-    color: #374151;
-}
-
-.checkbox-label input[type="checkbox"] {
-    margin-right: 8px;
-    width: 16px;
-    height: 16px;
-}
-
 /* 进度条样式 */
-.progress-section {
-    margin-top: 30px;
-    padding: 20px;
-    background: #f8f9fa;
-    border-radius: 8px;
-}
-
 .progress-bar {
     width: 100%;
     height: 20px;
@@ -265,7 +231,6 @@
 
 /* 结果显示样式 */
 .result-section {
-    margin-top: 30px;
     padding: 20px;
     border-radius: 8px;
 }
@@ -280,94 +245,23 @@
     border: 1px solid #fca5a5;
 }
 
-/* 导入说明样式 */
-.import-instructions {
-    background: #f8f9fa;
-    padding: 20px;
-    border-radius: 8px;
-    border-left: 4px solid #007bff;
-}
-
-.instruction-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 16px;
-    margin-bottom: 20px;
-}
-
-.instruction-item {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.instruction-item strong {
-    color: #374151;
-    font-size: 0.875rem;
-}
-
-.instruction-item span {
-    color: #6b7280;
-    font-size: 0.875rem;
-}
-
-/* 字段标签样式 */
-.required-fields,
-.optional-fields {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 16px;
-}
-
-.field-tag {
-    display: inline-block;
-    padding: 4px 8px;
-    background: #3b82f6;
-    color: white;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    font-weight: 500;
-}
-
-.field-tag.optional {
-    background: #6b7280;
-}
-
-/* 按钮样式 */
-.btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.btn-outline {
-    background: transparent;
-    border: 1px solid #d1d5db;
-    color: #374151;
-}
-
-.btn-outline:hover {
-    background: #f9fafb;
-}
-
-.btn-sm {
-    padding: 4px 8px;
-    font-size: 0.75rem;
-}
-
 /* 响应式设计 */
 @media (max-width: 768px) {
     .file-upload-area {
         padding: 30px 15px;
     }
     
-    .instruction-grid {
-        grid-template-columns: 1fr;
+    .grid.grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-4.gap-4 {
+        grid-template-columns: 1fr !important;
     }
     
-    .required-fields,
-    .optional-fields {
-        justify-content: center;
+    .flex.flex-wrap.gap-3 {
+        flex-direction: column;
+    }
+    
+    .flex.flex-wrap.gap-3 > * {
+        width: 100%;
+        text-align: center;
     }
 }
 </style>
@@ -542,39 +436,57 @@ document.addEventListener('DOMContentLoaded', function() {
         if (result.success) {
             resultContent.innerHTML = `
                 <div class="result-success">
-                    <h4>✅ 导入成功</h4>
-                    <p>${result.message}</p>
-                    <ul>
+                    <h4 class="text-green-800 font-medium mb-2">✅ 导入成功</h4>
+                    <p class="text-green-700 mb-4">${result.message}</p>
+                    <ul class="text-green-700 space-y-1">
                         <li>总记录数：<strong>${result.total_rows}</strong> 条</li>
                         <li>成功导入：<strong>${result.success_count}</strong> 条记录</li>
                         <li>失败记录：<strong>${result.error_count}</strong> 条记录</li>
                         ${result.duplicate_count > 0 ? `<li>重复记录：<strong>${result.duplicate_count}</strong> 条记录</li>` : ''}
                     </ul>
                     ${result.errors && result.errors.length > 0 ? `
-                        <div style="margin-top: 16px;">
-                            <h5>错误详情：</h5>
-                            <ul style="color: #dc3545; font-size: 0.9em;">
+                        <div class="mt-4">
+                            <h5 class="text-red-800 font-medium">错误详情：</h5>
+                            <ul class="text-red-700 text-sm space-y-1 mt-2">
                                 ${result.errors.map(error => `<li>${error}</li>`).join('')}
                             </ul>
                         </div>
                     ` : ''}
-                    <div style="margin-top: 16px;">
-                        <a href="/fault/data" class="btn btn-primary">查看导入数据</a>
-                        <button type="button" class="btn btn-secondary" onclick="resetForm()">继续导入</button>
+                    <div class="mt-4 flex gap-3">
+                        <a href="/fault/data" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">查看导入数据</a>
+                        <button type="button" class="bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200" onclick="resetForm()">继续导入</button>
                     </div>
                 </div>
             `;
         } else {
             resultContent.innerHTML = `
                 <div class="result-error">
-                    <h4>❌ 导入失败</h4>
-                    <p>${result.error || '未知错误'}</p>
-                    <div style="margin-top: 16px;">
-                        <button type="button" class="btn btn-secondary" onclick="resetForm()">重新尝试</button>
+                    <h4 class="text-red-800 font-medium mb-2">❌ 导入失败</h4>
+                    <p class="text-red-700">${result.error || '未知错误'}</p>
+                    <div class="mt-4">
+                        <button type="button" class="bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200" onclick="resetForm()">重新尝试</button>
                     </div>
                 </div>
             `;
         }
+        
+        resultSection.style.display = 'block';
+    }
+
+    // 显示错误
+    function showError(message) {
+        const resultSection = document.getElementById('resultSection');
+        const resultContent = document.getElementById('resultContent');
+        
+        resultContent.innerHTML = `
+            <div class="result-error">
+                <h4 class="text-red-800 font-medium mb-2">❌ 导入失败</h4>
+                <p class="text-red-700">${message}</p>
+                <div class="mt-4">
+                    <button type="button" class="bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200" onclick="resetForm()">重新尝试</button>
+                </div>
+            </div>
+        `;
         
         resultSection.style.display = 'block';
     }
@@ -584,50 +496,31 @@ document.addEventListener('DOMContentLoaded', function() {
         // 重置文件输入
         document.getElementById('fileInput').value = '';
         
-        // 重置UI状态
-        const uploadArea = document.getElementById('uploadArea');
-        uploadArea.classList.remove('active');
-        uploadArea.querySelector('.upload-text').innerHTML = `
-            <i class="fas fa-cloud-upload-alt"></i>
-            <p>点击选择文件或拖拽文件到此处</p>
-            <small>支持 .xlsx 和 .xls 格式</small>
-        `;
-        
         // 隐藏进度条和结果
         document.getElementById('progressSection').style.display = 'none';
         document.getElementById('resultSection').style.display = 'none';
         
         // 重置进度条
-        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
         const progressText = document.getElementById('progressText');
-        progressBar.style.width = '0%';
-        progressText.textContent = '准备中...';
+        const statusText = document.getElementById('statusText');
+        progressFill.style.width = '0%';
+        progressText.textContent = '0%';
+        statusText.textContent = '准备中...';
         
-        // 显示导入按钮
-        document.getElementById('importBtn').style.display = 'inline-block';
-    }
-
-    // 清除文件
-    function clearFile() {
-        const fileInput = document.getElementById('fileInput');
-        const fileInfo = document.getElementById('fileInfo');
-        const importBtn = document.getElementById('importBtn');
-        const previewBtn = document.getElementById('previewBtn');
-        
-        fileInput.value = '';
-        fileInfo.style.display = 'none';
+        // 重置按钮状态
         importBtn.disabled = true;
         previewBtn.disabled = true;
+        
+        // 隐藏文件信息
+        fileInfo.style.display = 'none';
     }
 
-    // 预览文件
-    function previewFile() {
-        alert('预览功能正在开发中...');
-    }
-
+    // 全局函数，供HTML调用
+    window.resetForm = resetForm;
 });
 
-// 全局函数定义
+// 清除文件
 function clearFile() {
     const fileInput = document.getElementById('fileInput');
     const fileInfo = document.getElementById('fileInfo');

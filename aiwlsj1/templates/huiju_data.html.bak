@@ -15,20 +15,20 @@
 
 {% block content %}
 <div class="card">
+    <h2 class="card-title">汇聚骨干指标数据管理</h2>
+
     <!-- 筛选表单 -->
-    <form method="get" id="filterForm" class="mb-6 flex gap-4 items-center flex-wrap">
-        <label class="flex items-center gap-2 text-sm font-medium text-gray-700">
-            城市：
-            <select name="city" onchange="document.getElementById('filterForm').submit();" class="form-select">
+    <form method="get" id="filterForm" style="margin-bottom: 18px; display: flex; gap: 18px; align-items: center; flex-wrap: wrap;">
+        <label>城市：
+            <select name="city" onchange="document.getElementById('filterForm').submit();" style="min-width: 100px;">
                 <option value="">全部</option>
                 {% for city in all_cities %}
                 <option value="{{ city }}" {% if current_city==city %}selected{% endif %}>{{ city }}</option>
                 {% endfor %}
             </select>
         </label>
-        <label class="flex items-center gap-2 text-sm font-medium text-gray-700">
-            月份：
-            <select name="month" onchange="document.getElementById('filterForm').submit();" class="form-select">
+        <label>月份：
+            <select name="month" onchange="document.getElementById('filterForm').submit();" style="min-width: 100px;">
                 <option value="">全部</option>
                 {% for m in all_months %}
                 <option value="{{ m }}" {% if current_month==m %}selected{% endif %}>{{ m }}</option>
@@ -39,8 +39,8 @@
     </form>
 
     <!-- 操作按钮区 -->
-    <div class="mb-4">
-        <a href="/huiju/data/add" class="btn-primary">添加汇聚骨干数据</a>
+    <div class="action-bar">
+        <a href="/huiju/data/add" class="btn btn-primary">添加汇聚骨干数据</a>
     </div>
 
     <div class="data-table-container">
@@ -71,43 +71,41 @@
                     <td>{{ item.over_12h }}</td>
                     <td>{{ item.created_at.strftime('%Y-%m-%d %H:%M:%S') if item.created_at else '' }}</td>
                     <td>{{ item.updated_at.strftime('%Y-%m-%d %H:%M:%S') if item.updated_at else '' }}</td>
-                    <td class="action-column">
-                        <div class="action-buttons">
-                            <a href="/huiju/data/edit/{{ item.id }}" class="btn-xs btn-primary">编辑</a>
-                            <a href="#" onclick="confirmDelete({{ item.id }})" class="btn-xs btn-danger">删除</a>
-                        </div>
+                    <td class="action-buttons">
+                        <a href="/huiju/data/edit/{{ item.id }}" class="btn-edit">编辑</a>
+                        <a href="#" onclick="confirmDelete({{ item.id }})" class="btn-delete">删除</a>
                     </td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="10" class="text-center py-8 text-gray-500">暂无数据</td>
+                    <td colspan="10" style="text-align: center;">暂无数据</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 
-    <!-- 分页控件 -->
+    <!-- 分页 -->
     {% if pagination.pages > 1 %}
     <div class="pagination">
         {% if pagination.has_prev %}
-            <a class="page-link" href="?page={{ pagination.prev_num }}{% if current_city %}&city={{ current_city }}{% endif %}{% if current_month %}&month={{ current_month }}{% endif %}">上一页</a>
+            <a href="?page={{ pagination.prev_num }}{% if current_city %}&city={{ current_city }}{% endif %}{% if current_month %}&month={{ current_month }}{% endif %}">上一页</a>
         {% endif %}
         
         {% for page_num in pagination.iter_pages %}
             {% if page_num %}
                 {% if page_num == pagination.page %}
-                    <span class="px-3 py-2 text-sm bg-primary-600 text-white rounded font-medium">{{ page_num }}</span>
+                    <span class="current-page">{{ page_num }}</span>
                 {% else %}
-                    <a class="page-link" href="?page={{ page_num }}{% if current_city %}&city={{ current_city }}{% endif %}{% if current_month %}&month={{ current_month }}{% endif %}">{{ page_num }}</a>
+                    <a href="?page={{ page_num }}{% if current_city %}&city={{ current_city }}{% endif %}{% if current_month %}&month={{ current_month }}{% endif %}">{{ page_num }}</a>
                 {% endif %}
             {% else %}
-                <span class="px-3 py-2 text-sm text-gray-400">...</span>
+                <span class="ellipsis">...</span>
             {% endif %}
         {% endfor %}
         
         {% if pagination.has_next %}
-            <a class="page-link" href="?page={{ pagination.next_num }}{% if current_city %}&city={{ current_city }}{% endif %}{% if current_month %}&month={{ current_month }}{% endif %}">下一页</a>
+            <a href="?page={{ pagination.next_num }}{% if current_city %}&city={{ current_city }}{% endif %}{% if current_month %}&month={{ current_month }}{% endif %}">下一页</a>
         {% endif %}
     </div>
     {% endif %}

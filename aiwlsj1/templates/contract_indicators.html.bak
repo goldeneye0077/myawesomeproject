@@ -1,22 +1,13 @@
-{% extends "base.html" %}
+{% extends "base.html" %}  
 
-{% block title %}契约化攻坚指标 - 网络视界指标后台管理{% endblock %}
+{% block title %}契约化攻坚指标 - 网络视界指标后台管理{% endblock %}  
 
-{% block page_title %}契约化攻坚指标{% endblock %}
-
-{% block breadcrumb %}
-    <li><span class="text-gray-300">/</span></li>
-    <li><span class="text-gray-500">契约化指标分析</span></li>
-    <li><span class="text-gray-300">/</span></li>
-    <li><span class="text-primary-600">契约化攻坚指标</span></li>
-{% endblock %}
-
-{% block content %}
-<!-- 指标列表卡片 -->
-<div class="card">
-    <h2 class="card-title">契约化攻坚指标</h2>
-    <div class="mb-4">
-        <a href="/add_contract_indicator" class="btn-primary">添加契约化数据</a>
+{% block content %}  
+<!-- 指标列表卡片 -->  
+<div class="card">  
+    <h2 class="card-title">契约化攻坚指标</h2>  
+    <div class="action-bar">
+        <a href="/add_contract_indicator" class="btn btn-primary">添加契约化数据</a>
     </div>
     <div class="data-table-container">  
         <table class="data-table">  
@@ -48,11 +39,12 @@
                     <td>{{ zbk.qspm }}</td>  
                     <td>{{ zbk.qnljdfzb }}</td>  
                     <td>
-                        {% if zbk.qnljdfzb is not none and zbk.jzz is not none and zbk.qnljdfzb|float > zbk.jzz|float %}
-                            <span class="status-circle status-success"></span>
-                        {% else %}
-                            <span class="status-circle status-danger"></span>
-                        {% endif %}
+                            {% if zbk.qnljdfzb is not none and zbk.jzz is not none and zbk.qnljdfzb|float > zbk.jzz|float %}
+                             <span class="status-circle status-success"></span>
+                           {% else %}
+                                   <span class="status-circle status-danger"></span>
+                           {% endif %}
+
                     </td>
                     <td>{{ zbk.y1zb }}</td>  
                     <td>{{ zbk.y2zb }}</td>  
@@ -62,11 +54,9 @@
                     <td>{{ zbk.y6zb }}</td>  
                     <td>{{ zbk.jzz }}</td>  
                     <td>{{ zbk.tzz }}</td>  
-                    <td class="action-column">
-                        <div class="action-buttons">
-                            <a href="/edit/{{ zbk.xh }}" class="btn-xs btn-primary">编辑</a>
-                            <a href="javascript:void(0)" onclick="confirmDelete({{ zbk.xh }})" class="btn-xs btn-danger">删除</a>
-                        </div>
+                    <td class="action-buttons">  
+                        <a href="/edit/{{ zbk.xh }}" class="btn btn-info">编辑</a>  
+                        <a href="javascript:void(0)" onclick="confirmDelete({{ zbk.xh }})" class="btn btn-danger">删除</a>  
                     </td>  
                 </tr>  
                 {% endfor %}  
