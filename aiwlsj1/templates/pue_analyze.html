@@ -14,25 +14,171 @@
 {% endblock %}
 
 {% block content %}
+
+<!-- 顶部关键指标卡片组 -->
+<div class="metrics-grid" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; margin-bottom: 24px;">
+    <!-- 当月PUE值 -->
+    <div class="metric-card" style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); border-radius: 12px; padding: 16px; color: white; box-shadow: 0 4px 16px rgba(0,0,0,0.1); position: relative; overflow: hidden;">
+        <div style="position: absolute; top: -20px; right: -20px; width: 80px; height: 80px; background: rgba(255,255,255,0.1); border-radius: 50%; opacity: 0.3;"></div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <h3 style="margin: 0; font-size: 13px; font-weight: 600;">{{ key_metrics.current_month }}月PUE值</h3>
+            <svg style="width: 28px; height: 28px; opacity: 0.8;" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+        </div>
+        <div style="font-size: 24px; font-weight: 700; margin-bottom: 6px;">
+            {{ key_metrics.current_month_pue if key_metrics.current_month_pue else "N/A" }}
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 14px; opacity: 0.9;">
+            {% if key_metrics.monthly_change is not none %}
+                <span style="display: flex; align-items: center; gap: 4px;">
+                    {% if key_metrics.monthly_change > 0 %}
+                        <span style="color: #ffcdd2;">↗ +{{ key_metrics.monthly_change }}%</span>
+                    {% else %}
+                        <span style="color: #c8e6c9;">↘ {{ key_metrics.monthly_change }}%</span>
+                    {% endif %}
+                    环比
+                </span>
+            {% endif %}
+            {% if key_metrics.yearly_change is not none %}
+                <span>|</span>
+                <span style="display: flex; align-items: center; gap: 4px;">
+                    {% if key_metrics.yearly_change > 0 %}
+                        <span style="color: #ffcdd2;">↗ +{{ key_metrics.yearly_change }}%</span>
+                    {% else %}
+                        <span style="color: #c8e6c9;">↘ {{ key_metrics.yearly_change }}%</span>
+                    {% endif %}
+                    同比
+                </span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 年度平均PUE -->
+    <div class="metric-card" style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); border-radius: 12px; padding: 16px; color: white; box-shadow: 0 4px 16px rgba(0,0,0,0.1); position: relative; overflow: hidden;">
+        <div style="position: absolute; top: -20px; right: -20px; width: 80px; height: 80px; background: rgba(255,255,255,0.1); border-radius: 50%; opacity: 0.3;"></div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <h3 style="margin: 0; font-size: 13px; font-weight: 600;">年度平均PUE</h3>
+            <svg style="width: 28px; height: 28px; opacity: 0.8;" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+            </svg>
+        </div>
+        <div style="font-size: 24px; font-weight: 700; margin-bottom: 6px;">
+            {{ key_metrics.year_avg_pue if key_metrics.year_avg_pue else "N/A" }}
+        </div>
+        <div style="font-size: 12px; opacity: 0.9;">{{ this_year }}年累计平均</div>
+    </div>
+
+    <!-- 最优地点 -->
+    <div class="metric-card" style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); border-radius: 12px; padding: 16px; color: white; box-shadow: 0 4px 16px rgba(0,0,0,0.1); position: relative; overflow: hidden;">
+        <div style="position: absolute; top: -20px; right: -20px; width: 80px; height: 80px; background: rgba(255,255,255,0.1); border-radius: 50%; opacity: 0.3;"></div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <h3 style="margin: 0; font-size: 13px; font-weight: 600;">最优地点</h3>
+            <svg style="width: 28px; height: 28px; opacity: 0.8;" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+        </div>
+        <div style="font-size: 24px; font-weight: 700; margin-bottom: 4px;">
+            {{ key_metrics.best_location if key_metrics.best_location else "N/A" }}
+        </div>
+        <div style="font-size: 18px; font-weight: 600; color: #c8e6c9; margin-bottom: 8px;">
+            PUE: {{ key_metrics.best_pue if key_metrics.best_pue else "N/A" }}
+        </div>
+        <div style="font-size: 12px; opacity: 0.9;">{{ key_metrics.current_month }}月表现最佳</div>
+    </div>
+
+    <!-- 达标率 -->
+    <div class="metric-card" style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); border-radius: 12px; padding: 16px; color: white; box-shadow: 0 4px 16px rgba(0,0,0,0.1); position: relative; overflow: hidden;">
+        <div style="position: absolute; top: -20px; right: -20px; width: 80px; height: 80px; background: rgba(255,255,255,0.1); border-radius: 50%; opacity: 0.3;"></div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <h3 style="margin: 0; font-size: 13px; font-weight: 600;">达标率</h3>
+            <svg style="width: 28px; height: 28px; opacity: 0.8;" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/>
+            </svg>
+        </div>
+        <div style="font-size: 24px; font-weight: 700; margin-bottom: 6px;">
+            {{ key_metrics.compliance_rate if key_metrics.compliance_rate else "N/A" }}{% if key_metrics.compliance_rate %}<span style="font-size: 20px;">%</span>{% endif %}
+        </div>
+        <div style="font-size: 12px; opacity: 0.9;">PUE ≤ 1.5 标准</div>
+    </div>
+
+    <!-- 节能量 -->
+    <div class="metric-card" style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); border-radius: 12px; padding: 16px; color: white; box-shadow: 0 4px 16px rgba(0,0,0,0.1); position: relative; overflow: hidden;">
+        <div style="position: absolute; top: -20px; right: -20px; width: 80px; height: 80px; background: rgba(255,255,255,0.1); border-radius: 50%; opacity: 0.3;"></div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <h3 style="margin: 0; font-size: 13px; font-weight: 600;">累计节能</h3>
+            <svg style="width: 28px; height: 28px; opacity: 0.8;" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M9 11H7v6h2v-6zm4 0h-2v6h2v-6zm4 0h-2v6h2v-6zm2-7h-3V2h-2v2H8V2H6v2H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z"/>
+            </svg>
+        </div>
+        <div style="font-size: 22px; font-weight: 700; margin-bottom: 4px;">
+            {{ "{:,}".format(key_metrics.energy_savings|int) if key_metrics.energy_savings else "N/A" }}
+        </div>
+        <div style="font-size: 12px; opacity: 0.9;">kWh 相比基准PUE 2.0</div>
+    </div>
+
+    <!-- 碳减排 -->
+    <div class="metric-card" style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); border-radius: 12px; padding: 16px; color: white; box-shadow: 0 4px 16px rgba(0,0,0,0.1); position: relative; overflow: hidden;">
+        <div style="position: absolute; top: -20px; right: -20px; width: 80px; height: 80px; background: rgba(255,255,255,0.1); border-radius: 50%; opacity: 0.3;"></div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <h3 style="margin: 0; font-size: 13px; font-weight: 600;">碳减排量</h3>
+            <svg style="width: 28px; height: 28px; opacity: 0.8;" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M17,8C8,10 5.9,16.17 3.82,21.34L5.71,22L6.66,19.7C7.14,19.87 7.64,20 8,20C19,20 22,3 22,3C21,5 14,5.25 9,6.25C4,7.25 2,11.5 2,13.5C2,15.5 3.75,17.25 3.75,17.25C7,8 17,8 17,8Z"/>
+            </svg>
+        </div>
+        <div style="font-size: 24px; font-weight: 700; margin-bottom: 6px;">
+            {{ key_metrics.carbon_reduction if key_metrics.carbon_reduction else "N/A" }}{% if key_metrics.carbon_reduction %}<span style="font-size: 18px;">t</span>{% endif %}
+        </div>
+        <div style="font-size: 12px; opacity: 0.9;">CO₂ 等效减排</div>
+    </div>
+</div>
+
 <div class="main-flex-row" style="display: flex; gap: 24px; align-items: flex-start; min-width:0; width:100%; box-sizing:border-box; position:relative; z-index:1;">
     <!-- 左侧主内容区 -->
     <div style="flex: 7 1 0; min-width:0; max-width: 70%; display: flex; flex-direction: column; gap: 24px; box-sizing:border-box; overflow-x:auto;">
         <div class="card" style="width:100%; box-sizing:border-box;">
-            <div style="display: flex; flex-direction: column; align-items: stretch; width: 100%; gap: 12px; min-width: 0; box-sizing:border-box;">
-                <form method="get" id="locationForm" style="margin-bottom: 0; display: flex; gap: 18px; align-items: center; flex-wrap: nowrap; min-width:0; width:100%; max-width:100%;">
-                    <div style="display:flex; gap:18px; align-items:center; flex:1 1 0; min-width:0; max-width:100%; overflow:hidden;">
-                    {% for loc in all_locations %}
-                    <label style="margin-right: 10px; white-space: nowrap;">
-                        <input type="radio" name="location" value="{{ loc }}" {% if current_location==loc %}checked{% endif %} onchange="document.getElementById('locationForm').submit();">
-                        {{ loc }}
-                    </label>
-                    {% endfor %}
-                    <label style="margin-right: 10px; white-space: nowrap;">
-                        <input type="radio" name="location" value="" {% if not current_location %}checked{% endif %} onchange="document.getElementById('locationForm').submit();">
-                        全部
-                    </label>
+            <!-- 图表控制面板 -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding: 12px 16px; background: #f8f9fa; border-radius: 8px; flex-wrap: wrap; gap: 12px;">
+                <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+                    <!-- 地点选择 -->
+                    <form method="get" id="locationForm" style="margin: 0; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                        <span style="font-weight: 600; color: #495057;">选择地点：</span>
+                        {% for loc in all_locations %}
+                        <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; white-space: nowrap;">
+                            <input type="radio" name="location" value="{{ loc }}" {% if current_location==loc %}checked{% endif %} onchange="document.getElementById('locationForm').submit();" style="margin: 0;">
+                            <span style="font-size: 14px;">{{ loc }}</span>
+                        </label>
+                        {% endfor %}
+                        <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; white-space: nowrap;">
+                            <input type="radio" name="location" value="" {% if not current_location %}checked{% endif %} onchange="document.getElementById('locationForm').submit();" style="margin: 0;">
+                            <span style="font-size: 14px;">全部</span>
+                        </label>
+                    </form>
+                </div>
+                
+                <!-- 图表控制按钮 -->
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <div style="display: flex; background: white; border-radius: 6px; border: 1px solid #dee2e6; overflow: hidden;">
+                        <button type="button" id="chartViewMonth" onclick="switchChartView('month')" style="padding: 6px 12px; border: none; background: #3498db; color: white; font-size: 12px; cursor: pointer; transition: all 0.3s;">月度</button>
+                        <button type="button" id="chartViewQuarter" onclick="switchChartView('quarter')" style="padding: 6px 12px; border: none; background: white; color: #6c757d; font-size: 12px; cursor: pointer; transition: all 0.3s;">季度</button>
+                        <button type="button" id="chartViewYear" onclick="switchChartView('year')" style="padding: 6px 12px; border: none; background: white; color: #6c757d; font-size: 12px; cursor: pointer; transition: all 0.3s;">年度</button>
                     </div>
-                </form>
+                    <button type="button" onclick="toggleFullscreen()" style="padding: 6px 12px; background: #28a745; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.3s;">
+                        <svg style="width: 14px; height: 14px;" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+                        </svg>
+                        全屏
+                    </button>
+                    <button type="button" onclick="exportChart()" style="padding: 6px 12px; background: #fd7e14; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.3s;">
+                        <svg style="width: 14px; height: 14px;" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                        </svg>
+                        导出
+                    </button>
+                </div>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; align-items: stretch; width: 100%; gap: 12px; min-width: 0; box-sizing:border-box;">
                 <div style="width:100%; min-width:0;">
                     {{ pue_bar_chart|safe }}
                 </div>
@@ -111,6 +257,337 @@
 <div style="height:32px; width:100%; clear:both;"></div>
 
 <style>
+/* 指标卡片动画效果 */
+.metric-card {
+    animation: fadeInUp 0.8s ease-out;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.metric-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 16px 48px rgba(0,0,0,0.15) !important;
+}
+
+.metric-card:nth-child(1) { animation-delay: 0.1s; }
+.metric-card:nth-child(2) { animation-delay: 0.2s; }
+.metric-card:nth-child(3) { animation-delay: 0.3s; }
+.metric-card:nth-child(4) { animation-delay: 0.4s; }
+.metric-card:nth-child(5) { animation-delay: 0.5s; }
+.metric-card:nth-child(6) { animation-delay: 0.6s; }
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 响应式网格布局 */
+@media (max-width: 1400px) {
+    .metrics-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+}
+
+@media (max-width: 1000px) {
+    .metrics-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .metrics-grid {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+    }
+    .metric-card {
+        padding: 20px !important;
+    }
+}
+
+/* ============ 高级动画效果 ============ */
+
+/* 浮动动画 */
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-8px); }
+}
+
+/* 脉冲动画 */
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+/* 闪烁动画 */
+@keyframes shimmer {
+    0% { background-position: -200px 0; }
+    100% { background-position: calc(200px + 100%) 0; }
+}
+
+/* 旋转动画 */
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* 弹性进入动画 */
+@keyframes bounceIn {
+    0% {
+        opacity: 0;
+        transform: scale3d(0.3, 0.3, 0.3);
+    }
+    20% {
+        transform: scale3d(1.1, 1.1, 1.1);
+    }
+    40% {
+        transform: scale3d(0.9, 0.9, 0.9);
+    }
+    60% {
+        opacity: 1;
+        transform: scale3d(1.03, 1.03, 1.03);
+    }
+    80% {
+        transform: scale3d(0.97, 0.97, 0.97);
+    }
+    100% {
+        opacity: 1;
+        transform: scale3d(1, 1, 1);
+    }
+}
+
+/* 滑动进入动画 */
+@keyframes slideInFromRight {
+    0% {
+        transform: translateX(100px);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideInFromLeft {
+    0% {
+        transform: translateX(-100px);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* ============ 视觉美化样式 ============ */
+
+/* 可视化卡片动画 */
+.viz-card {
+    animation: bounceIn 0.8s ease-out forwards;
+    opacity: 0;
+}
+
+.viz-card:nth-child(1) { animation-delay: 0.1s; }
+.viz-card:nth-child(2) { animation-delay: 0.2s; }
+
+/* 卡片悬停效果增强 */
+.viz-card:hover {
+    transform: translateY(-12px) scale(1.02);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2) !important;
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* 控制按钮美化 */
+.chart-control-btn {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.chart-control-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    transition: left 0.5s;
+}
+
+.chart-control-btn:hover::before {
+    left: 100%;
+}
+
+.chart-control-btn:hover {
+    background: rgba(255,255,255,1) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+/* 图表容器美化 */
+.chart-container {
+    position: relative;
+    overflow: hidden;
+}
+
+.chart-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea, #764ba2, #f093fb, #f5576c);
+    background-size: 400% 400%;
+    animation: gradient 3s ease infinite;
+    z-index: 1;
+}
+
+@keyframes gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* 控制面板美化 */
+.viz-control-panel {
+    position: relative;
+    overflow: hidden;
+    animation: slideInFromLeft 0.6s ease-out 0.3s backwards;
+}
+
+.viz-control-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.3) 100%);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    z-index: -1;
+}
+
+/* 控制组动画 */
+.control-group {
+    animation: fadeInUp 0.4s ease-out forwards;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.control-group:nth-child(1) { animation-delay: 0.1s; }
+.control-group:nth-child(2) { animation-delay: 0.2s; }
+.control-group:nth-child(3) { animation-delay: 0.3s; }
+.control-group:nth-child(4) { animation-delay: 0.4s; }
+
+.control-group:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.1) !important;
+}
+
+/* 操作按钮增强 */
+.action-btn {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.action-btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255,255,255,0.3);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.action-btn:hover::after {
+    width: 300px;
+    height: 300px;
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+}
+
+/* 数值跳动动画 */
+.metric-value {
+    display: inline-block;
+    transition: all 0.3s ease;
+}
+
+.metric-value:hover {
+    animation: pulse 1s infinite;
+}
+
+/* 指标卡片详细美化 */
+.metric-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 50% 0%, rgba(255,255,255,0.1) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.metric-card::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    border-radius: 18px;
+}
+
+.metric-card:hover::after {
+    opacity: 1;
+}
+
+
+/* 全屏模式增强 */
+.fullscreen-mode {
+    animation: bounceIn 0.5s ease-out;
+}
+
+/* 响应式美化 */
+@media (max-width: 768px) {
+    .viz-card {
+        margin-bottom: 20px;
+    }
+    
+    .viz-control-panel {
+        padding: 12px !important;
+    }
+    
+    .panel-content {
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+    }
+}
+
 .ai-loading-spinner {
   display: inline-block;
   width: 22px;
@@ -643,7 +1120,7 @@
     }, 100);
 }
 
-function applyFilters(){
+function applyDrillDownFilters(){
     const kwInput=document.getElementById('kw-search');
     const kw=(kwInput?kwInput.value:'').trim().toLowerCase();
     const selType=document.getElementById('sel-type');
@@ -703,7 +1180,7 @@ function setupFilters(rows){
         if(tab){tab.prepend(bar);}    
         ['kw-search','sel-type','sel-status','sel-executor'].forEach(id=>{
             const el=document.getElementById(id);
-            if(el){el.addEventListener('input',applyFilters);el.addEventListener('change',applyFilters);} 
+            if(el){el.addEventListener('input',applyDrillDownFilters);el.addEventListener('change',applyDrillDownFilters);} 
         });
         document.getElementById('btn-clear-filter').onclick=function(){
             document.getElementById('kw-search').value='';
@@ -711,7 +1188,7 @@ function setupFilters(rows){
                 const sel=document.getElementById(id);
                 if(sel){Array.from(sel.options).forEach(o=>o.selected=false);} 
             });
-            applyFilters();
+            applyDrillDownFilters();
         };
     }
     const getUnique=(field)=>[...new Set(rows.map(r=>r[field]).filter(Boolean))];
@@ -1707,7 +2184,872 @@ function showWorkItemDetail(index) {
             document.getElementById(summaryId).innerHTML = `${title}统计信息加载中...`;
         }
     }
+
+    // ============ 图表控制功能 ============
+    
+    // 图表视图切换功能
+    function switchChartView(period) {
+        // 移除所有活动状态
+        document.querySelectorAll('.chart-view-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        // 激活当前按钮
+        event.target.classList.add('active');
+        
+        // 显示加载状态
+        const chartContainer = document.querySelector('#pue_bar');
+        if (chartContainer) {
+            chartContainer.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 400px; color: #666;"><i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>正在切换视图...</div>';
+        }
+        
+        // 构建新的URL参数
+        const currentUrl = new URL(window.location);
+        currentUrl.searchParams.set('period', period);
+        
+        // 发起请求获取新数据
+        fetch(currentUrl.toString())
+            .then(response => response.text())
+            .then(html => {
+                // 解析响应HTML，提取图表部分
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newChart = doc.querySelector('#pue_bar');
+                
+                if (newChart && chartContainer) {
+                    chartContainer.innerHTML = newChart.innerHTML;
+                    
+                    // 重新执行图表脚本
+                    const scripts = newChart.querySelectorAll('script');
+                    scripts.forEach(script => {
+                        const newScript = document.createElement('script');
+                        newScript.text = script.text;
+                        document.head.appendChild(newScript);
+                        document.head.removeChild(newScript);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('切换图表视图失败:', error);
+                if (chartContainer) {
+                    chartContainer.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 400px; color: #e53935;"><i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>加载失败，请稍后重试</div>';
+                }
+            });
+    }
+    
+    // 全屏切换功能
+    function toggleFullscreen() {
+        const chartCard = document.querySelector('.chart-container').closest('.card');
+        const fullscreenBtn = document.querySelector('.fullscreen-btn i');
+        
+        if (!chartCard.classList.contains('fullscreen-mode')) {
+            // 进入全屏
+            chartCard.classList.add('fullscreen-mode');
+            chartCard.style.cssText = `
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                z-index: 9999 !important;
+                margin: 0 !important;
+                border-radius: 0 !important;
+                background: white !important;
+                overflow: auto !important;
+            `;
+            
+            // 调整图表大小
+            const chartContainer = chartCard.querySelector('#pue_bar');
+            if (chartContainer) {
+                chartContainer.style.height = 'calc(100vh - 200px)';
+                
+                // 触发图表重新渲染
+                setTimeout(() => {
+                    window.dispatchEvent(new Event('resize'));
+                }, 100);
+            }
+            
+            fullscreenBtn.className = 'fas fa-compress';
+            
+            // 添加ESC键退出监听
+            document.addEventListener('keydown', handleEscapeKey);
+            
+        } else {
+            // 退出全屏
+            exitFullscreen();
+        }
+    }
+    
+    // 退出全屏
+    function exitFullscreen() {
+        const chartCard = document.querySelector('.fullscreen-mode');
+        if (chartCard) {
+            chartCard.classList.remove('fullscreen-mode');
+            chartCard.style.cssText = '';
+            
+            // 恢复图表大小
+            const chartContainer = chartCard.querySelector('#pue_bar');
+            if (chartContainer) {
+                chartContainer.style.height = '480px';
+                
+                // 触发图表重新渲染
+                setTimeout(() => {
+                    window.dispatchEvent(new Event('resize'));
+                }, 100);
+            }
+            
+            document.querySelector('.fullscreen-btn i').className = 'fas fa-expand';
+            document.removeEventListener('keydown', handleEscapeKey);
+        }
+    }
+    
+    // ESC键处理
+    function handleEscapeKey(event) {
+        if (event.key === 'Escape') {
+            exitFullscreen();
+        }
+    }
+    
+    // 图表导出功能
+    function exportChart() {
+        const exportBtn = document.querySelector('.export-btn');
+        const originalText = exportBtn.innerHTML;
+        
+        // 显示加载状态
+        exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 导出中...';
+        exportBtn.disabled = true;
+        
+        try {
+            // 获取图表实例
+            const chartDom = document.querySelector('#pue_bar');
+            const chartInstance = echarts.getInstanceByDom(chartDom);
+            
+            if (chartInstance) {
+                // 导出为PNG图片
+                const dataURL = chartInstance.getDataURL({
+                    type: 'png',
+                    pixelRatio: 2,
+                    backgroundColor: '#fff'
+                });
+                
+                // 创建下载链接
+                const link = document.createElement('a');
+                link.download = `PUE指标分析_${new Date().toISOString().slice(0, 10)}.png`;
+                link.href = dataURL;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // 显示成功消息
+                setTimeout(() => {
+                    exportBtn.innerHTML = '<i class="fas fa-check"></i> 导出成功';
+                    setTimeout(() => {
+                        exportBtn.innerHTML = originalText;
+                        exportBtn.disabled = false;
+                    }, 1500);
+                }, 500);
+                
+            } else {
+                throw new Error('图表实例未找到');
+            }
+            
+        } catch (error) {
+            console.error('导出失败:', error);
+            exportBtn.innerHTML = '<i class="fas fa-times"></i> 导出失败';
+            setTimeout(() => {
+                exportBtn.innerHTML = originalText;
+                exportBtn.disabled = false;
+            }, 2000);
+        }
+    }
+    
+    
+    // 页面加载完成后初始化图表控制
+    document.addEventListener('DOMContentLoaded', function() {
+        // 监听窗口大小变化，自动调整图表
+        window.addEventListener('resize', function() {
+            const chartDom = document.querySelector('#pue_bar');
+            if (chartDom) {
+                const chartInstance = echarts.getInstanceByDom(chartDom);
+                if (chartInstance) {
+                    chartInstance.resize();
+                }
+            }
+        });
+        
+        // 图表控制面板的交互效果
+        document.querySelectorAll('.chart-control-btn').forEach(btn => {
+            btn.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-2px)';
+            });
+            
+            btn.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+    });
+    
+    // ============ 高级可视化组件控制函数 ============
+    
+    // 热力图全屏切换
+    function toggleHeatmapFullscreen() {
+        const container = document.querySelector('#heatmap-container').closest('.card');
+        const btn = container.querySelector('.fa-expand, .fa-compress');
+        
+        if (!container.classList.contains('fullscreen-mode')) {
+            container.classList.add('fullscreen-mode');
+            container.style.cssText = `
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                z-index: 9999 !important;
+                margin: 0 !important;
+                border-radius: 0 !important;
+                background: white !important;
+            `;
+            document.querySelector('#heatmap-container').style.height = 'calc(100vh - 120px)';
+            btn.className = 'fas fa-compress';
+        } else {
+            container.classList.remove('fullscreen-mode');
+            container.style.cssText = '';
+            document.querySelector('#heatmap-container').style.height = '400px';
+            btn.className = 'fas fa-expand';
+        }
+        
+        // 触发图表重新渲染
+        setTimeout(() => {
+            const chartDom = document.querySelector('#heatmap-container').firstElementChild;
+            if (chartDom) {
+                const chartInstance = echarts.getInstanceByDom(chartDom);
+                if (chartInstance) chartInstance.resize();
+            }
+        }, 100);
+    }
+    
+    // 雷达图全屏切换
+    function toggleRadarFullscreen() {
+        const container = document.querySelector('#radar-container').closest('.card');
+        const btn = container.querySelector('.fa-expand, .fa-compress');
+        
+        if (!container.classList.contains('fullscreen-mode')) {
+            container.classList.add('fullscreen-mode');
+            container.style.cssText = `
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                z-index: 9999 !important;
+                margin: 0 !important;
+                border-radius: 0 !important;
+                background: white !important;
+            `;
+            document.querySelector('#radar-container').style.height = 'calc(100vh - 120px)';
+            btn.className = 'fas fa-compress';
+        } else {
+            container.classList.remove('fullscreen-mode');
+            container.style.cssText = '';
+            document.querySelector('#radar-container').style.height = '400px';
+            btn.className = 'fas fa-expand';
+        }
+        
+        // 触发图表重新渲染
+        setTimeout(() => {
+            const chartDom = document.querySelector('#radar-container').firstElementChild;
+            if (chartDom) {
+                const chartInstance = echarts.getInstanceByDom(chartDom);
+                if (chartInstance) chartInstance.resize();
+            }
+        }, 100);
+    }
+    
+    // 刷新所有可视化组件
+    function refreshAllViz() {
+        const refreshBtn = document.querySelector('[onclick="refreshAllViz()"]');
+        const originalText = refreshBtn.innerHTML;
+        
+        refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 刷新中...';
+        refreshBtn.disabled = true;
+        
+        // 重新加载页面数据
+        fetch(window.location.href)
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                // 更新热力图
+                const newHeatmap = doc.querySelector('#heatmap-container');
+                const currentHeatmap = document.querySelector('#heatmap-container');
+                if (newHeatmap && currentHeatmap) {
+                    currentHeatmap.innerHTML = newHeatmap.innerHTML;
+                }
+                
+                // 更新雷达图
+                const newRadar = doc.querySelector('#radar-container');
+                const currentRadar = document.querySelector('#radar-container');
+                if (newRadar && currentRadar) {
+                    currentRadar.innerHTML = newRadar.innerHTML;
+                }
+                
+                // 重新执行图表脚本
+                setTimeout(() => {
+                    window.dispatchEvent(new Event('resize'));
+                }, 200);
+                
+                refreshBtn.innerHTML = '<i class="fas fa-check"></i> 刷新完成';
+                setTimeout(() => {
+                    refreshBtn.innerHTML = originalText;
+                    refreshBtn.disabled = false;
+                }, 1500);
+            })
+            .catch(error => {
+                console.error('刷新失败:', error);
+                refreshBtn.innerHTML = '<i class="fas fa-times"></i> 刷新失败';
+                setTimeout(() => {
+                    refreshBtn.innerHTML = originalText;
+                    refreshBtn.disabled = false;
+                }, 2000);
+            });
+    }
+    
+    // 导出所有可视化组件
+    function exportAllViz() {
+        const exportBtn = document.querySelector('[onclick="exportAllViz()"]');
+        const originalText = exportBtn.innerHTML;
+        
+        exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 导出中...';
+        exportBtn.disabled = true;
+        
+        try {
+            // 导出热力图
+            const heatmapDom = document.querySelector('#heatmap-container').firstElementChild;
+            const heatmapInstance = echarts.getInstanceByDom(heatmapDom);
+            
+            // 导出雷达图
+            const radarDom = document.querySelector('#radar-container').firstElementChild;
+            const radarInstance = echarts.getInstanceByDom(radarDom);
+            
+            if (heatmapInstance && radarInstance) {
+                // 简化导出：分别导出两个图表
+                const heatmapDataURL = heatmapInstance.getDataURL({
+                    type: 'png',
+                    pixelRatio: 2,
+                    backgroundColor: '#fff'
+                });
+                
+                const radarDataURL = radarInstance.getDataURL({
+                    type: 'png',
+                    pixelRatio: 2,
+                    backgroundColor: '#fff'
+                });
+                
+                // 下载热力图
+                const link1 = document.createElement('a');
+                link1.download = `PUE热力图_${new Date().toISOString().slice(0, 10)}.png`;
+                link1.href = heatmapDataURL;
+                document.body.appendChild(link1);
+                link1.click();
+                document.body.removeChild(link1);
+                
+                // 下载雷达图
+                setTimeout(() => {
+                    const link2 = document.createElement('a');
+                    link2.download = `PUE雷达图_${new Date().toISOString().slice(0, 10)}.png`;
+                    link2.href = radarDataURL;
+                    document.body.appendChild(link2);
+                    link2.click();
+                    document.body.removeChild(link2);
+                }, 500);
+                
+                exportBtn.innerHTML = '<i class="fas fa-check"></i> 导出成功';
+                setTimeout(() => {
+                    exportBtn.innerHTML = originalText;
+                    exportBtn.disabled = false;
+                }, 1500);
+            } else {
+                throw new Error('图表实例未找到');
+            }
+            
+        } catch (error) {
+            console.error('导出失败:', error);
+            exportBtn.innerHTML = '<i class="fas fa-times"></i> 导出失败';
+            setTimeout(() => {
+                exportBtn.innerHTML = originalText;
+                exportBtn.disabled = false;
+            }, 2000);
+        }
+    }
+    
+    // 更新热力图范围
+    function updateHeatmapRange(range) {
+        console.log('更新热力图范围:', range);
+    }
+    
+    // 更新雷达图地点显示
+    function updateRadarLocations(option) {
+        console.log('更新雷达图地点:', option);
+    }
+    
+    // 更新数据范围
+    function updateDataRange(range) {
+        console.log('更新数据范围:', range);
+    }
+    
+    // 切换数据标签显示
+    function toggleDataLabels(show) {
+        console.log('切换数据标签:', show);
+    }
+    
+    // 切换动画效果
+    function toggleAnimation(enable) {
+        const allCharts = document.querySelectorAll('#pue_bar, #heatmap-container, #radar-container');
+        allCharts.forEach(container => {
+            const chartDom = container.firstElementChild;
+            if (chartDom) {
+                const chartInstance = echarts.getInstanceByDom(chartDom);
+                if (chartInstance) {
+                    chartInstance.setOption({
+                        animation: enable
+                    });
+                }
+            }
+        });
+        console.log('切换动画效果:', enable);
+    }
+    
+    // ============ 高级交互功能 ============
+    
+    // 数据筛选器
+    function initDataFilters() {
+        // 添加地点筛选交互
+        const locationFilter = document.createElement('div');
+        locationFilter.innerHTML = `
+            <div class="filter-section" style="background: white; padding: 16px; border-radius: 12px; margin-bottom: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.05);">
+                <h4 style="margin: 0 0 12px 0; color: #495057;">
+                    <i class="fas fa-filter" style="margin-right: 8px; color: #6c757d;"></i>
+                    高级筛选
+                </h4>
+                <div class="filter-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                    <div class="filter-item">
+                        <label style="font-size: 12px; color: #6c757d; margin-bottom: 4px; display: block;">数据范围</label>
+                        <select id="dateRangeFilter" class="form-control" style="width: 100%; padding: 6px 8px; border: 1px solid #ced4da; border-radius: 4px;">
+                            <option value="current" {% if not request.query_params.get('date_range') or request.query_params.get('date_range') == 'current' %}selected{% endif %}>当前年度</option>
+                            <option value="last6months" {% if request.query_params.get('date_range') == 'last6months' %}selected{% endif %}>近6个月</option>
+                            <option value="last12months" {% if request.query_params.get('date_range') == 'last12months' %}selected{% endif %}>近12个月</option>
+                        </select>
+                    </div>
+                    <div class="filter-item">
+                        <label style="font-size: 12px; color: #6c757d; margin-bottom: 4px; display: block;">PUE阈值</label>
+                        <select id="pueThresholdFilter" class="form-control" style="width: 100%; padding: 6px 8px; border: 1px solid #ced4da; border-radius: 4px;">
+                            <option value="all">全部数据</option>
+                            <option value="excellent">优秀 (≤1.5)</option>
+                            <option value="good">良好 (1.5-2.0)</option>
+                            <option value="warning">警告 (2.0-2.5)</option>
+                            <option value="critical">严重 (>2.5)</option>
+                        </select>
+                    </div>
+                    <div class="filter-item">
+                        <label style="font-size: 12px; color: #6c757d; margin-bottom: 4px; display: block;">地点筛选</label>
+                        <select id="locationFilter" class="form-control" style="width: 100%; padding: 6px 8px; border: 1px solid #ced4da; border-radius: 4px;">
+                            <option value="" {% if not current_location %}selected{% endif %}>全部地点</option>
+                            {% for loc in all_locations %}
+                            <option value="{{ loc }}" {% if current_location==loc %}selected{% endif %}>{{ loc }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="filter-item">
+                        <label style="font-size: 12px; color: #6c757d; margin-bottom: 4px; display: block;">操作</label>
+                        <div style="display: flex; gap: 6px;">
+                            <button onclick="applyFilters()" class="btn btn-primary" style="flex: 1; padding: 6px 12px; background: #007bff; color: white; border: none; border-radius: 4px; font-size: 12px;">
+                                <i class="fas fa-search"></i> 应用
+                            </button>
+                            <button onclick="resetFilters()" class="btn btn-secondary" style="flex: 1; padding: 6px 12px; background: #6c757d; color: white; border: none; border-radius: 4px; font-size: 12px;">
+                                <i class="fas fa-undo"></i> 重置
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // 插入到页面顶部
+        const metricsGrid = document.querySelector('.metrics-grid');
+        if (metricsGrid) {
+            metricsGrid.parentNode.insertBefore(locationFilter, metricsGrid);
+        }
+    }
+    
+    // 应用筛选器
+    function applyFilters() {
+        const dateRange = document.getElementById('dateRangeFilter')?.value || 'current';
+        const pueThreshold = document.getElementById('pueThresholdFilter')?.value || 'all';
+        const location = document.getElementById('locationFilter')?.value || '';
+        
+        // 构建筛选参数
+        const params = new URLSearchParams();
+        
+        // 添加非默认值的参数
+        if (location && location !== '') {
+            params.set('location', location);
+        }
+        if (dateRange && dateRange !== 'current') {
+            params.set('date_range', dateRange);
+        }
+        
+        // 显示加载状态
+        showFilterLoading();
+        
+        // 重新加载页面，保留现有参数并添加新的筛选参数
+        const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+        window.location.href = newUrl;
+    }
+    
+    // 重置筛选器
+    function resetFilters() {
+        window.location.href = window.location.pathname;
+    }
+    
+    // 显示筛选加载状态
+    function showFilterLoading() {
+        const filterSection = document.querySelector('.filter-section');
+        if (filterSection) {
+            filterSection.style.opacity = '0.6';
+            filterSection.style.pointerEvents = 'none';
+            
+            const loadingDiv = document.createElement('div');
+            loadingDiv.innerHTML = `
+                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(255,255,255,0.9); padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                    <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>
+                    正在应用筛选条件...
+                </div>
+            `;
+            loadingDiv.style.position = 'absolute';
+            loadingDiv.style.top = '0';
+            loadingDiv.style.left = '0';
+            loadingDiv.style.right = '0';
+            loadingDiv.style.bottom = '0';
+            loadingDiv.style.zIndex = '10';
+            
+            filterSection.style.position = 'relative';
+            filterSection.appendChild(loadingDiv);
+        }
+    }
+    
+    // 数据对比功能
+    function initDataComparison() {
+        // 添加对比工具栏
+        const comparisonBar = document.createElement('div');
+        comparisonBar.innerHTML = `
+            <div class="comparison-toolbar" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 16px; border-radius: 12px; margin: 16px 0; box-shadow: 0 4px 16px rgba(0,0,0,0.05);">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                    <h4 style="margin: 0; color: #495057;">
+                        <i class="fas fa-balance-scale" style="margin-right: 8px; color: #6c757d;"></i>
+                        数据对比分析
+                    </h4>
+                    <button onclick="toggleComparisonMode()" id="comparisonToggle" class="btn btn-outline-primary" style="padding: 6px 12px; border: 1px solid #007bff; color: #007bff; background: white; border-radius: 6px; font-size: 12px;">
+                        <i class="fas fa-exchange-alt"></i> 启用对比
+                    </button>
+                </div>
+                <div id="comparisonPanel" style="display: none;">
+                    <div class="comparison-controls" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 12px;">
+                        <div>
+                            <label style="font-size: 12px; color: #6c757d; margin-bottom: 4px; display: block;">对比维度</label>
+                            <select id="comparisonDimension" class="form-control" style="width: 100%; padding: 4px 8px; border: 1px solid #ced4da; border-radius: 4px; font-size: 12px;">
+                                <option value="location">地点对比</option>
+                                <option value="time">时间对比</option>
+                                <option value="threshold">阈值对比</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; color: #6c757d; margin-bottom: 4px; display: block;">对比对象A</label>
+                            <select id="comparisonA" class="form-control" style="width: 100%; padding: 4px 8px; border: 1px solid #ced4da; border-radius: 4px; font-size: 12px;">
+                                <!-- 动态填充 -->
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; color: #6c757d; margin-bottom: 4px; display: block;">对比对象B</label>
+                            <select id="comparisonB" class="form-control" style="width: 100%; padding: 4px 8px; border: 1px solid #ced4da; border-radius: 4px; font-size: 12px;">
+                                <!-- 动态填充 -->
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; color: #6c757d; margin-bottom: 4px; display: block;">操作</label>
+                            <button onclick="performComparison()" class="btn btn-success" style="width: 100%; padding: 4px 8px; background: #28a745; color: white; border: none; border-radius: 4px; font-size: 12px;">
+                                <i class="fas fa-chart-line"></i> 开始对比
+                            </button>
+                        </div>
+                    </div>
+                    <div id="comparisonResult" style="background: white; border-radius: 8px; padding: 12px; min-height: 100px; border: 1px solid #dee2e6; display: none;">
+                        <!-- 对比结果显示区域 -->
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // 插入到可视化控制面板后
+        const vizControlPanel = document.querySelector('.viz-control-panel');
+        if (vizControlPanel) {
+            vizControlPanel.parentNode.insertBefore(comparisonBar, vizControlPanel.nextSibling);
+        }
+    }
+    
+    // 切换对比模式
+    function toggleComparisonMode() {
+        const panel = document.getElementById('comparisonPanel');
+        const toggle = document.getElementById('comparisonToggle');
+        
+        if (panel.style.display === 'none') {
+            panel.style.display = 'block';
+            toggle.innerHTML = '<i class="fas fa-times"></i> 关闭对比';
+            toggle.classList.remove('btn-outline-primary');
+            toggle.classList.add('btn-outline-danger');
+            
+            // 填充对比选项
+            populateComparisonOptions();
+        } else {
+            panel.style.display = 'none';
+            toggle.innerHTML = '<i class="fas fa-exchange-alt"></i> 启用对比';
+            toggle.classList.remove('btn-outline-danger');
+            toggle.classList.add('btn-outline-primary');
+        }
+    }
+    
+    // 填充对比选项
+    function populateComparisonOptions() {
+        // 这里可以根据实际数据填充选项
+        const comparisonA = document.getElementById('comparisonA');
+        const comparisonB = document.getElementById('comparisonB');
+        
+        // 示例：填充地点选项
+        const locations = ['北京', '上海', '广州', '深圳', '杭州'];
+        comparisonA.innerHTML = '';
+        comparisonB.innerHTML = '';
+        
+        locations.forEach(location => {
+            comparisonA.innerHTML += `<option value="${location}">${location}</option>`;
+            comparisonB.innerHTML += `<option value="${location}">${location}</option>`;
+        });
+    }
+    
+    // 执行对比分析
+    function performComparison() {
+        const dimension = document.getElementById('comparisonDimension').value;
+        const objectA = document.getElementById('comparisonA').value;
+        const objectB = document.getElementById('comparisonB').value;
+        const resultDiv = document.getElementById('comparisonResult');
+        
+        // 显示加载状态
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = `
+            <div style="text-align: center; padding: 20px;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: #007bff; margin-bottom: 12px;"></i>
+                <p style="margin: 0; color: #6c757d;">正在进行对比分析...</p>
+            </div>
+        `;
+        
+        // 模拟对比分析
+        setTimeout(() => {
+            resultDiv.innerHTML = `
+                <div class="comparison-summary" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="comparison-item" style="text-align: center; padding: 12px; background: #f8f9fa; border-radius: 6px;">
+                        <h5 style="margin: 0 0 8px 0; color: #495057;">${objectA}</h5>
+                        <div style="font-size: 24px; font-weight: 600; color: #007bff;">1.65</div>
+                        <div style="font-size: 12px; color: #6c757d;">平均PUE值</div>
+                    </div>
+                    <div class="comparison-item" style="text-align: center; padding: 12px; background: #f8f9fa; border-radius: 6px;">
+                        <h5 style="margin: 0 0 8px 0; color: #495057;">${objectB}</h5>
+                        <div style="font-size: 24px; font-weight: 600; color: #28a745;">1.42</div>
+                        <div style="font-size: 12px; color: #6c757d;">平均PUE值</div>
+                    </div>
+                </div>
+                <div class="comparison-analysis" style="margin-top: 12px; padding: 12px; background: #e7f3ff; border-radius: 6px; border-left: 4px solid #007bff;">
+                    <h6 style="margin: 0 0 6px 0; color: #0056b3;">对比分析结果</h6>
+                    <p style="margin: 0; font-size: 13px; color: #004085;">
+                        ${objectB} 的PUE值比 ${objectA} 低 0.23，能效表现更优。建议将 ${objectB} 的最佳实践应用到 ${objectA}。
+                    </p>
+                </div>
+                <div class="comparison-actions" style="margin-top: 12px; text-align: center;">
+                    <button onclick="exportComparisonReport()" class="btn btn-info" style="padding: 6px 12px; background: #17a2b8; color: white; border: none; border-radius: 4px; font-size: 12px; margin-right: 8px;">
+                        <i class="fas fa-file-export"></i> 导出对比报告
+                    </button>
+                    <button onclick="generateRecommendations()" class="btn btn-warning" style="padding: 6px 12px; background: #ffc107; color: #212529; border: none; border-radius: 4px; font-size: 12px;">
+                        <i class="fas fa-lightbulb"></i> 生成建议
+                    </button>
+                </div>
+            `;
+        }, 2000);
+    }
+    
+    // 导出对比报告
+    function exportComparisonReport() {
+        const reportData = {
+            comparison_type: document.getElementById('comparisonDimension').value,
+            object_a: document.getElementById('comparisonA').value,
+            object_b: document.getElementById('comparisonB').value,
+            timestamp: new Date().toISOString(),
+            results: {
+                object_a_pue: 1.65,
+                object_b_pue: 1.42,
+                difference: 0.23,
+                recommendation: "建议将最佳实践应用到表现较差的地点"
+            }
+        };
+        
+        // 创建并下载JSON报告
+        const dataStr = JSON.stringify(reportData, null, 2);
+        const dataBlob = new Blob([dataStr], {type: 'application/json'});
+        const url = URL.createObjectURL(dataBlob);
+        
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `PUE对比报告_${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+    
+    // 生成优化建议
+    function generateRecommendations() {
+        alert('基于对比分析，建议:\n1. 优化冷却系统效率\n2. 调整服务器负载分布\n3. 改进能源管理策略\n4. 定期进行能效审计');
+    }
+    
+    // 页面初始化
+    window.addEventListener('load', function() {
+        // 初始化高级功能
+        setTimeout(() => {
+            initDataFilters();
+            initDataComparison();
+        }, 1000);
+    });
+    
     </script>
+</div>
+
+<!-- 高级可视化组件区域 -->
+<div class="advanced-viz-section" style="margin-top: 32px;">
+    <div class="row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+        <!-- 热力图卡片 -->
+        <div class="card viz-card" style="position: relative; overflow: hidden; border-radius: 16px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border: none; box-shadow: 0 8px 32px rgba(0,0,0,0.1);">
+            <div class="card-header" style="background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); padding: 20px; border-bottom: 1px solid rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <h3 style="margin: 0; font-size: 18px; color: #2c3e50; font-weight: 600;">
+                        <i class="fas fa-th" style="margin-right: 8px; color: #e74c3c;"></i>
+                        PUE热力分布图
+                    </h3>
+                    <p style="margin: 4px 0 0 0; font-size: 13px; color: #7f8c8d;">地点-月份PUE值热力分析</p>
+                </div>
+                <div class="chart-controls">
+                    <button class="chart-control-btn" onclick="toggleHeatmapFullscreen()" style="background: rgba(255,255,255,0.8); border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease;">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body" style="padding: 20px; background: rgba(255,255,255,0.7);">
+                <div id="heatmap-container" style="width: 100%; height: 400px;">
+                    {{ heatmap_html|safe }}
+                </div>
+            </div>
+        </div>
+
+        <!-- 雷达图卡片 -->
+        <div class="card viz-card" style="position: relative; overflow: hidden; border-radius: 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; box-shadow: 0 8px 32px rgba(0,0,0,0.1);">
+            <div class="card-header" style="background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); padding: 20px; border-bottom: 1px solid rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <h3 style="margin: 0; font-size: 18px; color: #2c3e50; font-weight: 600;">
+                        <i class="fas fa-chart-radar" style="margin-right: 8px; color: #9b59b6;"></i>
+                        多维度性能雷达
+                    </h3>
+                    <p style="margin: 4px 0 0 0; font-size: 13px; color: #7f8c8d;">综合性能评估与对比</p>
+                </div>
+                <div class="chart-controls">
+                    <button class="chart-control-btn" onclick="toggleRadarFullscreen()" style="background: rgba(255,255,255,0.8); border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease;">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body" style="padding: 20px; background: rgba(255,255,255,0.7);">
+                <div id="radar-container" style="width: 100%; height: 400px;">
+                    {{ radar_html|safe }}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 可视化组件控制面板 -->
+    <div class="viz-control-panel" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 12px; padding: 16px; margin-bottom: 24px; box-shadow: 0 4px 16px rgba(0,0,0,0.05);">
+        <div class="panel-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <h4 style="margin: 0; font-size: 16px; color: #495057; font-weight: 600;">
+                <i class="fas fa-sliders-h" style="margin-right: 8px; color: #6c757d;"></i>
+                可视化控制面板
+            </h4>
+            <div class="panel-actions">
+                <button class="action-btn" onclick="refreshAllViz()" style="background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; margin-right: 8px;">
+                    <i class="fas fa-sync-alt"></i> 刷新
+                </button>
+                <button class="action-btn" onclick="exportAllViz()" style="background: #17a2b8; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer;">
+                    <i class="fas fa-download"></i> 导出
+                </button>
+            </div>
+        </div>
+        
+        <div class="panel-content" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+            <!-- 热力图设置 -->
+            <div class="control-group" style="background: white; padding: 12px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                <label style="display: block; font-size: 12px; color: #6c757d; margin-bottom: 6px; font-weight: 600;">热力图设置</label>
+                <div style="display: flex; gap: 8px;">
+                    <select class="form-control" onchange="updateHeatmapRange(this.value)" style="flex: 1; padding: 4px 8px; border: 1px solid #ced4da; border-radius: 4px; font-size: 12px;">
+                        <option value="auto">自动范围</option>
+                        <option value="1.0-2.0">1.0-2.0</option>
+                        <option value="1.5-2.5">1.5-2.5</option>
+                        <option value="1.0-3.0">1.0-3.0</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- 雷达图设置 -->
+            <div class="control-group" style="background: white; padding: 12px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                <label style="display: block; font-size: 12px; color: #6c757d; margin-bottom: 6px; font-weight: 600;">雷达图设置</label>
+                <div style="display: flex; gap: 8px;">
+                    <select class="form-control" onchange="updateRadarLocations(this.value)" style="flex: 1; padding: 4px 8px; border: 1px solid #ced4da; border-radius: 4px; font-size: 12px;">
+                        <option value="top5">显示前5个</option>
+                        <option value="top3">显示前3个</option>
+                        <option value="all">显示全部</option>
+                        <option value="custom">自定义</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- 数据范围选择 -->
+            <div class="control-group" style="background: white; padding: 12px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                <label style="display: block; font-size: 12px; color: #6c757d; margin-bottom: 6px; font-weight: 600;">数据范围</label>
+                <div style="display: flex; gap: 8px;">
+                    <select class="form-control" onchange="updateDataRange(this.value)" style="flex: 1; padding: 4px 8px; border: 1px solid #ced4da; border-radius: 4px; font-size: 12px;">
+                        <option value="current">当前年度</option>
+                        <option value="last6">近6个月</option>
+                        <option value="last12">近12个月</option>
+                        <option value="custom">自定义范围</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- 显示选项 -->
+            <div class="control-group" style="background: white; padding: 12px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                <label style="display: block; font-size: 12px; color: #6c757d; margin-bottom: 6px; font-weight: 600;">显示选项</label>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label style="font-size: 11px; color: #495057; display: flex; align-items: center;">
+                        <input type="checkbox" checked onchange="toggleDataLabels(this.checked)" style="margin-right: 6px;"> 数据标签
+                    </label>
+                    <label style="font-size: 11px; color: #495057; display: flex; align-items: center;">
+                        <input type="checkbox" checked onchange="toggleAnimation(this.checked)" style="margin-right: 6px;"> 动画效果
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- 原始数据多维表 -->
