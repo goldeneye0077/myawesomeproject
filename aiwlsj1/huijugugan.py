@@ -354,6 +354,37 @@ async def delete_huiju_data(id: int, db: AsyncSession = Depends(get_db)):
     await db.commit()
     return {"success": True}
 
+@router.post("/data/batch_delete")
+async def batch_delete_huiju_data(request: Request, db: AsyncSession = Depends(get_db)):
+    """批量删除汇聚骨干指标数据"""
+    try:
+        body = await request.json()
+        ids = body.get('ids', [])
+        
+        if not ids:
+            return {"success": False, "message": "未提供要删除的ID列表"}
+        
+        # 查询要删除的记录
+        result = await db.execute(select(Huijugugan).where(Huijugugan.id.in_(ids)))
+        items_to_delete = result.scalars().all()
+        
+        if not items_to_delete:
+            return {"success": False, "message": "没有找到要删除的记录"}
+        
+        # 执行批量删除
+        deleted_count = 0
+        for item in items_to_delete:
+            await db.delete(item)
+            deleted_count += 1
+        
+        await db.commit()
+        
+        return {"success": True, "deleted_count": deleted_count, "message": f"成功删除 {deleted_count} 条记录"}
+        
+    except Exception as e:
+        await db.rollback()
+        return {"success": False, "message": f"删除失败：{str(e)}"}
+
 class HuijuguganCreate(BaseModel):
     month: str
     city: str

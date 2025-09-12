@@ -218,26 +218,45 @@
             </div>
         </div>
         
+        <!-- 批量操作工具栏 -->
+        <div class="action-bar" style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; margin-bottom: 16px; padding: 12px 16px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef;">
+            <div class="action-left" style="display: flex; align-items: center; gap: 12px;">
+                <span id="selectedCount" class="selected-count" style="font-size: 14px; color: #6c757d; font-weight: 500;">0 项已选中</span>
+                <button id="batchDeleteBtn" class="btn-danger" style="padding: 6px 12px; background: #dc3545; color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;" disabled onclick="batchDeleteFaults()">
+                    <svg style="width: 14px; height: 14px; margin-right: 4px;" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 7L18.1 19.9C18 21 17 22 15.9 22H8.1C7 22 6 21 5.9 19.9L5 7H19M3 7H21M16 2L13 2L11 2L8 2V4H16V2M14 12V17H12V12H14M10 12V17H8V12H10Z"/>
+                    </svg>
+                    批量删除
+                </button>
+            </div>
+            <div class="action-right" style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 12px; color: #7f8c8d;">提示：选中行后可进行批量操作</span>
+            </div>
+        </div>
+        
         <!-- 故障列表 -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+        <div class="modern-table-card" style="margin-top: 24px; border-radius: 16px; background: white; border: 1px solid #e9ecef; box-shadow: 0 4px 16px rgba(0,0,0,0.05); overflow: hidden;">
+            <div class="data-table-container" style="overflow-x: auto; max-height: 600px; border-radius: 8px;">
+                <table class="modern-data-table compact-view" style="width: 100%; border-collapse: collapse; background: white;">
+                    <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); position: sticky; top: 0; z-index: 10;">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">序号</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">故障时间</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">故障名称</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">故障类型</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">原因分类</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">通报级别</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">处理时长</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">主动发现</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                            <th style="background: #2c3e50; color: white; padding: 16px 20px; text-align: center; font-weight: 600; border-right: 2px solid white; position: sticky; left: 0; z-index: 11; min-width: 50px; white-space: nowrap;">
+                                <input type="checkbox" id="selectAll" onchange="toggleSelectAll()" style="transform: scale(1.2); accent-color: #3498db; cursor: pointer;">
+                            </th>
+                            <th style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white; padding: 12px 20px; text-align: center; font-weight: 600; border-right: 2px solid white; white-space: nowrap; min-width: 70px;">序号</th>
+                            <th style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white; padding: 12px 20px; text-align: center; font-weight: 600; border-right: 2px solid white; white-space: nowrap; min-width: 130px;">故障时间</th>
+                            <th style="background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); color: white; padding: 12px 18px; text-align: center; font-weight: 500; border-right: 1px solid rgba(255,255,255,0.2); font-size: 13px; min-width: 150px; white-space: nowrap;">故障名称</th>
+                            <th style="background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); color: white; padding: 12px 18px; text-align: center; font-weight: 500; border-right: 1px solid rgba(255,255,255,0.2); font-size: 13px; min-width: 120px; white-space: nowrap;">故障类型</th>
+                            <th style="background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); color: white; padding: 12px 18px; text-align: center; font-weight: 500; border-right: 1px solid rgba(255,255,255,0.2); font-size: 13px; min-width: 100px; white-space: nowrap;">原因分类</th>
+                            <th style="background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); color: white; padding: 12px 18px; text-align: center; font-weight: 500; border-right: 1px solid rgba(255,255,255,0.2); font-size: 13px; min-width: 100px; white-space: nowrap;">通报级别</th>
+                            <th style="background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); color: white; padding: 12px 18px; text-align: center; font-weight: 500; border-right: 1px solid rgba(255,255,255,0.2); font-size: 13px; min-width: 100px; white-space: nowrap;">处理时长</th>
+                            <th style="background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); color: white; padding: 12px 18px; text-align: center; font-weight: 500; border-right: 1px solid rgba(255,255,255,0.2); font-size: 13px; min-width: 90px; white-space: nowrap;">主动发现</th>
+                            <th style="background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); color: white; padding: 12px 18px; text-align: center; font-weight: 500; border-right: 1px solid rgba(255,255,255,0.2); font-size: 13px; min-width: 120px; white-space: nowrap;">操作</th>
                         </tr>
                     </thead>
-                    <tbody id="fault-table-body" class="bg-white divide-y divide-gray-200">
+                    <tbody id="fault-table-body" style="background: white;">
                         <tr>
-                            <td colspan="9" class="px-6 py-12 text-center text-gray-500">
+                            <td colspan="9" style="padding: 40px 20px; text-align: center; color: #7f8c8d; font-size: 16px;">
                                 <div class="flex flex-col items-center">
                                     <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-4"></div>
                                     <span>加载中...</span>
@@ -251,7 +270,7 @@
         
         <!-- 分页 -->
         <div class="mt-6">
-            <nav class="flex justify-center" id="pagination">
+            <nav class="flex justify-center" id="pagination" style="padding: 20px; background: #fafafa; border-radius: 8px; border: 1px solid #e9ecef;">
                 <!-- 分页内容将通过 JavaScript 生成 -->
             </nav>
         </div>
@@ -770,12 +789,15 @@
         function renderFaultTable(data) {
             const tbody = document.getElementById('fault-table-body');
             if (data.faults.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="text-center">暂无数据</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="10" class="text-center">暂无数据</td></tr>';
                 return;
             }
             
             tbody.innerHTML = data.faults.map(fault => `
                 <tr>
+                    <td style="text-align: center; padding: 8px;">
+                        <input type="checkbox" class="row-checkbox" value="${fault.id}" onchange="updateSelectedCount()">
+                    </td>
                     <td>${fault.sequence_no || '-'}</td>
                     <td>${fault.fault_date}</td>
                     <td>${fault.fault_name || '-'}</td>
@@ -787,6 +809,9 @@
                     <td><button class="btn btn-sm btn-outline-primary" onclick="showFaultDetail(${fault.id})">详情</button></td>
                 </tr>
             `).join('');
+            
+            // 更新批量操作状态
+            updateSelectedCount();
         }
         
         // 获取徽章样式类
@@ -1159,5 +1184,254 @@
                 ]
             });
         }
+        
+        // 批量删除相关功能
+        function toggleSelectAll(checkbox) {
+            const checkboxes = document.querySelectorAll('.row-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = checkbox.checked;
+            });
+            updateSelectedCount();
+        }
+        
+        function updateSelectedCount() {
+            const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
+            const selectedCount = document.getElementById('selectedCount');
+            const batchDeleteBtn = document.getElementById('batchDeleteBtn');
+            
+            selectedCount.textContent = `${checkedBoxes.length} 项已选中`;
+            
+            if (checkedBoxes.length > 0) {
+                batchDeleteBtn.style.display = 'inline-block';
+                batchDeleteBtn.style.backgroundColor = '#dc3545';
+                batchDeleteBtn.style.color = 'white';
+            } else {
+                batchDeleteBtn.style.display = 'none';
+            }
+        }
+        
+        function batchDeleteFaults() {
+            const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
+            
+            if (checkedBoxes.length === 0) {
+                alert('请至少选择一项数据');
+                return;
+            }
+            
+            if (!confirm(`确定要删除选中的 ${checkedBoxes.length} 条故障记录吗？此操作不可撤销。`)) {
+                return;
+            }
+            
+            const selectedIds = Array.from(checkedBoxes).map(checkbox => checkbox.value);
+            
+            const batchDeleteBtn = document.getElementById('batchDeleteBtn');
+            const originalText = batchDeleteBtn.textContent;
+            batchDeleteBtn.textContent = '删除中...';
+            batchDeleteBtn.disabled = true;
+            
+            fetch('/fault/batch_delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ ids: selectedIds })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`成功删除 ${data.deleted_count} 条记录`);
+                    // 重新加载当前页面数据
+                    loadDetailList(currentPage);
+                } else {
+                    alert('删除失败: ' + (data.message || '未知错误'));
+                }
+            })
+            .catch(error => {
+                console.error('删除操作失败:', error);
+                alert('删除操作失败，请稍后重试');
+            })
+            .finally(() => {
+                batchDeleteBtn.textContent = originalText;
+                batchDeleteBtn.disabled = false;
+            });
+        }
     </script>
+    
+    <style>
+    /* 现代化表格样式 */
+    .modern-data-table tbody tr {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .modern-data-table tbody tr:hover {
+        background: rgba(52, 152, 219, 0.05) !important;
+        transform: scale(1.002);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    /* 现代化分页样式 */
+    #pagination .page-link,
+    #pagination button {
+        padding: 8px 16px;
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        text-decoration: none;
+        margin: 0 4px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    #pagination .page-link:hover,
+    #pagination button:hover {
+        background: linear-gradient(135deg, #2980b9 0%, #1f4e79 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    #pagination .current {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        font-weight: 600;
+    }
+    
+    #pagination span:not(.current) {
+        color: #7f8c8d;
+        padding: 8px 12px;
+    }
+    
+    /* 现代化徽章样式 */
+    .modern-badge {
+        padding: 4px 12px;
+        border-radius: 16px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+        display: inline-block;
+        transition: all 0.3s ease;
+    }
+    
+    .modern-badge:hover {
+        transform: scale(1.05);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    
+    .badge-danger {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        color: white;
+    }
+    
+    .badge-warning {
+        background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        color: white;
+    }
+    
+    .badge-success {
+        background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+        color: white;
+    }
+    
+    .badge-info {
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        color: white;
+    }
+    
+    .badge-secondary {
+        background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+        color: white;
+    }
+    
+    /* 现代化操作按钮 */
+    .action-btn {
+        padding: 4px 8px;
+        border: none;
+        border-radius: 4px;
+        font-size: 11px;
+        text-decoration: none;
+        margin: 0 2px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .btn-view {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        color: white;
+    }
+    
+    .btn-edit {
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        color: white;
+    }
+    
+    /* 批量操作工具栏样式 */
+    .batch-action-bar {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 12px 20px;
+        margin-bottom: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .batch-action-bar #selectedCount {
+        color: #495057;
+        font-weight: 500;
+        font-size: 14px;
+    }
+    
+    .batch-action-bar #batchDeleteBtn {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 8px 16px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: none;
+    }
+    
+    .batch-action-bar #batchDeleteBtn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(220,53,69,0.3);
+    }
+    
+    .batch-action-bar #batchDeleteBtn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+    
+    /* 复选框样式优化 */
+    .modern-table-card .row-checkbox {
+        width: 16px;
+        height: 16px;
+        accent-color: #3498db;
+        cursor: pointer;
+    }
+    
+    .modern-table-card .select-all-checkbox {
+        width: 16px;
+        height: 16px;
+        accent-color: #3498db;
+        cursor: pointer;
+    }
+    </style>
 {% endblock %}

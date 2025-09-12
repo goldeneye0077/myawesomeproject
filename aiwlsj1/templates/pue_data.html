@@ -24,93 +24,315 @@
 
 {% block content %}
 <!-- PUE数据列表卡片 -->
-<div class="card">
-    <!-- 筛选表单 -->
-    <form method="get" id="filterForm" class="mb-6 flex gap-4 items-center flex-wrap">
-        <label class="flex items-center gap-2 text-sm font-medium text-gray-700">
-            地点：
-            <select name="location" onchange="document.getElementById('filterForm').submit();" class="form-select">
-                <option value="">全部</option>
-                {% for loc in all_locations %}
-                <option value="{{ loc }}" {% if current_location==loc %}selected{% endif %}>{{ loc }}</option>
-                {% endfor %}
-            </select>
-        </label>
-        <label class="flex items-center gap-2 text-sm font-medium text-gray-700">
-            年份：
-            <select name="year" onchange="document.getElementById('filterForm').submit();" class="form-select">
-                <option value="">全部</option>
-                {% for y in all_years %}
-                <option value="{{ y }}" {% if current_year==y %}selected{% endif %}>{{ y }}</option>
-                {% endfor %}
-            </select>
-        </label>
-        <input type="hidden" name="page" value="1">
-    </form>
-
-    <!-- 操作按钮区 -->
-    <div class="mb-4">
-        <a href="/add_pue_data" class="btn-primary">添加PUE数据</a>
+<div class="card modern-table-card" style="margin-top: 32px; position: relative; z-index: 0; border-radius: 16px; background: white; border: 1px solid #e9ecef; box-shadow: 0 4px 16px rgba(0,0,0,0.05);">
+    <div class="card-header" style="background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); padding: 24px; border-bottom: 1px solid rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: space-between;">
+        <div>
+            <h3 style="margin: 0; font-size: 20px; color: #2c3e50; font-weight: 600;">
+                <i class="fas fa-table" style="margin-right: 10px; color: #3498db;"></i>
+                PUE数据管理
+            </h3>
+            <p style="margin: 6px 0 0 0; font-size: 14px; color: #7f8c8d;">PUE指标数据列表 - 按地点和年份查看管理</p>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <a href="/add_pue_data" class="btn-primary" style="padding: 8px 16px; background: #3498db; color: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 4px; text-decoration: none; transition: all 0.3s;">
+                <svg style="width: 16px; height: 16px;" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 4v16m8-8H4"/>
+                </svg>
+                添加PUE数据
+            </a>
+        </div>
     </div>
+    <div class="card-body" style="padding: 24px;">
+        <!-- 筛选表单 -->
+        <form method="get" id="filterForm" class="mb-6 flex gap-4 items-center flex-wrap" style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin-bottom: 24px;">
+            <label class="flex items-center gap-2 text-sm font-medium text-gray-700" style="color: #2c3e50; font-weight: 500;">
+                地点：
+                <select name="location" onchange="document.getElementById('filterForm').submit();" class="form-select" style="padding: 6px 12px; border: 1px solid #dee2e6; border-radius: 6px; background: white; color: #2c3e50;">
+                    <option value="">全部</option>
+                    {% for loc in all_locations %}
+                    <option value="{{ loc }}" {% if current_location==loc %}selected{% endif %}>{{ loc }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label class="flex items-center gap-2 text-sm font-medium text-gray-700" style="color: #2c3e50; font-weight: 500;">
+                年份：
+                <select name="year" onchange="document.getElementById('filterForm').submit();" class="form-select" style="padding: 6px 12px; border: 1px solid #dee2e6; border-radius: 6px; background: white; color: #2c3e50;">
+                    <option value="">全部</option>
+                    {% for y in all_years %}
+                    <option value="{{ y }}" {% if current_year==y %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <input type="hidden" name="page" value="1">
+        </form>
 
-    <div class="data-table-container">
-        <table class="data-table">
-            <thead class="sticky-header">
-                <tr>
-                    <th>地点</th>
-                    <th>年份</th>
-                    <th>月份</th>
-                    <th>PUE值</th>
-                    <th>创建时间</th>
-                    <th>更新时间</th>
-                    <th>操作</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in pue_data_list %}
-                <tr>
-                    <td>{{ item.location }}</td>
-                    <td>{{ item.year }}</td>
-                    <td>{{ item.month }}</td>
-                    <td>{{ "{:.2f}".format(item.pue_value) }}</td>
-                    <td>{{ item.created_at.strftime('%Y-%m-%d') if item.created_at else '' }}</td>
-                    <td>{{ item.updated_at.strftime('%Y-%m-%d') if item.updated_at else '' }}</td>
-                    <td class="action-column">
-                        <div class="action-buttons">
-                            <a href="/edit_pue_data/{{ item.id }}" class="btn-xs btn-primary">编辑</a>
-                            <a href="/delete_pue_data/{{ item.id }}" class="btn-xs btn-danger" onclick="return confirm('确定要删除吗？');">删除</a>
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    <!-- 分页控件 -->
-    <div class="pagination">
-        {% if page > 1 %}
-            <a href="?page=1&location={{ current_location }}&year={{ current_year }}" class="page-link">首页</a>
-            <a href="?page={{ page - 1 }}&location={{ current_location }}&year={{ current_year }}" class="page-link">上一页</a>
-        {% endif %}
-        <span class="px-3 py-2 text-sm text-gray-600">第 {{ page }} / {{ pages }} 页</span>
-        {% if page < pages %}
-            <a href="?page={{ page + 1 }}&location={{ current_location }}&year={{ current_year }}" class="page-link">下一页</a>
-            <a href="?page={{ pages }}&location={{ current_location }}&year={{ current_year }}" class="page-link">末页</a>
-        {% endif %}
-        <span class="ml-3 px-3 py-2 text-sm text-gray-600">共 {{ total }} 条</span>
+        <!-- 批量操作工具栏 -->
+        <div class="action-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding: 12px 16px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef;">
+            <div class="action-left" style="display: flex; align-items: center; gap: 12px;">
+                <span id="selectedCount" class="selected-count" style="font-size: 14px; color: #6c757d; font-weight: 500;">0 项已选中</span>
+                <button id="batchDeleteBtn" class="btn-danger" style="padding: 6px 12px; background: #dc3545; color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;" disabled onclick="batchDelete()">
+                    <svg style="width: 14px; height: 14px; margin-right: 4px;" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 7L18.1 19.9C18 21 17 22 15.9 22H8.1C7 22 6 21 5.9 19.9L5 7H19M3 7H21M16 2L13 2L11 2L8 2V4H16V2M14 12V17H12V12H14M10 12V17H8V12H10Z"/>
+                    </svg>
+                    批量删除
+                </button>
+            </div>
+            <div class="action-right" style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 12px; color: #7f8c8d;">提示：选中行后可进行批量操作</span>
+            </div>
+        </div>
+
+        <div class="data-table-container" style="overflow-x: auto; max-height: 600px; border-radius: 8px; border: 1px solid #e0e0e0;">
+            <table class="modern-data-table compact-view" style="width: 100%; border-collapse: collapse; background: white;">
+                <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); position: sticky; top: 0; z-index: 10;">
+                    <tr>
+                        <th style="background: #2c3e50; color: white; padding: 16px 20px; text-align: center; font-weight: 600; border-right: 2px solid white; position: sticky; left: 0; z-index: 11; min-width: 50px; white-space: nowrap;">
+                            <input type="checkbox" id="selectAll" onchange="toggleSelectAll()" style="transform: scale(1.2); accent-color: #3498db; cursor: pointer;">
+                        </th>
+                        <th style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white; padding: 12px 20px; text-align: center; font-weight: 600; border-right: 2px solid white; white-space: nowrap; min-width: 80px;">地点</th>
+                        <th style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white; padding: 12px 20px; text-align: center; font-weight: 600; border-right: 2px solid white; white-space: nowrap; min-width: 70px;">年份</th>
+                        <th style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white; padding: 12px 20px; text-align: center; font-weight: 600; border-right: 2px solid white; white-space: nowrap; min-width: 70px;">月份</th>
+                        <th style="background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); color: white; padding: 12px 18px; text-align: center; font-weight: 500; border-right: 1px solid rgba(255,255,255,0.2); font-size: 13px; min-width: 80px; white-space: nowrap;">PUE值</th>
+                        <th style="background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); color: white; padding: 12px 18px; text-align: center; font-weight: 500; border-right: 1px solid rgba(255,255,255,0.2); font-size: 13px; min-width: 100px; white-space: nowrap;">创建时间</th>
+                        <th style="background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); color: white; padding: 12px 18px; text-align: center; font-weight: 500; border-right: 1px solid rgba(255,255,255,0.2); font-size: 13px; min-width: 100px; white-space: nowrap;">更新时间</th>
+                        <th style="background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); color: white; padding: 12px 18px; text-align: center; font-weight: 500; border-right: 1px solid rgba(255,255,255,0.2); font-size: 13px; min-width: 120px; white-space: nowrap;">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in pue_data_list %}
+                    <tr class="data-row" style="transition: all 0.3s ease;" onmouseover="this.style.background='rgba(52, 152, 219, 0.05)'" onmouseout="this.style.background='white'">
+                        <td style="background: #f8f9fa; color: #2c3e50; padding: 12px 20px; text-align: center; font-weight: 600; border-right: 2px solid #dee2e6; position: sticky; left: 0; z-index: 9; min-width: 50px; white-space: nowrap;">
+                            <input type="checkbox" class="row-checkbox" value="{{ item.id }}" onchange="updateSelectedCount()" style="transform: scale(1.2); accent-color: #3498db; cursor: pointer;">
+                        </td>
+                        <td style="background: #f8f9fa; color: #2c3e50; padding: 12px 20px; text-align: center; font-weight: 600; border-right: 2px solid #dee2e6; min-width: 80px; white-space: nowrap; font-size: 14px;">{{ item.location }}</td>
+                        <td style="padding: 12px 20px; text-align: center; font-weight: 500; border-right: 1px solid #dee2e6; border-bottom: 1px solid #f0f0f0; min-width: 70px; white-space: nowrap;">{{ item.year }}</td>
+                        <td style="padding: 12px 20px; text-align: center; font-weight: 500; border-right: 1px solid #dee2e6; border-bottom: 1px solid #f0f0f0; min-width: 70px; white-space: nowrap;">{{ item.month }}</td>
+                        {% set pue_class = 'excellent' if item.pue_value <= 1.2 else ('good' if item.pue_value <= 1.5 else ('warning' if item.pue_value <= 2.0 else 'danger')) %}
+                        <td class="pue-cell pue-{{ pue_class }}" style="padding: 12px 20px; text-align: center; font-weight: 500; border-right: 1px solid #dee2e6; border-bottom: 1px solid #f0f0f0; position: relative; min-width: 80px; white-space: nowrap;">
+                            <span class="pue-value" style="font-size: 14px; font-weight: 600;">{{ "{:.2f}".format(item.pue_value) }}</span>
+                        </td>
+                        <td style="padding: 12px 20px; text-align: center; color: #7f8c8d; border-right: 1px solid #dee2e6; border-bottom: 1px solid #f0f0f0; font-size: 13px; min-width: 100px; white-space: nowrap;">{{ item.created_at.strftime('%Y-%m-%d') if item.created_at else '-' }}</td>
+                        <td style="padding: 12px 20px; text-align: center; color: #7f8c8d; border-right: 1px solid #dee2e6; border-bottom: 1px solid #f0f0f0; font-size: 13px; min-width: 100px; white-space: nowrap;">{{ item.updated_at.strftime('%Y-%m-%d') if item.updated_at else '-' }}</td>
+                        <td class="action-column" style="padding: 12px 20px; text-align: center; border-bottom: 1px solid #f0f0f0; min-width: 120px; white-space: nowrap;">
+                            <div class="action-buttons" style="display: flex; gap: 6px; justify-content: center;">
+                                <a href="/edit_pue_data/{{ item.id }}" class="btn-xs" style="padding: 4px 8px; background: #3498db; color: white; border: none; border-radius: 4px; font-size: 12px; text-decoration: none; transition: all 0.3s; display: flex; align-items: center;">编辑</a>
+                                <a href="/delete_pue_data/{{ item.id }}" class="btn-xs" style="padding: 4px 8px; background: #e74c3c; color: white; border: none; border-radius: 4px; font-size: 12px; text-decoration: none; transition: all 0.3s; display: flex; align-items: center;" onclick="return confirm('确定要删除吗？');">删除</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <!-- 分页控件 -->
+        <div class="pagination" style="padding: 20px 24px; border-top: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; background: #fafafa;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                {% if page > 1 %}
+                    <a href="?page=1{% if current_location %}&location={{ current_location }}{% endif %}{% if current_year %}&year={{ current_year }}{% endif %}" class="page-link" style="padding: 6px 12px; background: #3498db; color: white; border-radius: 4px; text-decoration: none; font-size: 12px; transition: all 0.3s;">首页</a>
+                    <a href="?page={{ page - 1 }}{% if current_location %}&location={{ current_location }}{% endif %}{% if current_year %}&year={{ current_year }}{% endif %}" class="page-link" style="padding: 6px 12px; background: #3498db; color: white; border-radius: 4px; text-decoration: none; font-size: 12px; transition: all 0.3s;">上一页</a>
+                {% endif %}
+                {% if page < pages %}
+                    <a href="?page={{ page + 1 }}{% if current_location %}&location={{ current_location }}{% endif %}{% if current_year %}&year={{ current_year }}{% endif %}" class="page-link" style="padding: 6px 12px; background: #3498db; color: white; border-radius: 4px; text-decoration: none; font-size: 12px; transition: all 0.3s;">下一页</a>
+                    <a href="?page={{ pages }}{% if current_location %}&location={{ current_location }}{% endif %}{% if current_year %}&year={{ current_year }}{% endif %}" class="page-link" style="padding: 6px 12px; background: #3498db; color: white; border-radius: 4px; text-decoration: none; font-size: 12px; transition: all 0.3s;">末页</a>
+                {% endif %}
+            </div>
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <span style="color: #7f8c8d; font-size: 14px;">第 {{ page }} / {{ pages }} 页</span>
+                <span style="color: #7f8c8d; font-size: 14px;">共 {{ total }} 条记录</span>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
 
+{% block styles %}
+<style>
+.modern-data-table .pue-excellent { 
+    background: linear-gradient(135deg, rgba(46, 204, 113, 0.1) 0%, rgba(39, 174, 96, 0.1) 100%); 
+    color: #27ae60; 
+}
+.modern-data-table .pue-good { 
+    background: linear-gradient(135deg, rgba(52, 152, 219, 0.1) 0%, rgba(41, 128, 185, 0.1) 100%); 
+    color: #2980b9; 
+}
+.modern-data-table .pue-warning { 
+    background: linear-gradient(135deg, rgba(241, 196, 15, 0.1) 0%, rgba(230, 126, 34, 0.1) 100%); 
+    color: #f39c12; 
+}
+.modern-data-table .pue-danger { 
+    background: linear-gradient(135deg, rgba(231, 76, 60, 0.1) 0%, rgba(192, 57, 43, 0.1) 100%); 
+    color: #e74c3c; 
+}
+
+.modern-data-table .pue-cell::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 3px;
+    width: 100%;
+    background: currentColor;
+    opacity: 0.3;
+}
+
+.btn-xs:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+.data-row:hover .pue-cell {
+    transform: scale(1.02);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.page-link:hover {
+    background: #2980b9 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.modern-data-table.compact-view th,
+.modern-data-table.compact-view td {
+    padding: 8px 16px !important;
+    font-size: 12px !important;
+}
+
+.modern-data-table.compact-view .pue-value {
+    font-size: 12px !important;
+}
+
+/* 批量操作相关样式 */
+.action-bar .btn-danger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.action-bar .btn-danger:hover:not(:disabled) {
+    background: #c82333 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.row-checkbox:checked {
+    accent-color: #3498db;
+}
+
+.data-row.selected {
+    background: rgba(52, 152, 219, 0.1) !important;
+}
+</style>
+{% endblock %}
+
 {% block scripts %}
 <script>
+    // 单个删除功能
     function confirmDelete(id) {
         if (confirm('确定要删除这条PUE数据记录吗？此操作不可恢复。')) {
             window.location.href = '/delete_pue_data/' + id;
         }
     }
 
+    // 全选/取消全选功能
+    function toggleSelectAll() {
+        const selectAllCheckbox = document.getElementById('selectAll');
+        const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+        
+        rowCheckboxes.forEach(checkbox => {
+            checkbox.checked = selectAllCheckbox.checked;
+            // 更新行的视觉状态
+            const row = checkbox.closest('tr');
+            if (checkbox.checked) {
+                row.classList.add('selected');
+            } else {
+                row.classList.remove('selected');
+            }
+        });
+        
+        updateSelectedCount();
+    }
+
+    // 更新选中数量
+    function updateSelectedCount() {
+        const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+        const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
+        const selectAllCheckbox = document.getElementById('selectAll');
+        const selectedCountSpan = document.getElementById('selectedCount');
+        const batchDeleteBtn = document.getElementById('batchDeleteBtn');
+        
+        const selectedCount = checkedBoxes.length;
+        const totalCount = rowCheckboxes.length;
+        
+        // 更新选中数量显示
+        selectedCountSpan.textContent = `${selectedCount} 项已选中`;
+        
+        // 更新批量删除按钮状态
+        batchDeleteBtn.disabled = selectedCount === 0;
+        
+        // 更新全选复选框状态
+        if (selectedCount === 0) {
+            selectAllCheckbox.indeterminate = false;
+            selectAllCheckbox.checked = false;
+        } else if (selectedCount === totalCount) {
+            selectAllCheckbox.indeterminate = false;
+            selectAllCheckbox.checked = true;
+        } else {
+            selectAllCheckbox.indeterminate = true;
+            selectAllCheckbox.checked = false;
+        }
+        
+        // 更新行的视觉状态
+        rowCheckboxes.forEach(checkbox => {
+            const row = checkbox.closest('tr');
+            if (checkbox.checked) {
+                row.classList.add('selected');
+            } else {
+                row.classList.remove('selected');
+            }
+        });
+    }
+
+    // 批量删除功能
+    function batchDelete() {
+        const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
+        
+        if (checkedBoxes.length === 0) {
+            alert('请先选择要删除的记录');
+            return;
+        }
+        
+        const selectedIds = Array.from(checkedBoxes).map(checkbox => checkbox.value);
+        const confirmMessage = `确定要删除选中的 ${selectedIds.length} 条PUE数据记录吗？此操作不可撤销。`;
+        
+        if (confirm(confirmMessage)) {
+            // 发送批量删除请求
+            fetch('/pue_data/batch_delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ ids: selectedIds })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.success) {
+                    alert(`成功删除 ${data.deleted_count} 条记录`);
+                    window.location.reload();
+                } else {
+                    alert('批量删除失败：' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('批量删除过程中发生错误');
+            });
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
+        // 初始化选中计数
+        updateSelectedCount();
+        
+        // 文件上传相关（如果存在）
         const fileInput = document.getElementById('file');
         const fileNameDisplay = document.getElementById('file-name-display');
 

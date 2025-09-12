@@ -303,6 +303,38 @@ async def delete_pue_drill_down(id: int, db: AsyncSession = Depends(get_db)):
         await db.delete(row)
         await db.commit()
     return RedirectResponse(url="/pue_drill_down_manage", status_code=303)
+
+@router.post("/pue_drill_down/batch_delete")
+async def batch_delete_pue_drill_down(request: Request, db: AsyncSession = Depends(get_db)):
+    """批量删除PUE下钻数据"""
+    try:
+        body = await request.json()
+        ids = body.get('ids', [])
+        
+        if not ids:
+            return {"success": False, "message": "未提供要删除的ID列表"}
+        
+        # 查询要删除的记录
+        result = await db.execute(select(PUEDrillDownData).where(PUEDrillDownData.id.in_(ids)))
+        items_to_delete = result.scalars().all()
+        
+        if not items_to_delete:
+            return {"success": False, "message": "没有找到要删除的记录"}
+        
+        # 执行批量删除
+        deleted_count = 0
+        for item in items_to_delete:
+            await db.delete(item)
+            deleted_count += 1
+        
+        await db.commit()
+        
+        return {"success": True, "deleted_count": deleted_count, "message": f"成功删除 {deleted_count} 条记录"}
+        
+    except Exception as e:
+        await db.rollback()
+        return {"success": False, "message": f"删除失败：{str(e)}"}
+
 # Pydantic模型用于API请求和响应
 class PUEDataCreate(BaseModel):
     location: str
@@ -433,6 +465,37 @@ async def delete_pue_data(id: int, db: AsyncSession = Depends(get_db)):
     await db.delete(pue_data)
     await db.commit()
     return RedirectResponse(url="/pue_data", status_code=303)
+
+@router.post("/pue_data/batch_delete")
+async def batch_delete_pue_data(request: Request, db: AsyncSession = Depends(get_db)):
+    """批量删除PUE数据"""
+    try:
+        body = await request.json()
+        ids = body.get('ids', [])
+        
+        if not ids:
+            return {"success": False, "message": "未提供要删除的ID列表"}
+        
+        # 查询要删除的记录
+        result = await db.execute(select(PUEData).where(PUEData.id.in_(ids)))
+        items_to_delete = result.scalars().all()
+        
+        if not items_to_delete:
+            return {"success": False, "message": "没有找到要删除的记录"}
+        
+        # 执行批量删除
+        deleted_count = 0
+        for item in items_to_delete:
+            await db.delete(item)
+            deleted_count += 1
+        
+        await db.commit()
+        
+        return {"success": True, "deleted_count": deleted_count, "message": f"成功删除 {deleted_count} 条记录"}
+        
+    except Exception as e:
+        await db.rollback()
+        return {"success": False, "message": f"删除失败：{str(e)}"}
 
 @router.get("/download_pue_template")
 async def download_pue_template():
@@ -678,21 +741,39 @@ async def pue_analyze(request: Request, location: str = None, date_range: str = 
         pue_data_list = metrics_result.scalars().all()
 
         def build_year_series(records, target_year):
+            # 为当前视图的月份创建映射
             month_map = {m: [] for m in months}
+            
+            # 收集数据
             for rec in records:
-                if rec.year == target_year:
+                if rec.year == target_year and str(rec.month) in month_map:
                     month_map[str(rec.month)].append(rec.pue_value)
+            
+            # 构建series数据
             series = []
             for m in months:
                 vals = month_map[m]
                 if vals:
-                    series.append(round(sum(vals)/len(vals), 3))
+                    avg_value = sum(vals) / len(vals)
+                    series.append(round(avg_value, 3))
                 else:
                     series.append(None)
+            
+            
             return series
 
         last_year_values = build_year_series(chart_data_list, last_year)
         this_year_values = build_year_series(chart_data_list, this_year)
+        
+        # 确保数据长度匹配x_axis
+        target_len = len(x_axis)
+        while len(last_year_values) < target_len:
+            last_year_values.append(None)
+        while len(this_year_values) < target_len:
+            this_year_values.append(None)
+        
+        last_year_values = last_year_values[:target_len]
+        this_year_values = this_year_values[:target_len]
 
         # 构造月份到数值的映射，便于后续比较
         this_dict = {months[i]: this_year_values[i] for i in range(len(months))}

@@ -923,6 +923,62 @@ async def delete_fault_data(fault_id: int, db: AsyncSession = Depends(get_db)):
         await db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post('/batch_delete')
+async def batch_delete_fault_data(request: Request, db: AsyncSession = Depends(get_db)):
+    """批量删除故障数据"""
+    try:
+        # 获取请求体中的数据
+        body = await request.json()
+        ids = body.get('ids', [])
+        
+        if not ids:
+            return JSONResponse(content={"success": False, "message": "未提供要删除的ID列表"})
+        
+        # 验证ID列表
+        if not isinstance(ids, list) or not all(isinstance(id, (int, str)) for id in ids):
+            return JSONResponse(content={"success": False, "message": "ID列表格式无效"})
+        
+        # 转换为整数列表
+        try:
+            fault_ids = [int(id) for id in ids]
+        except (ValueError, TypeError):
+            return JSONResponse(content={"success": False, "message": "ID列表包含无效的数值"})
+        
+        # 开始事务处理
+        deleted_count = 0
+        
+        # 查询要删除的记录
+        result = await db.execute(select(FaultRecord).where(FaultRecord.id.in_(fault_ids)))
+        fault_records = result.scalars().all()
+        
+        if not fault_records:
+            return JSONResponse(content={"success": False, "message": "未找到要删除的记录"})
+        
+        # 执行删除操作
+        for fault_record in fault_records:
+            await db.delete(fault_record)
+            deleted_count += 1
+        
+        # 提交事务
+        await db.commit()
+        
+        logging.info(f"批量删除故障记录成功，删除数量: {deleted_count}")
+        
+        return JSONResponse(content={
+            "success": True, 
+            "message": f"成功删除 {deleted_count} 条记录",
+            "deleted_count": deleted_count
+        })
+        
+    except Exception as e:
+        # 回滚事务
+        await db.rollback()
+        logging.error(f"批量删除故障记录失败: {str(e)}")
+        return JSONResponse(content={
+            "success": False, 
+            "message": f"删除操作失败: {str(e)}"
+        })
+
 @router.get('/api/detail/{fault_id}')
 async def get_fault_detail(fault_id: int, db: AsyncSession = Depends(get_db)):
     try:
