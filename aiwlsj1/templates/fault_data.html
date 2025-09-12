@@ -15,134 +15,160 @@
 
 {% block content %}
 <!-- 故障数据列表卡片 -->
-<div class="card">
-    <!-- 筛选表单 -->
-    <form method="get" id="filterForm" style="margin-bottom: 18px; display: flex; gap: 18px; align-items: center; flex-wrap: wrap;">
-        <label>故障类型：
-            <select name="fault_type" onchange="document.getElementById('filterForm').submit();" style="min-width: 120px;">
-                <option value="">全部</option>
-                {% for type in all_fault_types %}
-                <option value="{{ type }}" {% if current_fault_type==type %}selected{% endif %}>{{ type }}</option>
-                {% endfor %}
-            </select>
-        </label>
-        <label>原因分类：
-            <select name="cause_category" onchange="document.getElementById('filterForm').submit();" style="min-width: 120px;">
-                <option value="">全部</option>
-                {% for category in all_cause_categories %}
-                <option value="{{ category }}" {% if current_cause_category==category %}selected{% endif %}>{{ category }}</option>
-                {% endfor %}
-            </select>
-        </label>
-        <label>通报级别：
-            <select name="notification_level" onchange="document.getElementById('filterForm').submit();" style="min-width: 100px;">
-                <option value="">全部</option>
-                {% for level in all_notification_levels %}
-                <option value="{{ level }}" {% if current_notification_level==level %}selected{% endif %}>{{ level }}</option>
-                {% endfor %}
-            </select>
-        </label>
-        <input type="hidden" name="page" value="1">
-    </form>
-
-    <!-- 操作按钮区 -->
-    <div class="action-bar">
-        <div class="action-left">
-            <a href="/fault/add_fault_data" class="btn btn-primary">添加故障数据</a>
-            <a href="/fault/import_fault_data" class="btn btn-secondary">批量导入</a>
-            <a href="/fault/export_fault_data" class="btn btn-success">导出数据</a>
+<div class="card modern-table-card" style="margin-top: 32px; position: relative; z-index: 0; border-radius: 16px; background: white; border: 1px solid #e9ecef; box-shadow: 0 4px 16px rgba(0,0,0,0.05);">
+    <div class="card-header" style="background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); padding: 24px; border-bottom: 1px solid rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: space-between;">
+        <div>
+            <h3 style="margin: 0; font-size: 20px; color: #2c3e50; font-weight: 600;">
+                <i class="fas fa-table" style="margin-right: 10px; color: #3498db;"></i>
+                故障指标数据管理
+            </h3>
+            <p style="margin: 6px 0 0 0; font-size: 14px; color: #7f8c8d;">故障数据详细管理 - 支持筛选、批量操作和数据导入导出</p>
         </div>
-        <div class="action-right">
-            <span id="selectedCount" class="selected-count">0 项已选中</span>
-            <button type="button" id="batchDeleteBtn" class="btn btn-danger" disabled>批量删除</button>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <a href="/fault/add_fault_data" class="btn-primary" style="padding: 8px 16px; background: #3498db; color: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 4px; text-decoration: none; transition: all 0.3s;">
+                <svg style="width: 16px; height: 16px;" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 4v16m8-8H4"/>
+                </svg>
+                添加故障数据
+            </a>
         </div>
     </div>
+    <div class="card-body" style="padding: 24px;">
+        <!-- 筛选表单 -->
+        <form method="get" id="filterForm" style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin-bottom: 24px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+            <label style="color: #2c3e50; font-weight: 500; display: flex; align-items: center; gap: 8px;">故障类型：
+                <select name="fault_type" onchange="document.getElementById('filterForm').submit();" style="padding: 6px 12px; border: 1px solid #dee2e6; border-radius: 6px; background: white; color: #2c3e50; min-width: 120px;">
+                    <option value="">全部</option>
+                    {% for type in all_fault_types %}
+                    <option value="{{ type }}" {% if current_fault_type==type %}selected{% endif %}>{{ type }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label style="color: #2c3e50; font-weight: 500; display: flex; align-items: center; gap: 8px;">原因分类：
+                <select name="cause_category" onchange="document.getElementById('filterForm').submit();" style="padding: 6px 12px; border: 1px solid #dee2e6; border-radius: 6px; background: white; color: #2c3e50; min-width: 120px;">
+                    <option value="">全部</option>
+                    {% for category in all_cause_categories %}
+                    <option value="{{ category }}" {% if current_cause_category==category %}selected{% endif %}>{{ category }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label style="color: #2c3e50; font-weight: 500; display: flex; align-items: center; gap: 8px;">通报级别：
+                <select name="notification_level" onchange="document.getElementById('filterForm').submit();" style="padding: 6px 12px; border: 1px solid #dee2e6; border-radius: 6px; background: white; color: #2c3e50; min-width: 120px;">
+                    <option value="">全部</option>
+                    {% for level in all_notification_levels %}
+                    <option value="{{ level }}" {% if current_notification_level==level %}selected{% endif %}>{{ level }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <input type="hidden" name="page" value="1">
+        </form>
 
-    <div class="data-table-container">
-        <table class="data-table">
-            <thead class="sticky-header">
-                <tr>
-                    <th class="checkbox-column">
-                        <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
-                    </th>
-                    <th style="min-width: 130px;" title="故障发生的日期和时间">故障日期</th>
-                    <th title="故障的具体名称和描述">故障名称</th>
-                    <th title="省级对故障类型的分类">省-故障类型</th>
-                    <th title="故障原因的分类类型">原因分类</th>
-                    <th style="min-width: 100px;" title="故障通报的级别和重要性">通报级别</th>
-                    <th title="故障处理所耗费的时间（小时）">处理时长(小时)</th>
-                    <th title="是否为主动发现的故障">主动发现</th>
-                    <th style="min-width: 130px;" title="故障开始发生的具体时间">发生时间</th>
-                    <th style="min-width: 130px;" title="故障处理完成的具体时间">结束时间</th>
-                    <th title="用户投诉的具体情况和处理结果">投诉情况</th>
-                    <th title="引起故障的具体原因分析">故障原因</th>
-                    <th title="故障的处理过程和解决方案">故障处理</th>
-                    <th title="省级对故障原因的分类">省-原因分类</th>
-                    <th title="省级对故障原因的详细分析">省-故障原因分析</th>
-                    <th title="其他补充说明和备注信息">备注</th>
-                    <th style="min-width: 100px;" title="记录创建的日期和时间">创建时间</th>
-                    <th style="min-width: 100px;" title="记录最后修改的日期和时间">更新时间</th>
-                    <th title="编辑、删除、查看等操作按钮">操作</th>
+        <!-- 操作按钮区 -->
+        <div class="action-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 16px; background: #fafafa; border-radius: 8px; flex-wrap: wrap; gap: 16px;">
+            <div class="action-left" style="display: flex; align-items: center; gap: 8px;">
+                <a href="/fault/import_fault_data" class="btn btn-secondary" style="padding: 8px 16px; background: #95a5a6; color: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 4px; text-decoration: none; transition: all 0.3s;">
+                    <svg style="width: 16px; height: 16px;" fill="currentColor" viewBox="0 0 24 24"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/></svg>
+                    批量导入
+                </a>
+                <a href="/fault/export_fault_data" class="btn btn-success" style="padding: 8px 16px; background: #27ae60; color: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 4px; text-decoration: none; transition: all 0.3s;">
+                    <svg style="width: 16px; height: 16px;" fill="currentColor" viewBox="0 0 24 24"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/></svg>
+                    导出数据
+                </a>
+            </div>
+            <div class="action-right" style="display: flex; align-items: center; gap: 12px;">
+                <span id="selectedCount" class="selected-count" style="color: #7f8c8d; font-size: 14px;">0 项已选中</span>
+                <button type="button" id="batchDeleteBtn" class="btn btn-danger" disabled style="padding: 8px 16px; background: #e74c3c; color: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; transition: all 0.3s; opacity: 0.6;">
+                    <svg style="width: 16px; height: 16px; margin-right: 4px;" fill="currentColor" viewBox="0 0 24 24"><path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"/></svg>
+                    批量删除
+                </button>
+            </div>
+        </div>
+
+        <div class="data-table-container" style="overflow-x: auto; max-height: 600px; border-radius: 8px; border: 1px solid #e0e0e0;">
+            <table class="modern-data-table compact-view" style="width: 100%; border-collapse: collapse; background: white;">
+                <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); position: sticky; top: 0; z-index: 10;">
+                    <tr>
+                        <th style="background: #2c3e50; color: white; padding: 16px 20px; text-align: center; font-weight: 600; border-right: 2px solid white; position: sticky; left: 0; z-index: 11; min-width: 50px; white-space: nowrap;">
+                            <input type="checkbox" id="selectAll" onchange="toggleSelectAll()" style="transform: scale(1.2);">
+                        </th>
+                        <th style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white; padding: 12px 20px; text-align: center; font-weight: 600; border-right: 2px solid white; white-space: nowrap; min-width: 130px;" title="故障发生的日期和时间">故障日期</th>
+                        <th style="background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); color: white; padding: 12px 18px; text-align: center; font-weight: 500; border-right: 1px solid rgba(255,255,255,0.2); font-size: 13px; min-width: 150px; white-space: nowrap;" title="故障的具体名称和描述">故障名称</th>
+                        <th style="background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); color: white; padding: 12px 18px; text-align: center; font-weight: 500; border-right: 1px solid rgba(255,255,255,0.2); font-size: 13px; min-width: 120px; white-space: nowrap;" title="省级对故障类型的分类">省-故障类型</th>
+                        <th style="background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); color: white; padding: 12px 18px; text-align: center; font-weight: 500; border-right: 1px solid rgba(255,255,255,0.2); font-size: 13px; min-width: 100px; white-space: nowrap;" title="故障原因的分类类型">原因分类</th>
+                        <th style="background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); color: white; padding: 12px 18px; text-align: center; font-weight: 500; border-right: 1px solid rgba(255,255,255,0.2); font-size: 13px; min-width: 100px; white-space: nowrap;" title="故障通报的级别和重要性">通报级别</th>
+                        <th style="background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); color: white; padding: 12px 18px; text-align: center; font-weight: 500; border-right: 1px solid rgba(255,255,255,0.2); font-size: 13px; min-width: 110px; white-space: nowrap;" title="故障处理所耗费的时间（小时）">处理时长(小时)</th>
+                        <th style="background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); color: white; padding: 12px 18px; text-align: center; font-weight: 500; border-right: 1px solid rgba(255,255,255,0.2); font-size: 13px; min-width: 90px; white-space: nowrap;" title="是否为主动发现的故障">主动发现</th>
+                        <th style="background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); color: white; padding: 12px 18px; text-align: center; font-weight: 500; border-right: 1px solid rgba(255,255,255,0.2); font-size: 13px; min-width: 130px; white-space: nowrap;" title="故障开始发生的具体时间">发生时间</th>
+                        <th style="background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); color: white; padding: 12px 18px; text-align: center; font-weight: 500; border-right: 1px solid rgba(255,255,255,0.2); font-size: 13px; min-width: 130px; white-space: nowrap;" title="故障处理完成的具体时间">结束时间</th>
+                        <th style="background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); color: white; padding: 12px 18px; text-align: center; font-weight: 500; border-right: 1px solid rgba(255,255,255,0.2); font-size: 13px; min-width: 120px; white-space: nowrap;" title="用户投诉的具体情况和处理结果">投诉情况</th>
+                        <th style="background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); color: white; padding: 12px 18px; text-align: center; font-weight: 500; border-right: 1px solid rgba(255,255,255,0.2); font-size: 13px; min-width: 150px; white-space: nowrap;" title="引起故障的具体原因分析">故障原因</th>
+                        <th style="background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); color: white; padding: 12px 18px; text-align: center; font-weight: 500; border-right: 1px solid rgba(255,255,255,0.2); font-size: 13px; min-width: 150px; white-space: nowrap;" title="故障的处理过程和解决方案">故障处理</th>
+                        <th style="background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); color: white; padding: 12px 18px; text-align: center; font-weight: 500; border-right: 1px solid rgba(255,255,255,0.2); font-size: 13px; min-width: 120px; white-space: nowrap;" title="省级对故障原因的分类">省-原因分类</th>
+                        <th style="background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); color: white; padding: 12px 18px; text-align: center; font-weight: 500; border-right: 1px solid rgba(255,255,255,0.2); font-size: 13px; min-width: 150px; white-space: nowrap;" title="省级对故障原因的详细分析">省-故障原因分析</th>
+                        <th style="background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); color: white; padding: 12px 18px; text-align: center; font-weight: 500; border-right: 1px solid rgba(255,255,255,0.2); font-size: 13px; min-width: 100px; white-space: nowrap;" title="其他补充说明和备注信息">备注</th>
+                        <th style="background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); color: white; padding: 12px 18px; text-align: center; font-weight: 500; border-right: 1px solid rgba(255,255,255,0.2); font-size: 13px; min-width: 100px; white-space: nowrap;" title="记录创建的日期和时间">创建时间</th>
+                        <th style="background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); color: white; padding: 12px 18px; text-align: center; font-weight: 500; border-right: 1px solid rgba(255,255,255,0.2); font-size: 13px; min-width: 100px; white-space: nowrap;" title="记录最后修改的日期和时间">更新时间</th>
+                        <th style="background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); color: white; padding: 12px 18px; text-align: center; font-weight: 500; border-right: 1px solid rgba(255,255,255,0.2); font-size: 13px; min-width: 130px; white-space: nowrap;" title="编辑、删除、查看等操作按钮">操作</th>
                 </tr>
             </thead>
             <tbody>
                 {% for item in fault_data_list %}
-                <tr>
-                    <td class="checkbox-column">
-                        <input type="checkbox" class="row-checkbox" value="{{ item.id }}" onchange="updateSelectedCount()">
+                <tr class="data-row" style="transition: all 0.3s ease;" onmouseover="this.style.background='rgba(52, 152, 219, 0.05)'" onmouseout="this.style.background='white'">
+                    <td class="checkbox-column" style="background: #f8f9fa; padding: 12px 16px; text-align: center; border-right: 2px solid #dee2e6; position: sticky; left: 0; z-index: 9;">
+                        <input type="checkbox" class="row-checkbox" value="{{ item.id }}" onchange="updateSelectedCount()" style="transform: scale(1.2);">
                     </td>
-                    <td title="{{ item.fault_date.strftime('%Y-%m-%d %H:%M:%S') if item.fault_date else '无日期' }}" style="min-width: 130px; white-space: nowrap;">
+                    <td title="{{ item.fault_date.strftime('%Y-%m-%d %H:%M:%S') if item.fault_date else '无日期' }}" style="padding: 12px 16px; text-align: center; font-weight: 500; border-right: 1px solid #dee2e6; border-bottom: 1px solid #f0f0f0; min-width: 130px; white-space: nowrap; color: #2c3e50;">
                         {{ item.fault_date.strftime('%Y-%m-%d %H:%M') if item.fault_date else '-' }}
                     </td>
-                    <td title="{{ item.fault_name or '' }}" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    <td title="{{ item.fault_name or '' }}" style="padding: 12px 16px; text-align: left; border-right: 1px solid #dee2e6; border-bottom: 1px solid #f0f0f0; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #2c3e50; font-weight: 500;">
                         {{ (item.fault_name[:30] + '...') if item.fault_name and item.fault_name|length > 30 else (item.fault_name or '-') }}
                     </td>
-                    <td>{{ item.province_fault_type or '-' }}</td>
-                    <td>{{ item.cause_category or '-' }}</td>
-                    <td style="min-width: 100px;">
-                        <span class="badge {% if item.notification_level and ('重大' in item.notification_level or '严重' in item.notification_level) %}badge-danger{% elif item.notification_level and '一般' in item.notification_level %}badge-warning{% else %}badge-info{% endif %}">
+                    <td style="padding: 12px 16px; text-align: center; border-right: 1px solid #dee2e6; border-bottom: 1px solid #f0f0f0; color: #34495e;">{{ item.province_fault_type or '-' }}</td>
+                    <td style="padding: 12px 16px; text-align: center; border-right: 1px solid #dee2e6; border-bottom: 1px solid #f0f0f0; color: #34495e;">{{ item.cause_category or '-' }}</td>
+                    <td style="padding: 12px 16px; text-align: center; border-right: 1px solid #dee2e6; border-bottom: 1px solid #f0f0f0; min-width: 100px;">
+                        <span class="modern-badge {% if item.notification_level and ('重大' in item.notification_level or '严重' in item.notification_level) %}badge-danger{% elif item.notification_level and '一般' in item.notification_level %}badge-warning{% else %}badge-info{% endif %}">
                             {{ item.notification_level or '-' }}
                         </span>
                     </td>
-                    <td>{{ "{:.2f}".format(item.fault_duration_hours) if item.fault_duration_hours else '-' }}</td>
-                    <td>
-                        <span class="badge {% if item.is_proactive_discovery == '是' %}badge-success{% elif item.is_proactive_discovery == '否' %}badge-secondary{% else %}badge-light{% endif %}">
+                    <td style="padding: 12px 16px; text-align: center; border-right: 1px solid #dee2e6; border-bottom: 1px solid #f0f0f0; color: #34495e; font-weight: 500;">{{ "{:.2f}".format(item.fault_duration_hours) if item.fault_duration_hours else '-' }}</td>
+                    <td style="padding: 12px 16px; text-align: center; border-right: 1px solid #dee2e6; border-bottom: 1px solid #f0f0f0;">
+                        <span class="modern-badge {% if item.is_proactive_discovery == '是' %}badge-success{% elif item.is_proactive_discovery == '否' %}badge-secondary{% else %}badge-light{% endif %}">
                             {{ item.is_proactive_discovery or '-' }}
                         </span>
                     </td>
-                    <td title="{{ item.start_time.strftime('%Y-%m-%d %H:%M:%S') if item.start_time else '无发生时间' }}" style="min-width: 130px; white-space: nowrap;">
+                    <td title="{{ item.start_time.strftime('%Y-%m-%d %H:%M:%S') if item.start_time else '无发生时间' }}" style="padding: 12px 16px; text-align: center; border-right: 1px solid #dee2e6; border-bottom: 1px solid #f0f0f0; min-width: 130px; white-space: nowrap; color: #7f8c8d; font-size: 13px;">
                         {{ item.start_time.strftime('%Y-%m-%d %H:%M') if item.start_time else '-' }}
                     </td>
-                    <td title="{{ item.end_time.strftime('%Y-%m-%d %H:%M:%S') if item.end_time else '无结束时间' }}" style="min-width: 130px; white-space: nowrap;">
+                    <td title="{{ item.end_time.strftime('%Y-%m-%d %H:%M:%S') if item.end_time else '无结束时间' }}" style="padding: 12px 16px; text-align: center; border-right: 1px solid #dee2e6; border-bottom: 1px solid #f0f0f0; min-width: 130px; white-space: nowrap; color: #7f8c8d; font-size: 13px;">
                         {{ item.end_time.strftime('%Y-%m-%d %H:%M') if item.end_time else '-' }}
                     </td>
-                    <td title="{{ item.complaint_situation or '' }}" style="max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    <td title="{{ item.complaint_situation or '' }}" style="padding: 12px 16px; text-align: left; border-right: 1px solid #dee2e6; border-bottom: 1px solid #f0f0f0; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #34495e;">
                         {{ (item.complaint_situation[:20] + '...') if item.complaint_situation and item.complaint_situation|length > 20 else (item.complaint_situation or '-') }}
                     </td>
-                    <td title="{{ item.fault_cause or '' }}" style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    <td title="{{ item.fault_cause or '' }}" style="padding: 12px 16px; text-align: left; border-right: 1px solid #dee2e6; border-bottom: 1px solid #f0f0f0; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #34495e;">
                         {{ (item.fault_cause[:30] + '...') if item.fault_cause and item.fault_cause|length > 30 else (item.fault_cause or '-') }}
                     </td>
-                    <td title="{{ item.fault_handling or '' }}" style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    <td title="{{ item.fault_handling or '' }}" style="padding: 12px 16px; text-align: left; border-right: 1px solid #dee2e6; border-bottom: 1px solid #f0f0f0; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #34495e;">
                         {{ (item.fault_handling[:30] + '...') if item.fault_handling and item.fault_handling|length > 30 else (item.fault_handling or '-') }}
                     </td>
-                    <td>{{ item.province_cause_category or '-' }}</td>
-                    <td title="{{ item.province_cause_analysis or '' }}" style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    <td style="padding: 12px 16px; text-align: center; border-right: 1px solid #dee2e6; border-bottom: 1px solid #f0f0f0; color: #34495e;">{{ item.province_cause_category or '-' }}</td>
+                    <td title="{{ item.province_cause_analysis or '' }}" style="padding: 12px 16px; text-align: left; border-right: 1px solid #dee2e6; border-bottom: 1px solid #f0f0f0; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #34495e;">
                         {{ (item.province_cause_analysis[:30] + '...') if item.province_cause_analysis and item.province_cause_analysis|length > 30 else (item.province_cause_analysis or '-') }}
                     </td>
-                    <td title="{{ item.remarks or '' }}" style="max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    <td title="{{ item.remarks or '' }}" style="padding: 12px 16px; text-align: left; border-right: 1px solid #dee2e6; border-bottom: 1px solid #f0f0f0; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #7f8c8d;">
                         {{ (item.remarks[:20] + '...') if item.remarks and item.remarks|length > 20 else (item.remarks or '-') }}
                     </td>
-                    <td title="{{ item.created_at.strftime('%Y-%m-%d %H:%M:%S') if item.created_at else '无创建时间' }}" style="min-width: 100px; white-space: nowrap;">
+                    <td title="{{ item.created_at.strftime('%Y-%m-%d %H:%M:%S') if item.created_at else '无创建时间' }}" style="padding: 12px 16px; text-align: center; border-right: 1px solid #dee2e6; border-bottom: 1px solid #f0f0f0; min-width: 100px; white-space: nowrap; color: #7f8c8d; font-size: 13px;">
                         {{ item.created_at.strftime('%Y-%m-%d') if item.created_at else '-' }}
                     </td>
-                    <td title="{{ item.updated_at.strftime('%Y-%m-%d %H:%M:%S') if item.updated_at else '无更新时间' }}" style="min-width: 100px; white-space: nowrap;">
+                    <td title="{{ item.updated_at.strftime('%Y-%m-%d %H:%M:%S') if item.updated_at else '无更新时间' }}" style="padding: 12px 16px; text-align: center; border-right: 1px solid #dee2e6; border-bottom: 1px solid #f0f0f0; min-width: 100px; white-space: nowrap; color: #7f8c8d; font-size: 13px;">
                         {{ item.updated_at.strftime('%Y-%m-%d') if item.updated_at else '-' }}
                     </td>
-                    <td class="action-column">
-                        <div class="action-buttons">
-                            <a href="/fault/edit_fault_data/{{ item.id }}" class="btn-xs btn-primary" title="编辑">编辑</a>
-                            <a href="/fault/delete_fault_data/{{ item.id }}" class="btn-xs btn-danger" onclick="return confirm('确定要删除吗？');" title="删除">删除</a>
-                            <a href="/fault/view_fault_data/{{ item.id }}" class="btn-xs btn-info" title="详情">详情</a>
+                    <td class="action-column" style="padding: 12px 16px; text-align: center; border-bottom: 1px solid #f0f0f0; min-width: 130px; white-space: nowrap;">
+                        <div class="action-buttons" style="display: flex; gap: 4px; justify-content: center; flex-wrap: wrap;">
+                            <a href="/fault/edit_fault_data/{{ item.id }}" class="btn-xs modern-btn-primary" title="编辑" style="padding: 4px 8px; background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white; border: none; border-radius: 4px; font-size: 11px; text-decoration: none; transition: all 0.3s; display: flex; align-items: center; font-weight: 500;">编辑</a>
+                            <a href="/fault/delete_fault_data/{{ item.id }}" class="btn-xs modern-btn-danger" onclick="return confirm('确定要删除吗？');" title="删除" style="padding: 4px 8px; background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); color: white; border: none; border-radius: 4px; font-size: 11px; text-decoration: none; transition: all 0.3s; display: flex; align-items: center; font-weight: 500;">删除</a>
+                            <a href="/fault/view_fault_data/{{ item.id }}" class="btn-xs modern-btn-info" title="详情" style="padding: 4px 8px; background: linear-gradient(135deg, #17a2b8 0%, #138496 100%); color: white; border: none; border-radius: 4px; font-size: 11px; text-decoration: none; transition: all 0.3s; display: flex; align-items: center; font-weight: 500;">详情</a>
                         </div>
                     </td>
                 </tr>
@@ -151,22 +177,75 @@
         </table>
     </div>
     
-    <!-- 分页控件 -->
-    <div class="pagination" style="margin-top: 18px; display: flex; justify-content: center; align-items: center; gap: 8px;">
-        {% if page > 1 %}
-            <a href="?page=1{% if current_fault_type %}&fault_type={{ current_fault_type }}{% endif %}{% if current_cause_category %}&cause_category={{ current_cause_category }}{% endif %}{% if current_notification_level %}&notification_level={{ current_notification_level }}{% endif %}" class="page-link">首页</a>
-            <a href="?page={{ page - 1 }}{% if current_fault_type %}&fault_type={{ current_fault_type }}{% endif %}{% if current_cause_category %}&cause_category={{ current_cause_category }}{% endif %}{% if current_notification_level %}&notification_level={{ current_notification_level }}{% endif %}" class="page-link">上一页</a>
-        {% endif %}
-        <span>第 {{ page }} / {{ pages }} 页</span>
-        {% if page < pages %}
-            <a href="?page={{ page + 1 }}{% if current_fault_type %}&fault_type={{ current_fault_type }}{% endif %}{% if current_cause_category %}&cause_category={{ current_cause_category }}{% endif %}{% if current_notification_level %}&notification_level={{ current_notification_level }}{% endif %}" class="page-link">下一页</a>
-            <a href="?page={{ pages }}{% if current_fault_type %}&fault_type={{ current_fault_type }}{% endif %}{% if current_cause_category %}&cause_category={{ current_cause_category }}{% endif %}{% if current_notification_level %}&notification_level={{ current_notification_level }}{% endif %}" class="page-link">末页</a>
-        {% endif %}
-        <span style="margin-left:12px;">共 {{ total }} 条</span>
+        <!-- 现代化分页控件 -->
+        <div style="margin-top: 24px; display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; background: #f8f9fa; border-radius: 12px; border: 1px solid #e9ecef;">
+            <div style="display: flex; gap: 8px; align-items: center;">
+                {% if page > 1 %}
+                    <a href="?page=1{% if current_fault_type %}&fault_type={{ current_fault_type }}{% endif %}{% if current_cause_category %}&cause_category={{ current_cause_category }}{% endif %}{% if current_notification_level %}&notification_level={{ current_notification_level }}{% endif %}" class="page-link modern-page-btn" style="padding: 6px 12px; background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white; border-radius: 4px; text-decoration: none; font-size: 12px; transition: all 0.3s; font-weight: 500;">首页</a>
+                    <a href="?page={{ page - 1 }}{% if current_fault_type %}&fault_type={{ current_fault_type }}{% endif %}{% if current_cause_category %}&cause_category={{ current_cause_category }}{% endif %}{% if current_notification_level %}&notification_level={{ current_notification_level }}{% endif %}" class="page-link modern-page-btn" style="padding: 6px 12px; background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white; border-radius: 4px; text-decoration: none; font-size: 12px; transition: all 0.3s; font-weight: 500;">上一页</a>
+                {% endif %}
+                {% if page < pages %}
+                    <a href="?page={{ page + 1 }}{% if current_fault_type %}&fault_type={{ current_fault_type }}{% endif %}{% if current_cause_category %}&cause_category={{ current_cause_category }}{% endif %}{% if current_notification_level %}&notification_level={{ current_notification_level }}{% endif %}" class="page-link modern-page-btn" style="padding: 6px 12px; background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white; border-radius: 4px; text-decoration: none; font-size: 12px; transition: all 0.3s; font-weight: 500;">下一页</a>
+                    <a href="?page={{ pages }}{% if current_fault_type %}&fault_type={{ current_fault_type }}{% endif %}{% if current_cause_category %}&cause_category={{ current_cause_category }}{% endif %}{% if current_notification_level %}&notification_level={{ current_notification_level }}{% endif %}" class="page-link modern-page-btn" style="padding: 6px 12px; background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white; border-radius: 4px; text-decoration: none; font-size: 12px; transition: all 0.3s; font-weight: 500;">末页</a>
+                {% endif %}
+            </div>
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <span style="color: #7f8c8d; font-size: 14px; font-weight: 500;">第 {{ page }} / {{ pages }} 页</span>
+                <span style="color: #7f8c8d; font-size: 14px; font-weight: 500;">共 {{ total }} 条记录</span>
+            </div>
+        </div>
     </div>
 </div>
 
 <style>
+/* 现代化徽章样式 */
+.modern-badge {
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.modern-badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.modern-badge.badge-danger { 
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); 
+    color: white; 
+}
+.modern-badge.badge-warning { 
+    background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); 
+    color: white; 
+}
+.modern-badge.badge-success { 
+    background: linear-gradient(135deg, #27ae60 0%, #229954 100%); 
+    color: white; 
+}
+.modern-badge.badge-info { 
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); 
+    color: white; 
+}
+.modern-badge.badge-secondary { 
+    background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%); 
+    color: white; 
+}
+.modern-badge.badge-light { 
+    background: linear-gradient(135deg, #ecf0f1 0%, #d5dbdb 100%); 
+    color: #2c3e50; 
+    border: 1px solid #bdc3c7; 
+}
+
+/* 保持原有徽章样式以防兼容性问题 */
 .badge {
     padding: 4px 8px;
     border-radius: 4px;
@@ -265,26 +344,40 @@
     align-items: center;
 }
 
-/* 小按钮样式 */
+/* 现代化按钮样式 */
 .btn-xs {
     display: inline-block;
-    padding: 2px 6px;
-    font-size: 0.7em;
+    padding: 4px 8px;
+    font-size: 11px;
     line-height: 1.2;
-    border-radius: 3px;
+    border-radius: 4px;
     text-decoration: none;
     color: white;
-    font-weight: 500;
-    min-width: 32px;
+    font-weight: 600;
+    min-width: 45px;
     text-align: center;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    letter-spacing: 0.3px;
 }
 
 .btn-xs:hover {
     text-decoration: none;
     color: white;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+}
+
+.modern-btn-primary:hover {
+    background: linear-gradient(135deg, #2980b9 0%, #21618c 100%) !important;
+}
+
+.modern-btn-danger:hover {
+    background: linear-gradient(135deg, #c0392b 0%, #a93226 100%) !important;
+}
+
+.modern-btn-info:hover {
+    background: linear-gradient(135deg, #138496 0%, #0f6674 100%) !important;
 }
 
 .btn-primary {
@@ -317,14 +410,41 @@
     border-color: #117a8b;
 }
 
-/* 分页样式 */
+/* 现代化分页样式 */
 .pagination {
-    margin-top: 20px;
+    margin-top: 24px;
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
+    background: #f8f9fa;
+    padding: 16px 24px;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+}
+
+.modern-page-btn {
+    display: inline-block;
+    padding: 6px 12px;
+    margin: 0 2px;
+    text-decoration: none;
+    color: white;
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.modern-page-btn:hover {
+    background: linear-gradient(135deg, #2980b9 0%, #21618c 100%) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    text-decoration: none;
+    color: white;
 }
 
 .page-link {
@@ -360,22 +480,73 @@
     color: #6c757d;
 }
 
+/* 现代化表格交互效果 */
+.modern-data-table.compact-view th,
+.modern-data-table.compact-view td {
+    padding: 8px 16px !important;
+    font-size: 12px !important;
+}
+
+.data-row:hover .modern-badge {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.data-row:hover .btn-xs {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* 表格行交替背景色 */
+.modern-data-table tbody tr:nth-child(even) {
+    background-color: rgba(248, 249, 250, 0.5);
+}
+
+.modern-data-table tbody tr:nth-child(odd) {
+    background-color: white;
+}
+
+/* 悬停时的微妙阴影效果 */
+.modern-data-table tbody tr:hover {
+    box-shadow: 0 4px 16px rgba(52, 152, 219, 0.1);
+    position: relative;
+    z-index: 2;
+}
+
+/* 复选框样式增强 */
+.checkbox-column input[type="checkbox"] {
+    transform: scale(1.2);
+    accent-color: #3498db;
+    cursor: pointer;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
     .action-buttons {
-        flex-direction: row;
-        gap: 1px;
+        flex-direction: column;
+        gap: 2px;
     }
     
     .btn-xs {
-        padding: 1px 4px;
-        font-size: 0.65em;
-        min-width: 28px;
+        padding: 3px 6px;
+        font-size: 10px;
+        min-width: 38px;
     }
     
     .action-column {
         min-width: 100px;
         width: 100px;
+    }
+    
+    .modern-badge {
+        font-size: 10px;
+        padding: 2px 8px;
+    }
+    
+    .pagination {
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
     }
 }
 </style>
