@@ -607,18 +607,14 @@ async def pue_analyze(request: Request, location: str = None, date_range: str = 
         
         # 处理period参数，调整月份和x轴显示
         if period == "quarter":
-            # 季度视图：只显示每季度最后一个月(3,6,9,12月)
+            # 季度视图：显示Q1-Q4所有季度，即使某些季度没有数据
             quarter_months = ['3', '6', '9', '12']
-            months = [m for m in months if m in quarter_months]
+            months = quarter_months
             x_axis = [f"Q{(int(m)-1)//3 + 1}" for m in months]
         elif period == "year":
             # 年度视图：只显示年末数据（12月）
-            if '12' in months:
-                months = ['12']
-                x_axis = [f"{this_year}年"]
-            else:
-                months = []
-                x_axis = []
+            months = ['12']
+            x_axis = [f"{this_year}年"]
         else:
             # 默认月度视图
             x_axis = [f"{m}月" for m in months]
@@ -763,7 +759,6 @@ async def pue_analyze(request: Request, location: str = None, date_range: str = 
         .set_global_opts(
             title_opts=opts.TitleOpts(
                 title="PUE指标与用电量双轴分析",
-                subtitle="柱状图：PUE值  |  折线图：用电量",
                 pos_left="center"
             ),
             xaxis_opts=opts.AxisOpts(
@@ -884,8 +879,23 @@ async def pue_analyze(request: Request, location: str = None, date_range: str = 
                 'pue_value': p.pue_value
             })
         locations = sorted(set([p.location for p in pue_data_list]))
+        
+        # 为multi_table获取完整的两年数据（last_year和this_year）
+        multi_table_query = select(PUEData).where(
+            and_(
+                PUEData.year.in_(years),
+                PUEData.month.in_(months)
+            )
+        )
+        multi_table_result = await db.execute(multi_table_query)
+        multi_table_data = multi_table_result.scalars().all()
+        
+        # 确保locations包含完整数据中的所有地点
+        all_multi_locations = sorted(set([p.location for p in multi_table_data]))
+        locations = sorted(set(locations + all_multi_locations))
+        
         multi_table = {m: {loc: {y: None for y in years} for loc in locations} for m in months}
-        for p in pue_data_list:
+        for p in multi_table_data:
             if p.year in years and p.location in locations and p.month in months:
                 multi_table[p.month][p.location][p.year] = p.pue_value
         # 其它红绿灯等业务逻辑保持不变
@@ -1028,187 +1038,191 @@ async def pue_analyze(request: Request, location: str = None, date_range: str = 
         }
     
         # ============ 生成热力图 ============
-        # TODO: 修复热力图数据结构问题
-        """
         # 准备热力图数据：地点-月份的PUE值分布
         heatmap_data = []
-        location_list = []
+        location_list = list(all_locations) if all_locations else []
         month_list = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
     
-        # 获取所有地点的年度数据
-        for loc in all_locations:
-            if loc not in location_list:
-                location_list.append(loc)
-    
         # 为每个地点和月份组合准备数据
-        for i, loc in enumerate(location_list):
-            for j, month in enumerate(month_list):
+        for j, month in enumerate(month_list):
+            for i, loc in enumerate(location_list):
                 pue_val = multi_table.get(month, {}).get(loc, {}).get(this_year)
                 if pue_val is not None:
-                    # [地点索引, 月份索引, PUE值]
-                    heatmap_data.append([i, j, round(float(pue_val), 3)])
+                    # [月份索引, 地点索引, PUE值]
+                    heatmap_data.append([j, i, round(float(pue_val), 3)])
     
         # 生成热力图
-        heatmap = (
-        HeatMap(init_opts=opts.InitOpts(width="100%", height="400px"))
-        .add_xaxis(month_list)
-        .add_yaxis(
-            "PUE热力分布",
-            location_list,
-            heatmap_data,
-            label_opts=opts.LabelOpts(is_show=True, font_size=10),
-        )
-        .set_global_opts(
-            title_opts=opts.TitleOpts(
-                title="PUE指标热力图",
-                subtitle=f"{this_year}年各地点月度PUE分布",
-                pos_left="center"
-            ),
-            visualmap_opts=opts.VisualMapOpts(
-                min_=1.0,
-                max_=3.0,
-                is_calculable=True,
-                orient="horizontal",
-                pos_left="center",
-                pos_bottom="10px",
-                range_color=["#313695", "#4575b4", "#74add1", "#abd9e9", 
-                           "#e0f3f8", "#fee090", "#fdae61", "#f46d43", "#d73027"]
-            ),
-            xaxis_opts=opts.AxisOpts(
-                name="月份",
-                name_location="middle",
-                name_gap=25,
-                axislabel_opts=opts.LabelOpts(rotate=0)
-            ),
-            yaxis_opts=opts.AxisOpts(
-                name="地点",
-                name_location="middle",
-                name_gap=50
-            ),
-            tooltip_opts=opts.TooltipOpts(
-                formatter=JsCode(
-                    "function(params) {"
-                    "return params.marker + params.data[2] + ' (PUE)<br/>' + "
-                    "params.name + '<br/>' + "
-                    "'地点: ' + params.value[1] + '<br/>' + "
-                    "'月份: ' + (params.value[0] + 1) + '月';"
-                    "}"
+        if heatmap_data and location_list:
+            heatmap = (
+                HeatMap(init_opts=opts.InitOpts(width="100%", height="500px"))
+                .add_xaxis([f"{m}月" for m in month_list])
+                .add_yaxis(
+                    "",
+                    location_list,
+                    heatmap_data,
+                    label_opts=opts.LabelOpts(is_show=True, font_size=9),
+                )
+                .set_global_opts(
+                    title_opts=opts.TitleOpts(
+                        title="PUE指标热力图",
+                        subtitle=f"{this_year}年各地点月度PUE分布",
+                        pos_left="center",
+                        pos_top="10px"
+                    ),
+                    visualmap_opts=opts.VisualMapOpts(
+                        min_=1.0,
+                        max_=3.0,
+                        is_calculable=True,
+                        is_show=False,
+                        range_color=["#313695", "#4575b4", "#74add1", "#abd9e9", 
+                                   "#e0f3f8", "#fee090", "#fdae61", "#f46d43", "#d73027"]
+                    ),
+                    xaxis_opts=opts.AxisOpts(
+                        name="月份",
+                        name_location="middle",
+                        name_gap=30,
+                        axislabel_opts=opts.LabelOpts(rotate=0)
+                    ),
+                    yaxis_opts=opts.AxisOpts(
+                        name="地点",
+                        name_location="middle",
+                        name_gap=60
+                    ),
+                    tooltip_opts=opts.TooltipOpts(
+                        formatter=JsCode(
+                            "function(params) {"
+                            "return params.marker + '地点: ' + params.name + '<br/>' + "
+                            "'月份: ' + params.value[0] + '月<br/>' + "
+                            "'PUE值: ' + params.value[2];"
+                            "}"
+                        )
+                    )
                 )
             )
-        )
-        )
-        """
-        # 热力图代码被暂时注释，使用默认空值
-        heatmap_html = ""
+            heatmap_html = heatmap.render_embed()
+        else:
+            heatmap_html = "<div style='text-align:center;padding:50px;color:#999;'>暂无热力图数据</div>"
     
         # ============ 生成雷达图 ============
         # 准备雷达图数据：多维度PUE性能评估
         radar_indicators = [
-        {"name": "当月PUE", "max": 3.0},
-        {"name": "年均PUE", "max": 3.0}, 
-        {"name": "稳定性", "max": 100},  # 基于标准差计算
-        {"name": "改善趋势", "max": 100},  # 基于同比变化
+        {"name": "当月PUE", "max": 100},    # 使用百分制
+        {"name": "年均PUE", "max": 100},    # 使用百分制
+        {"name": "稳定性", "max": 100},      # 基于标准差计算
+        {"name": "改善趋势", "max": 100},    # 基于同比变化
         {"name": "合规率", "max": 100},
-        {"name": "能效水平", "max": 100}   # 基于与基准值对比
+        {"name": "能效水平", "max": 100}     # 基于与基准值对比
         ]
     
-        # 为每个地点计算雷达图指标 - 暂时禁用避免缩进错误
+        # 为每个地点计算雷达图指标
         radar_data = []
-        # TODO: 修复雷达图缩进问题
-        """
-        for loc in location_list[:5]:  # 限制显示前5个地点
-            # 获取该地点当年的所有月份数据
-            loc_data = {}
-            for month in month_list:
-                pue_val = multi_table.get(month, {}).get(loc, {}).get(this_year)
-                if pue_val is not None:
-                    loc_data[month] = pue_val
-            
-            # 当月PUE (转换为百分制，3.0对应100)
-            current_pue = loc_data.get(current_month)
-            current_pue_score = (3.0 - float(current_pue)) / 2.0 * 100 if current_pue else 0
+        current_month = str(datetime.now().month)
         
-        # 年均PUE
-        loc_values = [float(v) for v in loc_data.values() if v is not None]
-        avg_pue = sum(loc_values) / len(loc_values) if loc_values else 2.5
-        avg_pue_score = (3.0 - avg_pue) / 2.0 * 100
-        
-        # 稳定性 (基于标准差，标准差越小稳定性越高)
-        if len(loc_values) > 1:
-            std_dev = statistics.stdev(loc_values)
-            stability_score = max(0, 100 - std_dev * 200)  # 标准差0.5对应0分
-        else:
-            stability_score = 50
-        
-        # 改善趋势 (基于同比变化)
-        if yearly_change is not None:
-            trend_score = max(0, min(100, 50 - yearly_change * 100))
-        else:
-            trend_score = 50
-        
-        # 合规率 (假设1.8以下为优秀)
-        compliance_score = sum(1 for v in loc_values if v <= 1.8) / len(loc_values) * 100 if loc_values else 0
-        
-        # 能效水平 (与行业基准2.0对比)
-        efficiency_score = (2.0 - avg_pue) / 1.0 * 100 if avg_pue <= 2.0 else 0
-        efficiency_score = max(0, min(100, efficiency_score))
-        
-        radar_data.append({
-            "value": [
-                round(current_pue_score, 1),
-                round(avg_pue_score, 1), 
-                round(stability_score, 1),
-                round(trend_score, 1),
-                round(compliance_score, 1),
-                round(efficiency_score, 1)
-            ],
-            "name": loc
-        })
+        if location_list:
+            for loc in location_list[:5]:  # 限制显示前5个地点
+                # 获取该地点当年的所有月份数据
+                loc_data = {}
+                for month in month_list:
+                    pue_val = multi_table.get(month, {}).get(loc, {}).get(this_year)
+                    if pue_val is not None:
+                        loc_data[month] = float(pue_val)
+                
+                if not loc_data:
+                    continue
+                    
+                # 当月PUE (转换为百分制，3.0对应0，1.0对应100)
+                current_pue = loc_data.get(current_month)
+                current_pue_score = max(0, (3.0 - current_pue) / 2.0 * 100) if current_pue else 0
+                
+                # 年均PUE
+                loc_values = list(loc_data.values())
+                avg_pue = sum(loc_values) / len(loc_values) if loc_values else 2.5
+                avg_pue_score = max(0, (3.0 - avg_pue) / 2.0 * 100)
+                
+                # 稳定性 (基于标准差，标准差越小稳定性越高)
+                if len(loc_values) > 1:
+                    std_dev = statistics.stdev(loc_values)
+                    stability_score = max(0, 100 - std_dev * 200)
+                else:
+                    stability_score = 50
+                
+                # 改善趋势 (基于现有数据变化)
+                if len(loc_values) >= 2:
+                    recent_avg = sum(loc_values[-3:]) / len(loc_values[-3:])
+                    early_avg = sum(loc_values[:3]) / len(loc_values[:3])
+                    trend_change = (early_avg - recent_avg) / early_avg
+                    trend_score = max(0, min(100, 50 + trend_change * 100))
+                else:
+                    trend_score = 50
+                
+                # 合规率 (假设1.8以下为优秀)
+                compliance_count = sum(1 for v in loc_values if v <= 1.8)
+                compliance_score = (compliance_count / len(loc_values)) * 100 if loc_values else 0
+                
+                # 能效水平 (与行业基准2.0对比)
+                if avg_pue <= 2.0:
+                    efficiency_score = (2.0 - avg_pue) / 1.0 * 100
+                else:
+                    efficiency_score = 0
+                efficiency_score = max(0, min(100, efficiency_score))
+                
+                radar_data.append({
+                    "value": [
+                        round(current_pue_score, 1),
+                        round(avg_pue_score, 1), 
+                        round(stability_score, 1),
+                        round(trend_score, 1),
+                        round(compliance_score, 1),
+                        round(efficiency_score, 1)
+                    ],
+                    "name": loc
+                })
     
         # 生成雷达图
-        radar = (
-        Radar(init_opts=opts.InitOpts(width="100%", height="400px"))
-        .add_schema(
-            schema=radar_indicators,
-            splitarea_opt=opts.SplitAreaOpts(is_show=True, areastyle_opts=opts.AreaStyleOpts(opacity=0.1)),
-            textstyle_opts=opts.TextStyleOpts(color="#666", font_size=12)
-        )
-        .add(
-            series_name="PUE综合评估",
-            data=radar_data,
-            linestyle_opts=opts.LineStyleOpts(width=2),
-            areastyle_opts=opts.AreaStyleOpts(opacity=0.2)
-        )
-        .set_global_opts(
-            title_opts=opts.TitleOpts(
-                title="PUE多维度性能雷达图", 
-                subtitle=f"{this_year}年各地点综合评估",
-                pos_left="center"
-            ),
-            legend_opts=opts.LegendOpts(
-                orient="horizontal",
-                pos_left="center",
-                pos_bottom="10px"
-            ),
-            tooltip_opts=opts.TooltipOpts(
-                trigger="item",
-                formatter=JsCode(
-                    "function(params) {"
-                    "var data = params.data;"
-                    "var indicators = ['当月PUE', '年均PUE', '稳定性', '改善趋势', '合规率', '能效水平'];"
-                    "var result = params.seriesName + '<br/>' + data.name + '<br/>';"
-                    "for(var i = 0; i < data.value.length; i++) {"
-                    "result += indicators[i] + ': ' + data.value[i] + '<br/>';"
-                    "}"
-                    "return result;"
-                    "}"
+        if radar_data:
+            radar = (
+                Radar(init_opts=opts.InitOpts(width="100%", height="520px"))
+                .add_schema(
+                    schema=radar_indicators,
+                    splitarea_opt=opts.SplitAreaOpts(is_show=True, areastyle_opts=opts.AreaStyleOpts(opacity=0.1)),
+                    textstyle_opts=opts.TextStyleOpts(color="#666", font_size=11)
+                )
+                .add(
+                    series_name="PUE综合评估",
+                    data=radar_data,
+                    linestyle_opts=opts.LineStyleOpts(width=2),
+                    areastyle_opts=opts.AreaStyleOpts(opacity=0.2)
+                )
+                .set_global_opts(
+                    title_opts=opts.TitleOpts(
+                        title="PUE多维度性能雷达图",
+                        pos_left="center",
+                        pos_top="0px"
+                    ),
+                    legend_opts=opts.LegendOpts(
+                        orient="vertical",
+                        pos_right="20px",
+                        pos_top="80px"
+                    ),
+                    tooltip_opts=opts.TooltipOpts(
+                        trigger="item",
+                        formatter=JsCode(
+                            "function(params) {"
+                            "var data = params.data;"
+                            "var indicators = ['当月PUE', '年均PUE', '稳定性', '改善趋势', '合规率', '能效水平'];"
+                            "var result = params.seriesName + '<br/>' + data.name + '<br/>';"
+                            "for(var i = 0; i < data.value.length; i++) {"
+                            "result += indicators[i] + ': ' + data.value[i] + '<br/>';"
+                            "}"
+                            "return result;"
+                            "}"
+                        )
+                    )
                 )
             )
-        )
-        )
-        """
-        # 雷达图代码被暂时注释，使用默认空值
-        radar_html = ""
+            radar_html = radar.render_embed()
+        else:
+            radar_html = "<div style='text-align:center;padding:50px;color:#999;'>暂无雷达图数据</div>"
     
     except Exception as e:
         # 如果数据处理失败，记录错误并使用默认值

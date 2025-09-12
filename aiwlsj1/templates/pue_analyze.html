@@ -2197,44 +2197,12 @@ function showWorkItemDetail(index) {
         // 激活当前按钮
         event.target.classList.add('active');
         
-        // 显示加载状态
-        const chartContainer = document.querySelector('#pue_bar');
-        if (chartContainer) {
-            chartContainer.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 400px; color: #666;"><i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>正在切换视图...</div>';
-        }
-        
         // 构建新的URL参数
         const currentUrl = new URL(window.location);
         currentUrl.searchParams.set('period', period);
         
-        // 发起请求获取新数据
-        fetch(currentUrl.toString())
-            .then(response => response.text())
-            .then(html => {
-                // 解析响应HTML，提取图表部分
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const newChart = doc.querySelector('#pue_bar');
-                
-                if (newChart && chartContainer) {
-                    chartContainer.innerHTML = newChart.innerHTML;
-                    
-                    // 重新执行图表脚本
-                    const scripts = newChart.querySelectorAll('script');
-                    scripts.forEach(script => {
-                        const newScript = document.createElement('script');
-                        newScript.text = script.text;
-                        document.head.appendChild(newScript);
-                        document.head.removeChild(newScript);
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('切换图表视图失败:', error);
-                if (chartContainer) {
-                    chartContainer.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 400px; color: #e53935;"><i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>加载失败，请稍后重试</div>';
-                }
-            });
+        // 直接跳转到新URL，让服务器处理视图切换
+        window.location.href = currentUrl.toString();
     }
     
     // 全屏切换功能
@@ -2395,9 +2363,17 @@ function showWorkItemDetail(index) {
     function toggleHeatmapFullscreen() {
         const container = document.querySelector('#heatmap-container').closest('.card');
         const btn = container.querySelector('.fa-expand, .fa-compress');
+        const heatmapContainer = document.querySelector('#heatmap-container');
         
         if (!container.classList.contains('fullscreen-mode')) {
+            // 进入全屏模式
             container.classList.add('fullscreen-mode');
+            
+            // 保存原始样式
+            container.setAttribute('data-original-style', container.style.cssText);
+            heatmapContainer.setAttribute('data-original-style', heatmapContainer.style.cssText);
+            
+            // 应用全屏样式
             container.style.cssText = `
                 position: fixed !important;
                 top: 0 !important;
@@ -2409,18 +2385,29 @@ function showWorkItemDetail(index) {
                 border-radius: 0 !important;
                 background: white !important;
             `;
-            document.querySelector('#heatmap-container').style.height = 'calc(100vh - 120px)';
+            heatmapContainer.style.cssText = 'width: 100%; height: calc(100vh - 120px); display: flex; align-items: center; justify-content: center;';
             btn.className = 'fas fa-compress';
         } else {
+            // 退出全屏模式
             container.classList.remove('fullscreen-mode');
-            container.style.cssText = '';
-            document.querySelector('#heatmap-container').style.height = '400px';
+            
+            // 恢复原始样式
+            const originalContainerStyle = container.getAttribute('data-original-style') || '';
+            const originalHeatmapStyle = heatmapContainer.getAttribute('data-original-style') || 'width: 100%; height: 320px; display: flex; align-items: center; justify-content: center;';
+            
+            container.style.cssText = originalContainerStyle;
+            heatmapContainer.style.cssText = originalHeatmapStyle;
+            
+            // 清理数据属性
+            container.removeAttribute('data-original-style');
+            heatmapContainer.removeAttribute('data-original-style');
+            
             btn.className = 'fas fa-expand';
         }
         
         // 触发图表重新渲染
         setTimeout(() => {
-            const chartDom = document.querySelector('#heatmap-container').firstElementChild;
+            const chartDom = heatmapContainer.firstElementChild;
             if (chartDom) {
                 const chartInstance = echarts.getInstanceByDom(chartDom);
                 if (chartInstance) chartInstance.resize();
@@ -2432,9 +2419,17 @@ function showWorkItemDetail(index) {
     function toggleRadarFullscreen() {
         const container = document.querySelector('#radar-container').closest('.card');
         const btn = container.querySelector('.fa-expand, .fa-compress');
+        const radarContainer = document.querySelector('#radar-container');
         
         if (!container.classList.contains('fullscreen-mode')) {
+            // 进入全屏模式
             container.classList.add('fullscreen-mode');
+            
+            // 保存原始样式
+            container.setAttribute('data-original-style', container.style.cssText);
+            radarContainer.setAttribute('data-original-style', radarContainer.style.cssText);
+            
+            // 应用全屏样式
             container.style.cssText = `
                 position: fixed !important;
                 top: 0 !important;
@@ -2446,18 +2441,29 @@ function showWorkItemDetail(index) {
                 border-radius: 0 !important;
                 background: white !important;
             `;
-            document.querySelector('#radar-container').style.height = 'calc(100vh - 120px)';
+            radarContainer.style.cssText = 'width: 100%; height: calc(100vh - 120px); display: flex; align-items: center; justify-content: center;';
             btn.className = 'fas fa-compress';
         } else {
+            // 退出全屏模式
             container.classList.remove('fullscreen-mode');
-            container.style.cssText = '';
-            document.querySelector('#radar-container').style.height = '400px';
+            
+            // 恢复原始样式
+            const originalContainerStyle = container.getAttribute('data-original-style') || '';
+            const originalRadarStyle = radarContainer.getAttribute('data-original-style') || 'width: 100%; height: 320px; display: flex; align-items: center; justify-content: center;';
+            
+            container.style.cssText = originalContainerStyle;
+            radarContainer.style.cssText = originalRadarStyle;
+            
+            // 清理数据属性
+            container.removeAttribute('data-original-style');
+            radarContainer.removeAttribute('data-original-style');
+            
             btn.className = 'fas fa-expand';
         }
         
         // 触发图表重新渲染
         setTimeout(() => {
-            const chartDom = document.querySelector('#radar-container').firstElementChild;
+            const chartDom = radarContainer.firstElementChild;
             if (chartDom) {
                 const chartInstance = echarts.getInstanceByDom(chartDom);
                 if (chartInstance) chartInstance.resize();
@@ -2467,52 +2473,33 @@ function showWorkItemDetail(index) {
     
     // 刷新所有可视化组件
     function refreshAllViz() {
+        console.log('开始刷新可视化组件...');
         const refreshBtn = document.querySelector('[onclick="refreshAllViz()"]');
         const originalText = refreshBtn.innerHTML;
         
         refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 刷新中...';
         refreshBtn.disabled = true;
         
-        // 重新加载页面数据
-        fetch(window.location.href)
-            .then(response => response.text())
-            .then(html => {
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                
-                // 更新热力图
-                const newHeatmap = doc.querySelector('#heatmap-container');
-                const currentHeatmap = document.querySelector('#heatmap-container');
-                if (newHeatmap && currentHeatmap) {
-                    currentHeatmap.innerHTML = newHeatmap.innerHTML;
-                }
-                
-                // 更新雷达图
-                const newRadar = doc.querySelector('#radar-container');
-                const currentRadar = document.querySelector('#radar-container');
-                if (newRadar && currentRadar) {
-                    currentRadar.innerHTML = newRadar.innerHTML;
-                }
-                
-                // 重新执行图表脚本
-                setTimeout(() => {
-                    window.dispatchEvent(new Event('resize'));
-                }, 200);
-                
-                refreshBtn.innerHTML = '<i class="fas fa-check"></i> 刷新完成';
-                setTimeout(() => {
-                    refreshBtn.innerHTML = originalText;
-                    refreshBtn.disabled = false;
-                }, 1500);
-            })
-            .catch(error => {
-                console.error('刷新失败:', error);
-                refreshBtn.innerHTML = '<i class="fas fa-times"></i> 刷新失败';
-                setTimeout(() => {
-                    refreshBtn.innerHTML = originalText;
-                    refreshBtn.disabled = false;
-                }, 2000);
-            });
+        // 简化的刷新策略：直接重新加载页面以保持状态
+        try {
+            // 保存当前URL（包含所有参数）
+            const currentUrl = window.location.href;
+            console.log('当前URL:', currentUrl);
+            
+            // 方法1：直接重新加载当前页面
+            showTooltip('正在重新加载数据...');
+            setTimeout(() => {
+                window.location.reload(true); // 强制从服务器重新加载
+            }, 500);
+            
+        } catch (error) {
+            console.error('刷新过程发生错误:', error);
+            refreshBtn.innerHTML = '<i class="fas fa-times"></i> 刷新失败';
+            setTimeout(() => {
+                refreshBtn.innerHTML = originalText;
+                refreshBtn.disabled = false;
+            }, 2000);
+        }
     }
     
     // 导出所有可视化组件
@@ -2586,21 +2573,73 @@ function showWorkItemDetail(index) {
     // 更新热力图范围
     function updateHeatmapRange(range) {
         console.log('更新热力图范围:', range);
+        // 找到热力图实例并更新范围配置
+        const heatmapContainer = document.querySelector('#heatmap-container');
+        if (heatmapContainer) {
+            const chartDom = heatmapContainer.firstElementChild;
+            if (chartDom) {
+                const chartInstance = echarts.getInstanceByDom(chartDom);
+                if (chartInstance) {
+                    let min = 'dataMin', max = 'dataMax';
+                    if (range !== 'auto') {
+                        const rangeValues = range.split('-');
+                        min = parseFloat(rangeValues[0]);
+                        max = parseFloat(rangeValues[1]);
+                    }
+                    chartInstance.setOption({
+                        visualMap: {
+                            min: min,
+                            max: max
+                        }
+                    });
+                }
+            }
+        }
     }
     
     // 更新雷达图地点显示
     function updateRadarLocations(option) {
         console.log('更新雷达图地点:', option);
+        // 雷达图地点显示逻辑需要重新渲染，暂时只记录选择状态
+        window.radarLocationOption = option;
     }
     
     // 更新数据范围
     function updateDataRange(range) {
         console.log('更新数据范围:', range);
+        // 数据范围变更需要重新请求后端数据，暂时只记录选择状态
+        window.dataRangeOption = range;
+        // 可以显示提示信息，提醒用户点击刷新
+        if (range !== 'current') {
+            showTooltip('数据范围已更新，点击刷新按钮应用更改');
+        }
     }
     
     // 切换数据标签显示
     function toggleDataLabels(show) {
         console.log('切换数据标签:', show);
+        // 更新所有图表的数据标签显示
+        const containers = ['#pue_bar', '#heatmap-container', '#radar-container'];
+        containers.forEach(selector => {
+            const container = document.querySelector(selector);
+            if (container) {
+                const chartDom = container.firstElementChild;
+                if (chartDom) {
+                    const chartInstance = echarts.getInstanceByDom(chartDom);
+                    if (chartInstance) {
+                        const option = chartInstance.getOption();
+                        if (option.series) {
+                            option.series.forEach(series => {
+                                if (series.label) {
+                                    series.label.show = show;
+                                }
+                            });
+                            chartInstance.setOption(option);
+                        }
+                    }
+                }
+            }
+        });
     }
     
     // 切换动画效果
@@ -2618,6 +2657,37 @@ function showWorkItemDetail(index) {
             }
         });
         console.log('切换动画效果:', enable);
+    }
+    
+    // 显示提示信息
+    function showTooltip(message) {
+        // 创建提示框
+        const tooltip = document.createElement('div');
+        tooltip.style.cssText = `
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 10000;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        `;
+        tooltip.innerHTML = `<i class="fas fa-info-circle" style="margin-right: 8px;"></i>${message}`;
+        
+        document.body.appendChild(tooltip);
+        
+        // 3秒后自动移除
+        setTimeout(() => {
+            tooltip.style.opacity = '0';
+            tooltip.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                document.body.removeChild(tooltip);
+            }, 300);
+        }, 3000);
     }
     
     // ============ 高级交互功能 ============
@@ -2933,7 +3003,7 @@ function showWorkItemDetail(index) {
 <div class="advanced-viz-section" style="margin-top: 32px;">
     <div class="row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
         <!-- 热力图卡片 -->
-        <div class="card viz-card" style="position: relative; overflow: hidden; border-radius: 16px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border: none; box-shadow: 0 8px 32px rgba(0,0,0,0.1);">
+        <div class="card viz-card" style="position: relative; overflow: hidden; border-radius: 16px; background: white; border: 1px solid #e9ecef; box-shadow: 0 4px 16px rgba(0,0,0,0.05);">
             <div class="card-header" style="background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); padding: 20px; border-bottom: 1px solid rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: space-between;">
                 <div>
                     <h3 style="margin: 0; font-size: 18px; color: #2c3e50; font-weight: 600;">
@@ -2948,15 +3018,15 @@ function showWorkItemDetail(index) {
                     </button>
                 </div>
             </div>
-            <div class="card-body" style="padding: 20px; background: rgba(255,255,255,0.7);">
-                <div id="heatmap-container" style="width: 100%; height: 400px;">
+            <div class="card-body" style="padding: 16px; background: white;">
+                <div id="heatmap-container" style="width: 100%; height: 320px; display: flex; align-items: center; justify-content: center;">
                     {{ heatmap_html|safe }}
                 </div>
             </div>
         </div>
 
         <!-- 雷达图卡片 -->
-        <div class="card viz-card" style="position: relative; overflow: hidden; border-radius: 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; box-shadow: 0 8px 32px rgba(0,0,0,0.1);">
+        <div class="card viz-card" style="position: relative; overflow: hidden; border-radius: 16px; background: white; border: 1px solid #e9ecef; box-shadow: 0 4px 16px rgba(0,0,0,0.05);">
             <div class="card-header" style="background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); padding: 20px; border-bottom: 1px solid rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: space-between;">
                 <div>
                     <h3 style="margin: 0; font-size: 18px; color: #2c3e50; font-weight: 600;">
@@ -2971,81 +3041,9 @@ function showWorkItemDetail(index) {
                     </button>
                 </div>
             </div>
-            <div class="card-body" style="padding: 20px; background: rgba(255,255,255,0.7);">
-                <div id="radar-container" style="width: 100%; height: 400px;">
+            <div class="card-body" style="padding: 16px; background: white;">
+                <div id="radar-container" style="width: 100%; height: 320px; display: flex; align-items: center; justify-content: center;">
                     {{ radar_html|safe }}
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 可视化组件控制面板 -->
-    <div class="viz-control-panel" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 12px; padding: 16px; margin-bottom: 24px; box-shadow: 0 4px 16px rgba(0,0,0,0.05);">
-        <div class="panel-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-            <h4 style="margin: 0; font-size: 16px; color: #495057; font-weight: 600;">
-                <i class="fas fa-sliders-h" style="margin-right: 8px; color: #6c757d;"></i>
-                可视化控制面板
-            </h4>
-            <div class="panel-actions">
-                <button class="action-btn" onclick="refreshAllViz()" style="background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; margin-right: 8px;">
-                    <i class="fas fa-sync-alt"></i> 刷新
-                </button>
-                <button class="action-btn" onclick="exportAllViz()" style="background: #17a2b8; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer;">
-                    <i class="fas fa-download"></i> 导出
-                </button>
-            </div>
-        </div>
-        
-        <div class="panel-content" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-            <!-- 热力图设置 -->
-            <div class="control-group" style="background: white; padding: 12px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-                <label style="display: block; font-size: 12px; color: #6c757d; margin-bottom: 6px; font-weight: 600;">热力图设置</label>
-                <div style="display: flex; gap: 8px;">
-                    <select class="form-control" onchange="updateHeatmapRange(this.value)" style="flex: 1; padding: 4px 8px; border: 1px solid #ced4da; border-radius: 4px; font-size: 12px;">
-                        <option value="auto">自动范围</option>
-                        <option value="1.0-2.0">1.0-2.0</option>
-                        <option value="1.5-2.5">1.5-2.5</option>
-                        <option value="1.0-3.0">1.0-3.0</option>
-                    </select>
-                </div>
-            </div>
-            
-            <!-- 雷达图设置 -->
-            <div class="control-group" style="background: white; padding: 12px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-                <label style="display: block; font-size: 12px; color: #6c757d; margin-bottom: 6px; font-weight: 600;">雷达图设置</label>
-                <div style="display: flex; gap: 8px;">
-                    <select class="form-control" onchange="updateRadarLocations(this.value)" style="flex: 1; padding: 4px 8px; border: 1px solid #ced4da; border-radius: 4px; font-size: 12px;">
-                        <option value="top5">显示前5个</option>
-                        <option value="top3">显示前3个</option>
-                        <option value="all">显示全部</option>
-                        <option value="custom">自定义</option>
-                    </select>
-                </div>
-            </div>
-            
-            <!-- 数据范围选择 -->
-            <div class="control-group" style="background: white; padding: 12px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-                <label style="display: block; font-size: 12px; color: #6c757d; margin-bottom: 6px; font-weight: 600;">数据范围</label>
-                <div style="display: flex; gap: 8px;">
-                    <select class="form-control" onchange="updateDataRange(this.value)" style="flex: 1; padding: 4px 8px; border: 1px solid #ced4da; border-radius: 4px; font-size: 12px;">
-                        <option value="current">当前年度</option>
-                        <option value="last6">近6个月</option>
-                        <option value="last12">近12个月</option>
-                        <option value="custom">自定义范围</option>
-                    </select>
-                </div>
-            </div>
-            
-            <!-- 显示选项 -->
-            <div class="control-group" style="background: white; padding: 12px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-                <label style="display: block; font-size: 12px; color: #6c757d; margin-bottom: 6px; font-weight: 600;">显示选项</label>
-                <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <label style="font-size: 11px; color: #495057; display: flex; align-items: center;">
-                        <input type="checkbox" checked onchange="toggleDataLabels(this.checked)" style="margin-right: 6px;"> 数据标签
-                    </label>
-                    <label style="font-size: 11px; color: #495057; display: flex; align-items: center;">
-                        <input type="checkbox" checked onchange="toggleAnimation(this.checked)" style="margin-right: 6px;"> 动画效果
-                    </label>
                 </div>
             </div>
         </div>
@@ -3053,40 +3051,169 @@ function showWorkItemDetail(index) {
 </div>
 
 <!-- 原始数据多维表 -->
-<div class="card" style="margin-top:0; position:relative; z-index:0;">
-    <div class="card-title">原始数据多维表</div>
-    <div class="data-table-container" style="overflow-x:auto;">
-        <table class="data-table" style="min-width:100%;">
-            <thead>
-                <tr>
-                    <th rowspan="2">月份</th>
-                    {% for loc in locations %}
-                        <th colspan="{{ years|length }}">{{ loc }}</th>
-                    {% endfor %}
-                </tr>
-                <tr>
-                    {% for loc in locations %}
-                        {% for y in years %}
-                            <th>{{ y }}</th>
+<div class="card modern-table-card" style="margin-top: 32px; position: relative; z-index: 0; border-radius: 16px; background: white; border: 1px solid #e9ecef; box-shadow: 0 4px 16px rgba(0,0,0,0.05);">
+    <div class="card-header" style="background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); padding: 24px; border-bottom: 1px solid rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: space-between;">
+        <div>
+            <h3 style="margin: 0; font-size: 20px; color: #2c3e50; font-weight: 600;">
+                <i class="fas fa-table" style="margin-right: 10px; color: #3498db;"></i>
+                原始数据多维表
+            </h3>
+            <p style="margin: 6px 0 0 0; font-size: 14px; color: #7f8c8d;">详细PUE数据表格 - 按地点和年份分组</p>
+        </div>
+        <div class="table-controls" style="display: flex; gap: 8px;">
+            <button class="btn-sm" onclick="exportTableData()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; transition: all 0.3s ease;">
+                <i class="fas fa-download" style="margin-right: 6px;"></i>导出
+            </button>
+            <button class="btn-sm" onclick="toggleTableView()" style="background: rgba(52, 152, 219, 0.1); color: #3498db; border: 1px solid #3498db; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; transition: all 0.3s ease;">
+                <i class="fas fa-eye" style="margin-right: 6px;"></i>切换视图
+            </button>
+        </div>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <div class="data-table-container" style="overflow-x: auto; max-height: 600px;">
+            <table class="modern-data-table compact-view" style="width: 100%; border-collapse: collapse; background: white;">
+                <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); position: sticky; top: 0; z-index: 10;">
+                    <tr>
+                        <th rowspan="2" style="background: #2c3e50; color: white; padding: 16px 20px; text-align: center; font-weight: 600; border-right: 2px solid white; position: sticky; left: 0; z-index: 11; min-width: 70px; white-space: nowrap;">月份</th>
+                        {% for loc in locations %}
+                            <th colspan="{{ years|length }}" style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white; padding: 12px 20px; text-align: center; font-weight: 600; border-right: 2px solid white; white-space: nowrap;">{{ loc }}</th>
                         {% endfor %}
-                    {% endfor %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for m in months %}
-                <tr>
-                    <td>{{ m }}月</td>
-                    {% for loc in locations %}
-                        {% for y in years %}
-                            <td>{% set v = multi_table[m][loc][y] %}{% if v is not none %}{{ "{:.2f}".format(v) }}{% else %}-{% endif %}</td>
+                    </tr>
+                    <tr>
+                        {% for loc in locations %}
+                            {% for y in years %}
+                                <th style="background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); color: white; padding: 12px 18px; text-align: center; font-weight: 500; border-right: 1px solid rgba(255,255,255,0.2); font-size: 13px; min-width: 65px; white-space: nowrap;">{{ y }}年</th>
+                            {% endfor %}
                         {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in months %}
+                    <tr class="data-row" style="transition: all 0.3s ease;" onmouseover="this.style.background='rgba(52, 152, 219, 0.05)'" onmouseout="this.style.background='white'">
+                        <td style="background: #f8f9fa; color: #2c3e50; padding: 12px 20px; text-align: center; font-weight: 600; border-right: 2px solid #dee2e6; position: sticky; left: 0; z-index: 9; min-width: 70px; white-space: nowrap; font-size: 14px;">{{ m }}月</td>
+                        {% for loc in locations %}
+                            {% for y in years %}
+                                {% set v = multi_table[m][loc][y] %}
+                                {% if v is not none %}
+                                    {% set pue_class = 'excellent' if v <= 1.2 else ('good' if v <= 1.5 else ('warning' if v <= 2.0 else 'danger')) %}
+                                    <td class="pue-cell pue-{{ pue_class }}" style="padding: 12px 20px; text-align: center; font-weight: 500; border-right: 1px solid #dee2e6; border-bottom: 1px solid #f0f0f0; position: relative; min-width: 65px; white-space: nowrap;">
+                                        <span class="pue-value" style="font-size: 14px; font-weight: 600;">{{ "{:.2f}".format(v) }}</span>
+                                    </td>
+                                {% else %}
+                                    <td style="padding: 12px 20px; text-align: center; color: #bdc3c7; border-right: 1px solid #dee2e6; border-bottom: 1px solid #f0f0f0; font-style: italic; min-width: 65px; white-space: nowrap;">-</td>
+                                {% endif %}
+                            {% endfor %}
+                        {% endfor %}
+                    </tr>
                     {% endfor %}
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
+
+<style>
+.modern-data-table .pue-excellent { background: linear-gradient(135deg, rgba(46, 204, 113, 0.1) 0%, rgba(39, 174, 96, 0.1) 100%); color: #27ae60; }
+.modern-data-table .pue-good { background: linear-gradient(135deg, rgba(52, 152, 219, 0.1) 0%, rgba(41, 128, 185, 0.1) 100%); color: #2980b9; }
+.modern-data-table .pue-warning { background: linear-gradient(135deg, rgba(241, 196, 15, 0.1) 0%, rgba(230, 126, 34, 0.1) 100%); color: #f39c12; }
+.modern-data-table .pue-danger { background: linear-gradient(135deg, rgba(231, 76, 60, 0.1) 0%, rgba(192, 57, 43, 0.1) 100%); color: #e74c3c; }
+
+.modern-data-table .pue-cell::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 3px;
+    width: 100%;
+    background: currentColor;
+    opacity: 0.3;
+}
+
+.btn-sm:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+.data-row:hover .pue-cell {
+    transform: scale(1.02);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.modern-data-table.compact-view th,
+.modern-data-table.compact-view td {
+    padding: 8px 16px !important;
+    font-size: 12px !important;
+}
+
+.modern-data-table.compact-view .pue-value {
+    font-size: 12px !important;
+}
+
+@media (max-width: 768px) {
+    .table-controls {
+        flex-direction: column !important;
+    }
+    
+    .modern-data-table th,
+    .modern-data-table td {
+        padding: 12px 8px !important;
+        font-size: 12px !important;
+    }
+}
+</style>
+
+<script>
+function exportTableData() {
+    // 简单的表格数据导出功能
+    const table = document.querySelector('.modern-data-table');
+    const rows = [];
+    
+    // 获取表头
+    const headers = [];
+    table.querySelectorAll('thead th').forEach(th => {
+        headers.push(th.textContent.trim());
+    });
+    
+    // 获取数据行
+    table.querySelectorAll('tbody tr').forEach(tr => {
+        const row = [];
+        tr.querySelectorAll('td').forEach(td => {
+            row.push(td.textContent.trim());
+        });
+        rows.push(row);
+    });
+    
+    // 创建CSV内容
+    let csvContent = headers.join(',') + '\n';
+    rows.forEach(row => {
+        csvContent += row.join(',') + '\n';
+    });
+    
+    // 下载文件
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `PUE数据表_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    showTooltip('数据导出成功！');
+}
+
+function toggleTableView() {
+    const table = document.querySelector('.modern-data-table');
+    const isCompact = table.classList.contains('compact-view');
+    
+    if (isCompact) {
+        table.classList.remove('compact-view');
+        showTooltip('切换到标准视图');
+    } else {
+        table.classList.add('compact-view');
+        showTooltip('切换到紧凑视图');
+    }
+}
+</script>
 <!-- 页面底部占位容器 -->
 <div style="height:60px;width:100%;pointer-events:none;clear:both;"></div>
 {% endblock %}
